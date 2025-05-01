@@ -1,12 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+
+// Root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'booking-calendar.html'));
+});
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://myshopdb_mbpm_user:YDPfxpjJXdYJcpqI1svSr9XquBfKCPQ4@dpg-d09vmq3ipnbc73b7f340-a.oregon-postgres.render.com/myshopdb_mbpm',
