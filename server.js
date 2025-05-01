@@ -3,17 +3,16 @@ const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'MyShop',
-  password: 'postgre2002007968', // replace with your actual password
-  port: 5432,
+  connectionString: process.env.DATABASE_URL || 'postgresql://myshopdb_mbpm_user:YDPfxpjJXdYJcpqI1svSr9XquBfKCPQ4@dpg-d09vmq3ipnbc73b7f340-a.oregon-postgres.render.com/myshopdb_mbpm',
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Create appointments table if not exists
@@ -26,7 +25,7 @@ pool.query(`CREATE TABLE IF NOT EXISTS appointments (
   price NUMERIC(10,2) NOT NULL,
   client VARCHAR(100) NOT NULL,
   status VARCHAR(30) NOT NULL
-);`);
+);`).catch(err => console.error('Error creating table:', err));
 
 // Get all appointments
 app.get('/appointments', async (req, res) => {
@@ -34,6 +33,7 @@ app.get('/appointments', async (req, res) => {
     const result = await pool.query('SELECT * FROM appointments ORDER BY date, time');
     res.json(result.rows);
   } catch (err) {
+    console.error('Error fetching appointments:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -49,10 +49,11 @@ app.post('/appointments', async (req, res) => {
     const result = await pool.query('SELECT * FROM appointments ORDER BY date, time');
     res.json(result.rows);
   } catch (err) {
+    console.error('Error creating appointment:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 }); 

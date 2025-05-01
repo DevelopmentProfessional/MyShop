@@ -129,9 +129,48 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const API_URL = 'https://myshop-5hec.onrender.com';
         const appointments = [];
         let currentDate = new Date();
         let selectedDate = null, selectedTime = null, selectedService = null, selectedServiceDuration = null, selectedClient = null;
+
+        // Load appointments from server
+        async function loadAppointments() {
+            try {
+                const response = await fetch(`${API_URL}/appointments`);
+                const data = await response.json();
+                appointments.length = 0; // Clear existing appointments
+                appointments.push(...data);
+                renderCalendar();
+                if (selectedDate) {
+                    showAppointmentsForDate(selectedDate);
+                }
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+            }
+        }
+
+        // Save appointment to server
+        async function saveAppointment(appointment) {
+            try {
+                const response = await fetch(`${API_URL}/appointments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(appointment)
+                });
+                const data = await response.json();
+                appointments.length = 0; // Clear existing appointments
+                appointments.push(...data);
+                renderCalendar();
+                if (selectedDate) {
+                    showAppointmentsForDate(selectedDate);
+                }
+            } catch (error) {
+                console.error('Error saving appointment:', error);
+            }
+        }
 
         function renderCalendar() {
             const year = currentDate.getFullYear();
@@ -362,7 +401,6 @@
         };
         document.getElementById('confirmBooking').onclick = () => {
             if (selectedDate && selectedTime && selectedService && selectedClient) {
-                // Store date as UTC string
                 const bookingDate = new Date(selectedDate.getTime());
                 bookingDate.setUTCHours(0, 0, 0, 0);
                 const appointment = {
@@ -376,21 +414,19 @@
                     status: 'scheduled'
                 };
                 
-                appointments.push(appointment);
+                saveAppointment(appointment);
                 
                 // Reset selection
                 selectedDate = selectedTime = selectedService = selectedServiceDuration = selectedClient = null;
                 document.getElementById('serviceSelect').value = '';
                 document.getElementById('clientSearch').value = '';
                 updateServiceInfo();
-                
-                // Update calendar and time slots
-                renderCalendar();
-                generateTimeSlots();
                 updateConfirmButton();
             }
         };
 
+        // Load appointments when page loads
+        loadAppointments();
         renderCalendar();
         generateTimeSlots();
     </script>
