@@ -9,7 +9,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // Configure CORS
 app.use(cors({
-  origin: isProduction ? 'https://myshop-5hec.onrender.com' : 'http://localhost:3000',
+  origin: '*', // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));
@@ -91,6 +91,20 @@ async function initializeTables() {
         price NUMERIC(10,2) NOT NULL,
         client_id INTEGER REFERENCES clients(id),
         status VARCHAR(30) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create products table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price NUMERIC(10,2) NOT NULL,
+        quantity INTEGER NOT NULL DEFAULT 0,
+        category VARCHAR(50),
+        status VARCHAR(20) NOT NULL DEFAULT 'active',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -189,6 +203,74 @@ app.post('/clients', async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Error creating client:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/clients/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, phone } = req.body;
+  
+  try {
+    // Validate client exists
+    const clientCheck = await pool.query('SELECT * FROM clients WHERE id = $1', [id]);
+    if (clientCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+
+    // Input validation
+    if (!name || !email || !phone) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate phone format
+    const phoneRegex = /^[\d-]+$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ error: 'Invalid phone format' });
+    }
+
+    // Check for duplicate email
+    const duplicateCheck = await pool.query(
+      'SELECT * FROM clients WHERE email = $1 AND id != $2',
+      [email, id]
+    );
+    if (duplicateCheck.rows.length > 0) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // Update client
+    const result = await pool.query(
+      'UPDATE clients SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING *',
+      [name, email, phone, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating client:', err);
+    res.status(500).json({ 
+      error: 'Failed to update client',
+      details: err.message,
+      code: err.code 
+    });
+  }
+});
+
+app.delete('/clients/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM clients WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Client not found' });
+    }
+    res.json({ message: 'Client deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting client:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -466,5 +548,83 @@ app.put('/appointments/:id', async (req, res) => {
   } catch (err) {
     console.error('Error updating appointment:', err);
     res.status(500).json({ error: 'Failed to update appointment', details: err.message });
+  }
+});
+
+// Product Routes
+app.get('/products', async (req, res) => {
+  try {
+    console.log('Fetching products...');
+    const result = await pool.query('SELECT * FROM products ORDER BY name');
+    console.log(`Successfully fetched ${result.rows.length} products`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching products:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch products',
+      details: err.message,
+      code: err.code 
+    });
+  }
+});
+
+app.post('/products', async (req, res) => {
+  const { name, description, price, quantity, category, status } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO products (name, description, price, quantity, category, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [name, description, price, quantity, category, status]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating product:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, price, quantity, category, status } = req.body;
+  
+  try {
+    // Validate product exists
+    const productCheck = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (productCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Input validation
+    if (!name || !price || !quantity) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Update product
+    const result = await pool.query(
+      'UPDATE products SET name = $1, description = $2, price = $3, quantity = $4, category = $5, status = $6 WHERE id = $7 RETURNING *',
+      [name, description, price, quantity, category, status, id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating product:', err);
+    res.status(500).json({ 
+      error: 'Failed to update product',
+      details: err.message,
+      code: err.code 
+    });
+  }
+});
+
+app.delete('/products/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    res.status(500).json({ error: err.message });
   }
 }); 

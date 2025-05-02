@@ -19,6 +19,9 @@
                 <a href="clients.html" class="btn btn-outline-light">
                     <i class="bi bi-people"></i> Manage Clients
                 </a>
+                <li class="nav-item">
+                    <a class="nav-link" href="products.html">Products</a>
+                </li>
             </div>
         </div>
     </nav>
@@ -366,7 +369,7 @@
                                    appointmentDate.getFullYear() === year;
                         });
 
-                        const dateString = date.toISOString().split('T')[0];
+                        const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         calendarHTML += `
                             <td class="calendar-day ${dayAppointments.length ? 'has-appointments' : ''}" 
                                 data-date="${dateString}">
@@ -390,13 +393,14 @@
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', () => {
                     const date = day.dataset.date;
-                    const selectedDate = new Date(date);
-                    selectedDate.setHours(0, 0, 0, 0);
+                    const [year, month, dayNum] = date.split('-').map(Number);
+                    const selectedDate = new Date(year, month - 1, dayNum);
                     
                     const dayAppointments = appointments.filter(a => {
                         const appointmentDate = new Date(a.date);
-                        appointmentDate.setHours(0, 0, 0, 0);
-                        return appointmentDate.getTime() === selectedDate.getTime();
+                        return appointmentDate.getDate() === dayNum && 
+                               appointmentDate.getMonth() === month - 1 && 
+                               appointmentDate.getFullYear() === year;
                     });
                     
                     const appointmentsList = document.getElementById('appointmentsList');
