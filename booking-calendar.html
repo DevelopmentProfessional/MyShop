@@ -9,29 +9,24 @@
 </head>
 <body style="overflow: hidden; height: 100vh; margin: 0; padding: 0;">
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom">
-        <div class="container-fluid">
-            <div class="ms-auto d-flex align-items-center">
-                <div class="d-flex">
-                    <a href="booking-calendar.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
-                        <i class="bi bi-calendar"></i> Appointments
-                    </a>
-                    <a href="services.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-list-check"></i> Manage Services
-                    </a>
-                    <a href="clients.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-people"></i> Manage Clients
-                    </a>
-                    <a href="products.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-box"></i> Products
-                    </a>
-                    <button class="btn btn-outline-light" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </div>
+    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="d-flex ms-auto">
+                <a class="btn btn-outline-light mx-1 disabled" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+                <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
+                <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
+                <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
+                <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
+                <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+            </div>
+     </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4"></h1>
             </div>
         </div>
-    </nav>
+    </div>
 
     <div class="container-fluid p-0">
         <!-- Appointments Section -->
@@ -108,6 +103,12 @@
                             <label for="clientSearch" class="form-label">Client</label>
                             <select class="form-select" id="clientSearch" required>
                                 <option value="">Select a client</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="employeeSelect" class="form-label">Employee</label>
+                            <select class="form-select" id="employeeSelect" required>
+                                <option value="">Select an employee</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -264,86 +265,64 @@
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Check authentication and role
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || !['admin', 'staff'].includes(user.role)) {
-            window.location.href = 'index.html';
+        async function fetchData(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
         }
-
-        // Add token to all fetch requests
-        const fetchWithAuth = async (url, options = {}) => {
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                ...options.headers
-            };
-            return fetch(url, { ...options, headers });
-        };
 
         let currentDate = new Date();
         let appointments = [];
         let services = [];
         let clients = [];
+        let employees = [];
 
         async function loadData() {
-            const loadingSpinner = document.getElementById('loadingSpinner');
-            loadingSpinner.style.display = 'block';
-            
             try {
-                const fetchWithTimeout = async (url, options = {}) => {
-                    const timeout = 5000; // 5 seconds timeout
-                    const controller = new AbortController();
-                    const id = setTimeout(() => controller.abort(), timeout);
-                    
-                    try {
-                        const response = await fetchWithAuth(`${API_URL}${url}`, {
-                            ...options,
-                            signal: controller.signal
-                        });
-                        clearTimeout(id);
-                        
-                        if (response.status === 401) {
-                            localStorage.removeItem('token');
-                            localStorage.removeItem('user');
-                            window.location.href = 'index.html';
-                            return;
-                        }
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
-                        return response.json();
-                    } catch (error) {
-                        if (error.name === 'AbortError') {
-                            throw new Error(`Request to ${url} timed out`);
-                        }
-                        throw error;
-                    }
-                };
-
-                const [appointmentsData, servicesData, clientsData] = await Promise.all([
-                    fetchWithTimeout('/appointments'),
-                    fetchWithTimeout('/services'),
-                    fetchWithTimeout('/clients')
+                const [servicesData, clientsData, appointmentsData] = await Promise.all([
+                    fetchData(`${API_URL}/api/services`),
+                    fetchData(`${API_URL}/api/clients`),
+                    fetchData(`${API_URL}/api/appointments`)
                 ]);
 
-                appointments = appointmentsData;
                 services = servicesData;
                 clients = clientsData;
+                appointments = appointmentsData;
 
-                renderAppointments();
                 renderCalendar();
-                renderServiceOptions();
-                renderClientOptions();
-                
-                showToast('Data loaded successfully', 'success');
+                renderAppointments();
+                populateFormSelects();
             } catch (error) {
                 console.error('Error loading data:', error);
-                showToast(`Failed to load data: ${error.message}`, 'danger');
-            } finally {
-                loadingSpinner.style.display = 'none';
+                showToast('Failed to load data', 'danger');
             }
+        }
+
+        function populateFormSelects() {
+            // Populate service select
+            const serviceSelect = document.getElementById('serviceSelect');
+            serviceSelect.innerHTML = '<option value="">Select a service</option>' +
+                services.map(service => `<option value="${service.id}">${service.name} - $${service.price}</option>`).join('');
+
+            // Populate client select
+            const clientSelect = document.getElementById('clientSearch');
+            clientSelect.innerHTML = '<option value="">Select a client</option>' +
+                clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
         }
 
         function renderAppointments() {
@@ -351,14 +330,35 @@
             appointmentsList.innerHTML = appointments.map(appointment => {
                 const service = services.find(s => s.id === appointment.service_id);
                 const client = clients.find(c => c.id === appointment.client_id);
+                const employee = employees.find(e => e.id === appointment.employee_id);
+                
+                const appointmentDate = new Date(appointment.date);
+                const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
                 return `
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <h6 class="mb-1">${client?.name || 'Unknown Client'}</h6>
-                                <small class="text-muted">${service?.name || 'Unknown Service'} - ${appointment.time}</small>
+                                <small class="text-muted">
+                                    <div>${service?.name || 'Unknown Service'}</div>
+                                    <div>${formattedDate} at ${appointment.time}</div>
+                                    <div>Duration: ${appointment.duration} min</div>
+                                    <div>Price: $${Number(appointment.price).toFixed(2)}</div>
+                                    <div>Employee: ${employee?.username || 'Unassigned'}</div>
+                                    <div>Status: ${appointment.status}</div>
+                                </small>
                             </div>
-                            <span class="badge bg-${getStatusColor(appointment.status)}">${appointment.status}</span>
+                            <div class="d-flex flex-column align-items-end">
+                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${appointment.status}</span>
+                                <small class="text-muted">
+                                    Created: ${new Date(appointment.created_at).toLocaleDateString()}
+                                </small>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -530,56 +530,6 @@
             `;
         }
 
-        function renderServiceOptions() {
-            const serviceSelect = document.getElementById('serviceSelect');
-            serviceSelect.innerHTML = `
-                <option value="">Select a service</option>
-                ${services.map(service => `
-                    <option value="${service.id}" data-duration="${service.duration}">
-                        ${service.name} (${service.duration} min) - $${service.price}
-                    </option>
-                `).join('')}
-            `;
-        }
-
-        function renderClientOptions() {
-            const clientSearch = document.getElementById('clientSearch');
-            clientSearch.innerHTML = `
-                <option value="">Select a client</option>
-                ${clients.map(client => `
-                    <option value="${client.id}">${client.name}</option>
-                `).join('')}
-            `;
-        }
-
-        function generateTimeSlots() {
-            const timeSlots = document.getElementById('timeSlots');
-            const serviceSelect = document.getElementById('serviceSelect');
-            const selectedService = services.find(s => s.id === parseInt(serviceSelect.value));
-            
-            if (!selectedService) {
-                timeSlots.innerHTML = '<option value="">Select a service first</option>';
-                return;
-            }
-
-            const slots = [];
-            const startTime = 9; // 9 AM
-            const endTime = 17; // 5 PM
-            const interval = 15; // 15 minutes
-
-            for (let hour = startTime; hour < endTime; hour++) {
-                for (let minute = 0; minute < 60; minute += interval) {
-                    const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                    slots.push(`<option value="${time}">${time}</option>`);
-                }
-            }
-
-            timeSlots.innerHTML = `
-                <option value="">Select a time</option>
-                ${slots.join('')}
-            `;
-        }
-
         function getStatusColor(status) {
             switch (status) {
                 case 'scheduled': return 'primary';
@@ -591,7 +541,6 @@
             }
         }
 
-        /* Commented out toast functionality for now
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -617,7 +566,6 @@
                 toast.remove();
             });
         }
-        */
 
         document.getElementById('serviceSelect').addEventListener('change', generateTimeSlots);
 
@@ -634,16 +582,17 @@
         document.getElementById('confirmBooking').addEventListener('click', async () => {
             const serviceId = document.getElementById('serviceSelect').value;
             const clientId = document.getElementById('clientSearch').value;
+            const employeeId = document.getElementById('employeeSelect').value;
             const date = document.getElementById('dateInput').value;
             const time = document.getElementById('timeSlots').value;
 
-            if (!serviceId || !clientId || !date || !time) {
-                // showToast('Please fill in all fields', 'danger');
+            if (!serviceId || !clientId || !employeeId || !date || !time) {
+                showToast('Please fill in all fields', 'danger');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_URL}/appointments`, {
+                const response = await fetch(`${API_URL}/api/appointments`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -651,6 +600,7 @@
                     body: JSON.stringify({
                         service_id: serviceId,
                         client_id: clientId,
+                        employee_id: employeeId,
                         date: date,
                         time: time
                     })
@@ -663,13 +613,13 @@
                     renderCalendar();
                     bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
                     document.getElementById('bookingForm').reset();
-                    // showToast('Appointment booked successfully', 'success');
+                    showToast('Appointment booked successfully', 'success');
                 } else {
                     throw new Error('Failed to book appointment');
                 }
             } catch (error) {
                 console.error('Error booking appointment:', error);
-                // showToast('Failed to book appointment', 'danger');
+                showToast('Failed to book appointment', 'danger');
             }
         });
 
@@ -684,7 +634,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/clients`, {
+                const response = await fetch(`${API_URL}/api/clients`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -723,7 +673,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+                const response = await fetch(`${API_URL}/api/appointments/${appointmentId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -756,20 +706,39 @@
 
         async function logout() {
             try {
-                await fetchWithAuth(`${API_URL}/api/logout`, {
+                await fetchData(`${API_URL}/api/logout`, {
                     method: 'POST'
                 });
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'index.html';
+                sessionStorage.removeItem('user');
             } catch (error) {
                 console.error('Logout error:', error);
                 showToast('Failed to logout', 'danger');
+            }
+        }
+ 
+        // Initialize dark mode
+        async function initializeDarkMode() {
+            try {
+                const user = JSON.parse(sessionStorage.getItem('user'));
+                if (!user) return;
+                
+                const response = await fetchData(`${API_URL}/api/users/${user.id}`);
+                const userData = response;
+                
+                if (userData.dark_mode) {
+                    document.body.classList.add('dark-mode');
+                    const icon = document.getElementById('darkModeToggle').querySelector('i');
+                    icon.className = 'bi bi-sun-fill';
+                }
+            } catch (error) {
+                console.error('Error initializing dark mode:', error);
             }
         }
 
         // Initialize
         loadData();
     </script>
+
+
 </body>
 </html> 

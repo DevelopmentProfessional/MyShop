@@ -24,31 +24,24 @@
     </style>
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom">
-        <div class="container-fluid">
-            <div class="ms-auto d-flex align-items-center">
-                <div class="d-flex">
-                    <a href="booking-calendar.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-calendar"></i> Appointments
-                    </a>
-                    <a href="services.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-list-check"></i> Manage Services
-                    </a>
-                    <a href="clients.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-people"></i> Manage Clients
-                    </a>
-                    <a href="products.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-box"></i> Products
-                    </a>
-                    <a href="admin.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
-                        <i class="bi bi-shield-lock"></i> Admin
-                    </a>
-                    <button class="btn btn-outline-light" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Admin</h1>
             </div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <span class="navbar-text me-2" id="userDisplay">Loading...</span> 
+        <div class="d-flex ms-auto">
+            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
+            <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
+            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
+            <a class="btn btn-outline-light mx-1 disabled" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
+            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
         </div>
     </nav>
 
@@ -59,17 +52,27 @@
         </button>
     </div>
 
-    <div class="card mt-4" style="margin-bottom: 100px;">
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Admin Dashboard</h1>
+            <div>
+                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#newUserModal">
+                    <i class="bi bi-person-plus"></i> Add User
+                </button>
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#roleManagementModal">
+                    <i class="bi bi-shield-lock"></i> Manage Roles
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table">
                 <thead>
                     <tr>
-                        <th>Delete</th>
                         <th>Username</th>
                         <th>Email</th>
                         <th>Role</th>
-                        <th>Created At</th>
-                        <th>Edit</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody"></tbody>
@@ -92,19 +95,19 @@
                             <input type="text" class="form-control" id="username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" required>
-                        </div>
-                        <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" required>
                         </div>
                         <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <div class="mb-3">
                             <label for="role" class="form-label">Role</label>
                             <select class="form-select" id="role" required>
-                                <option value="admin">Admin</option>
-                                <option value="staff">Staff</option>
                                 <option value="user">User</option>
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
                             </select>
                         </div>
                     </form>
@@ -119,7 +122,7 @@
 
     <!-- Edit User Modal -->
     <div class="modal fade" id="editUserModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Edit User</h5>
@@ -128,27 +131,106 @@
                 <div class="modal-body">
                     <form id="editUserForm">
                         <input type="hidden" id="editUserId">
-                        <div class="mb-3">
-                            <label for="editUsername" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="editUsername" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="editEmail" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editRole" class="form-label">Role</label>
-                            <select class="form-select" id="editRole" required>
-                                <option value="admin">Admin</option>
-                                <option value="staff">Staff</option>
-                                <option value="user">User</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editUsername" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="editUsername" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editEmail" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="editEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editPassword" class="form-label">Password (leave blank to keep current)</label>
+                                    <input type="password" class="form-control" id="editPassword">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="editRole" class="form-label">Role</label>
+                                    <select class="form-select" id="editRole" required>
+                                        <option value="">Select a role</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Permissions</label>
+                                    <div id="permissionsList" class="list-group">
+                                        <!-- Permissions will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="updateUser">Update User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Management Modal -->
+    <div class="modal fade" id="roleManagementModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Role Management</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRoleModal">
+                            <i class="bi bi-plus-circle"></i> Add New Role
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Role</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rolesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Role Modal -->
+    <div class="modal fade" id="newRoleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="newRoleForm">
+                        <div class="mb-3">
+                            <label for="roleName" class="form-label">Role Name</label>
+                            <input type="text" class="form-control" id="roleName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="roleDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="roleDescription" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Permissions</label>
+                            <div id="newRolePermissions" class="list-group">
+                                <!-- Permissions will be populated here -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveRole">Save Role</button>
                 </div>
             </div>
         </div>
@@ -169,37 +251,38 @@
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Check authentication and admin role
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || user.role !== 'admin') {
-            window.location.href = 'index.html';
+        async function fetchWithAuth(url, options = {}) {
+            try {
+                console.log('Fetching:', url);
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
         }
 
-        // Add token to all fetch requests
-        const fetchWithAuth = async (url, options = {}) => {
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                ...options.headers
-            };
-            return fetch(url, { ...options, headers });
-        };
-
         let users = [];
+        let roles = [];
+        let permissions = [];
 
         async function loadUsers() {
             try {
-                const response = await fetchWithAuth(`${API_URL}/api/users`);
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'index.html';
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                users = await response.json();
+                users = await fetchWithAuth(`${API_URL}/api/users`);
                 renderUsersTable();
             } catch (error) {
                 console.error('Error loading users:', error);
@@ -211,35 +294,24 @@
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = users.map(user => `
                 <tr>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})" ${user.id === parseInt(user.id) ? 'disabled' : ''}>
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
                     <td>${user.username}</td>
                     <td>${user.email}</td>
-                    <td>
-                        <span class="badge bg-${getRoleColor(user.role)}">
-                            ${user.role}
-                        </span>
-                    </td>
-                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>${getRoleName(user.role_id)}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
                             <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})" ${user.id === parseInt(localStorage.getItem('userId')) ? 'disabled' : ''}>
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function getRoleColor(role) {
-            switch (role) {
-                case 'admin': return 'danger';
-                case 'staff': return 'warning';
-                case 'user': return 'info';
-                default: return 'secondary';
-            }
+        function getRoleName(roleId) {
+            const role = roles.find(r => r.id === roleId);
+            return role ? role.name : 'No role';
         }
 
         function showToast(message, type = 'success') {
@@ -268,6 +340,73 @@
             });
         }
 
+        async function loadRoles() {
+            try {
+                roles = await fetchWithAuth(`${API_URL}/api/roles`);
+                renderRolesTable();
+                populateRoleSelects();
+            } catch (error) {
+                console.error('Error loading roles:', error);
+                showToast('Failed to load roles', 'danger');
+            }
+        }
+
+        async function loadPermissions() {
+            try {
+                permissions = await fetchWithAuth(`${API_URL}/api/permissions`);
+                renderPermissionsList();
+            } catch (error) {
+                console.error('Error loading permissions:', error);
+                showToast('Failed to load permissions', 'danger');
+            }
+        }
+
+        function renderRolesTable() {
+            const tbody = document.getElementById('rolesTableBody');
+            tbody.innerHTML = roles.map(role => `
+                <tr>
+                    <td>${role.name}</td>
+                    <td>${role.description || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editRole(${role.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteRole(${role.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPermissionsList() {
+            const permissionsList = document.getElementById('permissionsList');
+            const newRolePermissions = document.getElementById('newRolePermissions');
+            
+            const permissionsHtml = permissions.map(permission => `
+                <label class="list-group-item">
+                    <input class="form-check-input me-1" type="checkbox" value="${permission.id}">
+                    ${permission.name}
+                    <small class="text-muted d-block">${permission.description}</small>
+                </label>
+            `).join('');
+
+            permissionsList.innerHTML = permissionsHtml;
+            newRolePermissions.innerHTML = permissionsHtml;
+        }
+
+        function populateRoleSelects() {
+            const roleSelects = document.querySelectorAll('select[id$="Role"]');
+            roleSelects.forEach(select => {
+                select.innerHTML = `
+                    <option value="">Select a role</option>
+                    ${roles.map(role => `
+                        <option value="${role.id}">${role.name}</option>
+                    `).join('')}
+                `;
+            });
+        }
+
         async function editUser(id) {
             const user = users.find(u => u.id === id);
             if (!user) return;
@@ -275,13 +414,24 @@
             document.getElementById('editUserId').value = user.id;
             document.getElementById('editUsername').value = user.username;
             document.getElementById('editEmail').value = user.email;
-            document.getElementById('editRole').value = user.role;
+            document.getElementById('editRole').value = user.role_id;
+
+            try {
+                const userPermissions = await fetchWithAuth(`${API_URL}/api/users/${id}/permissions`);
+                const checkboxes = document.querySelectorAll('#permissionsList input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = userPermissions.some(p => p.id === parseInt(checkbox.value));
+                });
+            } catch (error) {
+                console.error('Error loading user permissions:', error);
+                showToast('Failed to load user permissions', 'danger');
+            }
 
             new bootstrap.Modal(document.getElementById('editUserModal')).show();
         }
 
         async function deleteUser(id) {
-            if (id === parseInt(user.id)) {
+            if (id === parseInt(localStorage.getItem('userId'))) {
                 showToast('Cannot delete your own account', 'danger');
                 return;
             }
@@ -309,8 +459,8 @@
         document.getElementById('saveUser').addEventListener('click', async () => {
             const userData = {
                 username: document.getElementById('username').value,
-                password: document.getElementById('password').value,
                 email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
                 role: document.getElementById('role').value
             };
 
@@ -339,20 +489,25 @@
             }
         });
 
-        document.getElementById('updateUser').addEventListener('click', async () => {
+        async function updateUser() {
             const id = document.getElementById('editUserId').value;
             const userData = {
                 username: document.getElementById('editUsername').value,
                 email: document.getElementById('editEmail').value,
-                role: document.getElementById('editRole').value
+                role_id: document.getElementById('editRole').value
             };
+
+            const password = document.getElementById('editPassword').value;
+            if (password) {
+                userData.password = password;
+            }
+
+            const checkboxes = document.querySelectorAll('#permissionsList input[type="checkbox"]:checked');
+            userData.permissions = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
             try {
                 const response = await fetchWithAuth(`${API_URL}/api/users/${id}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(userData)
                 });
 
@@ -372,7 +527,7 @@
                 console.error('Error updating user:', error);
                 showToast('Failed to update user', 'danger');
             }
-        });
+        }
 
         async function logout() {
             try {
@@ -390,6 +545,9 @@
 
         // Initialize
         loadUsers();
+        loadRoles();
+        loadPermissions();
+        document.getElementById('saveRole').addEventListener('click', saveRole);
     </script>
 </body>
 </html> 

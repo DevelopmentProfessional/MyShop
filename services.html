@@ -6,72 +6,65 @@
     <title>Manage Services</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        .table-responsive {
-            position: relative;
-            height: calc(100vh - 200px);
-            overflow: auto;
-        }
-        .table thead {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 1;
-        }
-        .table thead th {
-            border-bottom: 2px solid #dee2e6;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-light">
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom">
-        <div class="container-fluid">
-            <div class="ms-auto d-flex align-items-center">
-                <div class="d-flex">
-                    <a href="booking-calendar.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-calendar"></i> Appointments
-                    </a>
-                    <a href="services.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
-                        <i class="bi bi-list-check"></i> Manage Services
-                    </a>
-                    <a href="clients.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-people"></i> Manage Clients
-                    </a>
-                    <a href="products.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-box"></i> Products
-                    </a>
-                    <button class="btn btn-outline-light" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </div>
-            </div>
+    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="d-flex ms-auto">
+            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+            <a class="btn btn-outline-light mx-1 disabled" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
+            <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
+            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
+            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
+            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
         </div>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center fixed-bottom mb-5 pb-5">
-        <h2>Manage Services</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newServiceModal">
-            <i class="bi bi-plus-circle"></i> Add New Service
-        </button>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Services</h1>
+            </div>
+        </div>
     </div>
 
-    <div class="card mt-4" style="margin-bottom: 100px;">
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Delete</th>
-                        <th>Name</th>
-                        <th>Duration (min)</th>
-                        <th>Price ($)</th>
-                        <th>Status</th> 
-                        <th>Edit</th>
-                    </tr>
-                </thead>
-                <tbody id="servicesTableBody"></tbody>
-            </table>
+    <div class="container mt-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Manage Services</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newServiceModal">
+                <i class="bi bi-plus-circle"></i> Add New Service
+            </button>
         </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Duration (min)</th>
+                                <th>Price ($)</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="servicesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="position-fixed top-50 start-50 translate-middle" id="loadingSpinner" style="z-index: 1060">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toastContainer"></div>
     </div>
 
     <!-- New Service Modal -->
@@ -153,10 +146,6 @@
         </div>
     </div>
 
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div id="toastContainer"></div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const config = {
@@ -168,95 +157,82 @@
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Check authentication and role
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || !['admin', 'staff'].includes(user.role)) {
-            window.location.href = 'index.html';
-        }
-
-        // Add token to all fetch requests
-        const fetchWithAuth = async (url, options = {}) => {
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                ...options.headers
-            };
-            return fetch(url, { ...options, headers });
-        };
-
-        let services = [];
-
-        async function loadServices() {
+        async function fetchData(url, options = {}) {
             try {
-                const response = await fetchWithAuth(`${API_URL}/services`);
-                if (response.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'index.html';
-                    return;
-                }
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                services = await response.json();
-                renderServicesTable();
+                
+                return response.json();
             } catch (error) {
-                console.error('Error loading services:', error);
-                showToast('Failed to load services', 'danger');
+                console.error('Fetch error:', error);
+                throw error;
             }
         }
 
-        function renderServicesTable() {
+        let services = [];
+
+        async function loadData() {
+            try {
+                services = await fetchData(`${API_URL}/api/services`);
+                renderServices();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Failed to load data', 'danger');
+            }
+        }
+
+        function renderServices() {
             const tbody = document.getElementById('servicesTableBody');
             tbody.innerHTML = services.map(service => `
                 <tr>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteService(${service.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                   
                     <td>${service.name}</td>
                     <td>${service.duration}</td>
-                    <td>$${service.price}</td>
+                    <td>$${Number(service.price).toFixed(2)}</td>
+                    <td><span class="badge bg-${service.status === 'active' ? 'success' : 'secondary'}">${service.status}</span></td>
                     <td>
-                        <span class="badge bg-${service.status === 'active' ? 'success' : 'secondary'}">
-                            ${service.status}
-                        </span>
-                    </td>
-                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editService(${service.id})">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editService(${service.id})">
                             <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteService(${service.id})">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
+        async function saveService() {
+            const name = document.getElementById('serviceName').value;
+            const duration = document.getElementById('serviceDuration').value;
+            const price = document.getElementById('servicePrice').value;
+            const status = document.getElementById('serviceStatus').value;
+
+            try {
+                const response = await fetchData(`${API_URL}/api/services`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name, duration, price, status })
+                });
+
+                services.push(response);
+                renderServices();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('newServiceModal'));
+                modal.hide();
+                
+                showToast('Service created successfully', 'success');
+            } catch (error) {
+                console.error('Error creating service:', error);
+                showToast('Failed to create service', 'danger');
+            }
         }
 
         async function editService(id) {
@@ -269,115 +245,78 @@
             document.getElementById('editServicePrice').value = service.price;
             document.getElementById('editServiceStatus').value = service.status;
 
-            new bootstrap.Modal(document.getElementById('editServiceModal')).show();
+            const modal = new bootstrap.Modal(document.getElementById('editServiceModal'));
+            modal.show();
+        }
+
+        async function updateService() {
+            const id = document.getElementById('editServiceId').value;
+            const name = document.getElementById('editServiceName').value;
+            const duration = document.getElementById('editServiceDuration').value;
+            const price = document.getElementById('editServicePrice').value;
+            const status = document.getElementById('editServiceStatus').value;
+
+            try {
+                const response = await fetchData(`${API_URL}/api/services/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, duration, price, status })
+                });
+
+                const index = services.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    services[index] = response;
+                }
+                renderServices();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editServiceModal'));
+                modal.hide();
+
+                showToast('Service updated successfully', 'success');
+            } catch (error) {
+                console.error('Error updating service:', error);
+                showToast('Failed to update service', 'danger');
+            }
         }
 
         async function deleteService(id) {
             if (!confirm('Are you sure you want to delete this service?')) return;
 
             try {
-                const response = await fetchWithAuth(`${API_URL}/services/${id}`, {
+                await fetchData(`${API_URL}/api/services/${id}`, {
                     method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    services = services.filter(s => s.id !== id);
-                    renderServicesTable();
-                    showToast('Service deleted successfully', 'success');
-                } else {
-                    throw new Error('Failed to delete service');
-                }
+                services = services.filter(s => s.id !== id);
+                renderServices();
+                
+                showToast('Service deleted successfully', 'success');
             } catch (error) {
                 console.error('Error deleting service:', error);
                 showToast('Failed to delete service', 'danger');
             }
         }
 
-        document.getElementById('saveService').addEventListener('click', async () => {
-            const serviceData = {
-                name: document.getElementById('serviceName').value,
-                duration: parseInt(document.getElementById('serviceDuration').value),
-                price: parseFloat(document.getElementById('servicePrice').value),
-                status: document.getElementById('serviceStatus').value
-            };
-
-            try {
-                const response = await fetchWithAuth(`${API_URL}/services`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(serviceData)
-                });
-
-                if (response.ok) {
-                    const newService = await response.json();
-                    services.push(newService);
-                    renderServicesTable();
-                    bootstrap.Modal.getInstance(document.getElementById('newServiceModal')).hide();
-                    document.getElementById('newServiceForm').reset();
-                    showToast('Service added successfully', 'success');
-                } else {
-                    throw new Error('Failed to add service');
-                }
-            } catch (error) {
-                console.error('Error adding service:', error);
-                showToast('Failed to add service', 'danger');
-            }
-        });
-
-        document.getElementById('updateService').addEventListener('click', async () => {
-            const id = document.getElementById('editServiceId').value;
-            const serviceData = {
-                name: document.getElementById('editServiceName').value,
-                duration: parseInt(document.getElementById('editServiceDuration').value),
-                price: parseFloat(document.getElementById('editServicePrice').value),
-                status: document.getElementById('editServiceStatus').value
-            };
-
-            try {
-                const response = await fetchWithAuth(`${API_URL}/services/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(serviceData)
-                });
-
-                if (response.ok) {
-                    const updatedService = await response.json();
-                    const index = services.findIndex(s => s.id === parseInt(id));
-                    if (index !== -1) {
-                        services[index] = updatedService;
-                    }
-                    renderServicesTable();
-                    bootstrap.Modal.getInstance(document.getElementById('editServiceModal')).hide();
-                    showToast('Service updated successfully', 'success');
-                } else {
-                    throw new Error('Failed to update service');
-                }
-            } catch (error) {
-                console.error('Error updating service:', error);
-                showToast('Failed to update service', 'danger');
-            }
-        });
-
-        async function logout() {
-            try {
-                await fetchWithAuth(`${API_URL}/api/logout`, {
-                    method: 'POST'
-                });
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Failed to logout', 'danger');
-            }
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastHTML = `
+                <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toast = new bootstrap.Toast(toastContainer.lastElementChild);
+            toast.show();
         }
 
+        // Event Listeners
+        document.getElementById('saveService').addEventListener('click', saveService);
+        document.getElementById('updateService').addEventListener('click', updateService);
+
         // Initialize
-        loadServices();
+        loadData();
     </script>
 </body>
-</html> 
+</html>

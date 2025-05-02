@@ -6,71 +6,58 @@
     <title>Manage Clients</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        .table-responsive {
-            position: relative;
-            height: calc(100vh - 200px);
-            overflow: auto;
-        }
-        .table thead {
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 1;
-        }
-        .table thead th {
-            border-bottom: 2px solid #dee2e6;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-light">
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom">
-        <div class="container-fluid">
-            <div class="ms-auto d-flex align-items-center">
-                <div class="d-flex">
-                    <a href="booking-calendar.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-calendar"></i> Appointments
-                    </a>
-                    <a href="services.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-list-check"></i> Manage Services
-                    </a>
-                    <a href="clients.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
-                        <i class="bi bi-people"></i> Manage Clients
-                    </a>
-                    <a href="products.html" class="btn btn-outline-light me-2">
-                        <i class="bi bi-box"></i> Products
-                    </a>
-                    <button class="btn btn-outline-light" onclick="logout()">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </button>
-                </div>
-            </div>
+    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <span class="navbar-text me-2" id="userDisplay">Loading...</span> 
+        <div class="d-flex ms-auto">
+            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
+            <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
+            <a class="btn btn-outline-light mx-1 disabled" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
+            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
+            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
         </div>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center fixed-bottom mb-5 pb-5">
-        <h2>Manage Clients</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
-            <i class="bi bi-person-plus"></i> Add New Client
-        </button>
+    <div class="container mt-4 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Manage Clients</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                <i class="bi bi-person-plus"></i> Add New Client
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card mt-4" style="margin-bottom: 100px;">
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Delete</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Edit</th>
-                    </tr>
-                </thead>
-                <tbody id="clientsTableBody"></tbody>
-            </table>
+    <div class="position-fixed top-50 start-50 translate-middle" id="loadingSpinner" style="z-index: 1060">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toastContainer"></div>
     </div>
 
     <!-- New Client Modal -->
@@ -138,10 +125,6 @@
         </div>
     </div>
 
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
-        <div id="toastContainer"></div>
-    </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const config = {
@@ -153,89 +136,81 @@
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Check authentication and role
-        const token = localStorage.getItem('token');
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || !['admin', 'staff'].includes(user.role)) {
-            window.location.href = 'index.html';
-        }
-
-        // Add token to all fetch requests
-        const fetchWithAuth = async (url, options = {}) => {
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                ...options.headers
-            };
-            return fetch(url, { ...options, headers });
-        };
-
-        let clients = [];
-
-        async function loadClients() {
+        async function fetchData(url, options = {}) {
             try {
-                const response = await fetchWithAuth(`${API_URL}/clients`);
-                if (response.status === 401) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = 'index.html';
-                    return;
-                }
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                clients = await response.json();
-                renderClientsTable();
+                
+                return response.json();
             } catch (error) {
-                console.error('Error loading clients:', error);
-                showToast('Failed to load clients', 'danger');
+                console.error('Fetch error:', error);
+                throw error;
             }
         }
 
-        function renderClientsTable() {
+        let clients = [];
+
+        async function loadData() {
+            try {
+                clients = await fetchData(`${API_URL}/api/clients`);
+                renderClients();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('Failed to load data', 'danger');
+            }
+        }
+
+        function renderClients() {
             const tbody = document.getElementById('clientsTableBody');
             tbody.innerHTML = clients.map(client => `
                 <tr>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteClient(${client.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
                     <td>${client.name}</td>
                     <td>${client.email}</td>
-                    <td>${client.phone}</td>
+                    <td>${client.phone || ''}</td>
+                    <td>${client.address || ''}</td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editClient(${client.id})">
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editClient(${client.id})">
                             <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteClient(${client.id})">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
+        async function saveClient() {
+            const name = document.getElementById('clientName').value;
+            const email = document.getElementById('clientEmail').value;
+            const phone = document.getElementById('clientPhone').value;
+
+            try {
+                const response = await fetchData(`${API_URL}/api/clients`, {
+                    method: 'POST',
+                    body: JSON.stringify({ name, email, phone })
+                });
+
+                clients.push(response);
+                renderClients();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('newClientModal'));
+                modal.hide();
+                
+                showToast('Client created successfully', 'success');
+            } catch (error) {
+                console.error('Error creating client:', error);
+                showToast('Failed to create client', 'danger');
+            }
         }
 
         async function editClient(id) {
@@ -245,119 +220,79 @@
             document.getElementById('editClientId').value = client.id;
             document.getElementById('editClientName').value = client.name;
             document.getElementById('editClientEmail').value = client.email;
-            document.getElementById('editClientPhone').value = client.phone;
+            document.getElementById('editClientPhone').value = client.phone || '';
 
-            new bootstrap.Modal(document.getElementById('editClientModal')).show();
+            const modal = new bootstrap.Modal(document.getElementById('editClientModal'));
+            modal.show();
+        }
+
+        async function updateClient() {
+            const id = document.getElementById('editClientId').value;
+            const name = document.getElementById('editClientName').value;
+            const email = document.getElementById('editClientEmail').value;
+            const phone = document.getElementById('editClientPhone').value;
+
+            try {
+                const response = await fetchData(`${API_URL}/api/clients/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name, email, phone })
+                });
+
+                const index = clients.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    clients[index] = response;
+                }
+                renderClients();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
+                modal.hide();
+
+                showToast('Client updated successfully', 'success');
+            } catch (error) {
+                console.error('Error updating client:', error);
+                showToast('Failed to update client', 'danger');
+            }
         }
 
         async function deleteClient(id) {
             if (!confirm('Are you sure you want to delete this client?')) return;
 
             try {
-                const response = await fetchWithAuth(`${API_URL}/clients/${id}`, {
+                await fetchData(`${API_URL}/api/clients/${id}`, {
                     method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    clients = clients.filter(c => c.id !== id);
-                    renderClientsTable();
-                    showToast('Client deleted successfully', 'success');
-                } else {
-                    throw new Error('Failed to delete client');
-                }
+                clients = clients.filter(c => c.id !== id);
+                renderClients();
+                
+                showToast('Client deleted successfully', 'success');
             } catch (error) {
                 console.error('Error deleting client:', error);
                 showToast('Failed to delete client', 'danger');
             }
         }
 
-        async function logout() {
-            try {
-                await fetchWithAuth(`${API_URL}/api/logout`, {
-                    method: 'POST'
-                });
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Failed to logout', 'danger');
-            }
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastHTML = `
+                <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toast = new bootstrap.Toast(toastContainer.lastElementChild);
+            toast.show();
         }
 
-        document.getElementById('saveClient').addEventListener('click', async () => {
-            const clientData = {
-                name: document.getElementById('clientName').value,
-                email: document.getElementById('clientEmail').value,
-                phone: document.getElementById('clientPhone').value
-            };
-
-            try {
-                const response = await fetchWithAuth(`${API_URL}/clients`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(clientData)
-                });
-
-                if (response.ok) {
-                    const newClient = await response.json();
-                    clients.push(newClient);
-                    renderClientsTable();
-                    bootstrap.Modal.getInstance(document.getElementById('newClientModal')).hide();
-                    document.getElementById('newClientForm').reset();
-                    showToast('Client added successfully', 'success');
-                } else {
-                    throw new Error('Failed to add client');
-                }
-            } catch (error) {
-                console.error('Error adding client:', error);
-                showToast('Failed to add client', 'danger');
-            }
-        });
-
-        document.getElementById('updateClient').addEventListener('click', async () => {
-            const id = parseInt(document.getElementById('editClientId').value);
-            const clientData = {
-                name: document.getElementById('editClientName').value,
-                email: document.getElementById('editClientEmail').value,
-                phone: document.getElementById('editClientPhone').value
-            };
-
-            try {
-                const response = await fetchWithAuth(`${API_URL}/clients/${id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(clientData)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to update client');
-                }
-
-                const updatedClient = await response.json();
-                const index = clients.findIndex(c => c.id === id);
-                if (index !== -1) {
-                    clients[index] = updatedClient;
-                    renderClientsTable();
-                    bootstrap.Modal.getInstance(document.getElementById('editClientModal')).hide();
-                    showToast('Client updated successfully', 'success');
-                } else {
-                    throw new Error('Client not found in local array');
-                }
-            } catch (error) {
-                console.error('Error updating client:', error);
-                showToast(error.message || 'Failed to update client', 'danger');
-            }
-        });
+        // Event Listeners
+        document.getElementById('saveClient').addEventListener('click', saveClient);
+        document.getElementById('updateClient').addEventListener('click', updateClient);
 
         // Initialize
-        loadClients();
+        loadData();
     </script>
 </body>
 </html> 

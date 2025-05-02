@@ -6,14 +6,15 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 const app = express();
+const router = express.Router();
 const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Configure CORS
+// Middleware
 app.use(cors({
-  origin: '*', // Allow all origins
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -92,6 +93,7 @@ async function initializeTables() {
         duration INTEGER NOT NULL,
         price NUMERIC(10,2) NOT NULL,
         client_id INTEGER REFERENCES clients(id),
+        employee_id INTEGER REFERENCES users(id),
         status VARCHAR(30) NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
@@ -120,7 +122,8 @@ async function initializeTables() {
         email VARCHAR(100) UNIQUE NOT NULL,
         role VARCHAR(20) NOT NULL DEFAULT 'user',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        dark_mode BOOLEAN DEFAULT FALSE
       )
     `);
 
@@ -190,11 +193,121 @@ async function initializeDatabase() {
     }
     
     await initializeTables();
+
+    // Create users table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) NOT NULL UNIQUE,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(50) DEFAULT 'user',
+            phone VARCHAR(20),
+            theme_color VARCHAR(20) DEFAULT '#0d6efd',
+            dark_mode BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Create roles table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS roles (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Create permissions table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS permissions (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) NOT NULL UNIQUE,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // Create role_permissions table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS role_permissions (
+            role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+            permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+            PRIMARY KEY (role_id, permission_id)
+        )
+    `);
+
+    // Create user_permissions table
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS user_permissions (
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
+            PRIMARY KEY (user_id, permission_id)
+        )
+    `);
+
+    // Insert default permissions if they don't exist
+    await pool.query(`
+        INSERT INTO permissions (name, description) VALUES
+        ('view_admin', 'View admin page'),
+        ('view_services', 'View services page'),
+        ('edit_services', 'Edit services'),
+        ('view_clients', 'View clients page'),
+        ('edit_clients', 'Edit clients'),
+        ('view_products', 'View products page'),
+        ('edit_products', 'Edit products'),
+        ('view_appointments', 'View appointments'),
+        ('edit_appointments', 'Edit appointments')
+        ON CONFLICT (name) DO NOTHING
+    `);
+
+    // Insert default roles if they don't exist
+    await pool.query(`
+        INSERT INTO roles (name, description) VALUES
+        ('admin', 'Full access to all features'),
+        ('staff', 'Access to services, clients, and appointments'),
+        ('user', 'Basic access to view appointments')
+        ON CONFLICT (name) DO NOTHING
+    `);
+
+    // Assign permissions to admin role
+    await pool.query(`
+        INSERT INTO role_permissions (role_id, permission_id)
+        SELECT r.id, p.id
+        FROM roles r
+        CROSS JOIN permissions p
+        WHERE r.name = 'admin'
+        ON CONFLICT (role_id, permission_id) DO NOTHING
+    `);
+
+    // Assign permissions to staff role
+    await pool.query(`
+        INSERT INTO role_permissions (role_id, permission_id)
+        SELECT r.id, p.id
+        FROM roles r
+        CROSS JOIN permissions p
+        WHERE r.name = 'staff'
+        AND p.name IN ('view_services', 'edit_services', 'view_clients', 'edit_clients', 'view_appointments', 'edit_appointments')
+        ON CONFLICT (role_id, permission_id) DO NOTHING
+    `);
+
+    // Assign permissions to user role
+    await pool.query(`
+        INSERT INTO role_permissions (role_id, permission_id)
+        SELECT r.id, p.id
+        FROM roles r
+        CROSS JOIN permissions p
+        WHERE r.name = 'user'
+        AND p.name IN ('view_appointments')
+        ON CONFLICT (role_id, permission_id) DO NOTHING
+    `);
+
     console.log('Database initialization completed successfully');
     return true;
-  } catch (err) {
-    console.error('Database initialization failed:', err);
-    return false;
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
   }
 }
 
@@ -210,486 +323,163 @@ initializeDatabase().then(success => {
   }
 });
 
-// Authentication middleware
-const authenticateToken = async (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-    }
-
-    try {
-        const result = await pool.query(
-            'SELECT u.* FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = $1 AND s.expires_at > NOW()',
-            [token]
-        );
-        if (result.rows.length === 0) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
-        req.user = result.rows[0];
-        next();
-    } catch (error) {
-        console.error('Authentication error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-};
-
-// Login route
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
-    }
-
-    try {
-        // Find user by username
-        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-        const user = result.rows[0];
-
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        // Verify password
-        const isValidPassword = await bcrypt.compare(password, user.password);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        // Generate session token
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
-
-        // Store session in database
-        await pool.query(
-            'INSERT INTO sessions (user_id, token, expires_at) VALUES ($1, $2, $3)',
-            [user.id, token, expiresAt]
-        );
-
-        // Return user info and token
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                role: user.role
-            }
-        });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Logout route
-app.post('/api/logout', async (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-    }
-
-    try {
-        await pool.query('DELETE FROM sessions WHERE token = $1', [token]);
-        res.json({ message: 'Logged out successfully' });
-    } catch (error) {
-        console.error('Logout error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Client Routes
-app.get('/clients', async (req, res) => {
+// API Routes - No Authentication Required
+app.get('/api/test', async (req, res) => {
   try {
-    console.log('Fetching clients...');
-    const result = await pool.query('SELECT * FROM clients ORDER BY name');
-    console.log(`Successfully fetched ${result.rows.length} clients`);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching clients:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch clients',
-      details: err.message,
-      code: err.code 
-    });
+    await pool.query('SELECT NOW()');
+    res.json({ message: 'Database connection successful' });
+  } catch (error) {
+    res.status(500).json({ error: 'Database connection failed' });
   }
 });
 
-app.post('/clients', async (req, res) => {
+app.get('/api/services', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM services ORDER BY name');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch services' });
+  }
+});
+
+app.post('/api/services', async (req, res) => {
+  const { name, duration, price, status } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, duration, price, status || 'active']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create service' });
+  }
+});
+
+app.put('/api/services/:id', async (req, res) => {
+  const { name, duration, price, status } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE services SET name = $1, duration = $2, price = $3, status = $4 WHERE id = $5 RETURNING *',
+      [name, duration, price, status, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update service' });
+  }
+});
+
+app.delete('/api/services/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM services WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Service deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete service' });
+  }
+});
+
+app.get('/api/clients', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM clients ORDER BY name');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch clients' });
+  }
+});
+
+app.post('/api/clients', async (req, res) => {
   const { name, email, phone } = req.body;
   try {
     const result = await pool.query(
       'INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *',
       [name, email, phone]
     );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error creating client:', err);
-    res.status(500).json({ error: err.message });
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create client' });
   }
 });
 
-app.put('/clients/:id', async (req, res) => {
-  const { id } = req.params;
+app.put('/api/clients/:id', async (req, res) => {
   const { name, email, phone } = req.body;
-  
   try {
-    // Validate client exists
-    const clientCheck = await pool.query('SELECT * FROM clients WHERE id = $1', [id]);
-    if (clientCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found' });
-    }
-
-    // Input validation
-    if (!name || !email || !phone) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    // Validate phone format
-    const phoneRegex = /^[\d-]+$/;
-    if (!phoneRegex.test(phone)) {
-      return res.status(400).json({ error: 'Invalid phone format' });
-    }
-
-    // Check for duplicate email
-    const duplicateCheck = await pool.query(
-      'SELECT * FROM clients WHERE email = $1 AND id != $2',
-      [email, id]
-    );
-    if (duplicateCheck.rows.length > 0) {
-      return res.status(409).json({ error: 'Email already exists' });
-    }
-
-    // Update client
     const result = await pool.query(
       'UPDATE clients SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING *',
-      [name, email, phone, id]
+      [name, email, phone, req.params.id]
     );
-
     res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error updating client:', err);
-    res.status(500).json({ 
-      error: 'Failed to update client',
-      details: err.message,
-      code: err.code 
-    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update client' });
   }
 });
 
-app.delete('/clients/:id', async (req, res) => {
-  const { id } = req.params;
+app.delete('/api/clients/:id', async (req, res) => {
   try {
-    const result = await pool.query('DELETE FROM clients WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found' });
-    }
+    await pool.query('DELETE FROM clients WHERE id = $1', [req.params.id]);
     res.json({ message: 'Client deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting client:', err);
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete client' });
   }
 });
 
-// Service Routes
-app.get('/services', async (req, res) => {
+app.get('/api/appointments', async (req, res) => {
   try {
-    console.log('Fetching services...');
-    const result = await pool.query('SELECT * FROM services ORDER BY name');
-    console.log(`Successfully fetched ${result.rows.length} services`);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching services:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch services',
-      details: err.message,
-      code: err.code 
-    });
-  }
-});
-
-app.post('/services', async (req, res) => {
-  const { name, duration, price, status } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, duration, price, status]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error creating service:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/services/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, duration, price, status } = req.body;
-  try {
-    const result = await pool.query(
-      'UPDATE services SET name = $1, duration = $2, price = $3, status = $4 WHERE id = $5 RETURNING *',
-      [name, duration, price, status, id]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error updating service:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.delete('/services/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await pool.query('DELETE FROM services WHERE id = $1', [id]);
-    res.json({ message: 'Service deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting service:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Appointment Routes
-app.get('/appointments', async (req, res) => {
-  try {
-    console.log('Fetching appointments...');
     const result = await pool.query(`
-      SELECT a.*, c.name as client_name, s.name as service_name 
+      SELECT a.*, s.name as service_name, c.name as client_name 
       FROM appointments a 
-      JOIN clients c ON a.client_id = c.id 
-      JOIN services s ON a.service_id = s.id 
+      LEFT JOIN services s ON a.service_id = s.id 
+      LEFT JOIN clients c ON a.client_id = c.id 
       ORDER BY date, time
     `);
-    console.log(`Successfully fetched ${result.rows.length} appointments`);
     res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching appointments:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch appointments',
-      details: err.message,
-      code: err.code 
-    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch appointments' });
   }
 });
 
-app.post('/appointments', async (req, res) => {
-  const { date, time, service_id, client_id, status } = req.body;
-  
+app.post('/api/appointments', async (req, res) => {
+  const { date, time, service_id, duration, price, client_id } = req.body;
   try {
-    // Input validation
-    if (!date || !time || !service_id || !client_id) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Validate date format
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
-    }
-
-    // Validate time format (HH:mm)
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(time)) {
-      return res.status(400).json({ error: 'Invalid time format' });
-    }
-
-    // Check if service exists
-    const serviceResult = await pool.query('SELECT * FROM services WHERE id = $1', [service_id]);
-    if (serviceResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-    const service = serviceResult.rows[0];
-
-    // Check if service is active
-    if (service.status !== 'active') {
-      return res.status(400).json({ error: 'Selected service is not currently available' });
-    }
-
-    // Check if client exists
-    const clientResult = await pool.query('SELECT * FROM clients WHERE id = $1', [client_id]);
-    if (clientResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Client not found' });
-    }
-
-    // Check for scheduling conflicts
-    const conflictCheck = await pool.query(`
-      SELECT * FROM appointments 
-      WHERE date = $1 
-      AND status != 'cancelled'
-      AND (
-        (time::time <= ($2::time + ($3 || ' minutes')::interval) AND 
-        (time::time + (duration || ' minutes')::interval) >= $2::time)
-      )
-    `, [date, time, service.duration]);
-
-    if (conflictCheck.rows.length > 0) {
-      return res.status(409).json({ error: 'Time slot conflicts with existing appointment' });
-    }
-
-    // Create appointment
     const result = await pool.query(
       'INSERT INTO appointments (date, time, service_id, duration, price, client_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [date, time, service_id, service.duration, service.price, client_id, status || 'scheduled']
+      [date, time, service_id, duration, price, client_id, 'scheduled']
     );
-
-    // Return appointment with client and service details
-    const appointmentWithDetails = await pool.query(`
-      SELECT a.*, c.name as client_name, s.name as service_name 
-      FROM appointments a 
-      JOIN clients c ON a.client_id = c.id 
-      JOIN services s ON a.service_id = s.id 
-      WHERE a.id = $1
-    `, [result.rows[0].id]);
-
-    res.json(appointmentWithDetails.rows[0]);
-  } catch (err) {
-    console.error('Error creating appointment:', err);
-    res.status(500).json({ error: 'Failed to create appointment', details: err.message });
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create appointment' });
   }
 });
 
-// Update appointment status
-app.put('/appointments/:id', async (req, res) => {
-  const { id } = req.params;
-  const { status, date, time, service_id, client_id } = req.body;
-  
+app.put('/api/appointments/:id', async (req, res) => {
+  const { date, time, service_id, duration, price, client_id, status } = req.body;
   try {
-    // Validate appointment exists
-    const appointmentCheck = await pool.query('SELECT * FROM appointments WHERE id = $1', [id]);
-    if (appointmentCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Appointment not found' });
-    }
-
-    let updateFields = [];
-    let values = [];
-    let paramCount = 1;
-
-    // Build dynamic update query
-    if (status) {
-      updateFields.push(`status = $${paramCount}`);
-      values.push(status);
-      paramCount++;
-    }
-
-    if (date) {
-      const dateObj = new Date(date);
-      if (isNaN(dateObj.getTime())) {
-        return res.status(400).json({ error: 'Invalid date format' });
-      }
-      updateFields.push(`date = $${paramCount}`);
-      values.push(date);
-      paramCount++;
-    }
-
-    if (time) {
-      const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-      if (!timeRegex.test(time)) {
-        return res.status(400).json({ error: 'Invalid time format' });
-      }
-      updateFields.push(`time = $${paramCount}`);
-      values.push(time);
-      paramCount++;
-    }
-
-    if (service_id) {
-      const serviceResult = await pool.query('SELECT * FROM services WHERE id = $1', [service_id]);
-      if (serviceResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Service not found' });
-      }
-      const service = serviceResult.rows[0];
-      if (service.status !== 'active') {
-        return res.status(400).json({ error: 'Selected service is not currently available' });
-      }
-      updateFields.push(`service_id = $${paramCount}, duration = $${paramCount + 1}, price = $${paramCount + 2}`);
-      values.push(service_id, service.duration, service.price);
-      paramCount += 3;
-    }
-
-    if (client_id) {
-      const clientResult = await pool.query('SELECT * FROM clients WHERE id = $1', [client_id]);
-      if (clientResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Client not found' });
-      }
-      updateFields.push(`client_id = $${paramCount}`);
-      values.push(client_id);
-      paramCount++;
-    }
-
-    if (updateFields.length === 0) {
-      return res.status(400).json({ error: 'No valid fields to update' });
-    }
-
-    // If updating date/time/service, check for conflicts
-    if (date || time || service_id) {
-      const appointment = appointmentCheck.rows[0];
-      const checkDate = date || appointment.date;
-      const checkTime = time || appointment.time;
-      const checkServiceId = service_id || appointment.service_id;
-
-      const serviceResult = await pool.query('SELECT duration FROM services WHERE id = $1', [checkServiceId]);
-      const duration = serviceResult.rows[0].duration;
-
-      const conflictCheck = await pool.query(`
-        SELECT * FROM appointments 
-        WHERE date = $1 
-        AND id != $2
-        AND status != 'cancelled'
-        AND (
-          (time::time <= ($3::time + ($4 || ' minutes')::interval) AND 
-          (time::time + (duration || ' minutes')::interval) >= $3::time)
-        )
-      `, [checkDate, id, checkTime, duration]);
-
-      if (conflictCheck.rows.length > 0) {
-        return res.status(409).json({ error: 'Time slot conflicts with existing appointment' });
-      }
-    }
-
-    // Perform update
-    values.push(id);
     const result = await pool.query(
-      `UPDATE appointments SET ${updateFields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
-      values
+      'UPDATE appointments SET date = $1, time = $2, service_id = $3, duration = $4, price = $5, client_id = $6, status = $7 WHERE id = $8 RETURNING *',
+      [date, time, service_id, duration, price, client_id, status, req.params.id]
     );
-
-    // Return updated appointment with client and service details
-    const appointmentWithDetails = await pool.query(`
-      SELECT a.*, c.name as client_name, s.name as service_name 
-      FROM appointments a 
-      JOIN clients c ON a.client_id = c.id 
-      JOIN services s ON a.service_id = s.id 
-      WHERE a.id = $1
-    `, [result.rows[0].id]);
-
-    res.json(appointmentWithDetails.rows[0]);
-  } catch (err) {
-    console.error('Error updating appointment:', err);
-    res.status(500).json({ error: 'Failed to update appointment', details: err.message });
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
 
-// Product Routes
-app.get('/products', async (req, res) => {
+app.delete('/api/appointments/:id', async (req, res) => {
   try {
-    console.log('Fetching products...');
-    const result = await pool.query('SELECT * FROM products ORDER BY name');
-    console.log(`Successfully fetched ${result.rows.length} products`);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Error fetching products:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch products',
-      details: err.message,
-      code: err.code 
-    });
+    await pool.query('DELETE FROM appointments WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Appointment deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete appointment' });
   }
+});
+
+// Update routes to remove authentication
+app.get('/api/products', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM products ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 app.get('/products/:id', async (req, res) => {
@@ -710,140 +500,220 @@ app.get('/products/:id', async (req, res) => {
   }
 });
 
-app.post('/products', async (req, res) => {
-  const { name, description, price, quantity, category, status } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO products (name, description, price, quantity, category, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, description, price, quantity, category, status]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error creating product:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.put('/products/:id', async (req, res) => {
-  const { id } = req.params;
-  const { name, description, price, quantity, category, status } = req.body;
-  
-  try {
-    // Validate product exists
-    const productCheck = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
-    if (productCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-
-    // Input validation
-    if (!name || !price || !quantity) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Update product
-    const result = await pool.query(
-      'UPDATE products SET name = $1, description = $2, price = $3, quantity = $4, category = $5, status = $6 WHERE id = $7 RETURNING *',
-      [name, description, price, quantity, category, status, id]
-    );
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Error updating product:', err);
-    res.status(500).json({ 
-      error: 'Failed to update product',
-      details: err.message,
-      code: err.code 
-    });
-  }
-});
-
-app.delete('/products/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json({ message: 'Product deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting product:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add role-based access control middleware
-const checkRole = (roles) => {
-    return async (req, res, next) => {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Authentication required' });
-        }
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'Access denied' });
-        }
-        next();
-    };
-};
-
-// User management routes
-app.get('/api/users', authenticateToken, checkRole(['admin']), async (req, res) => {
-    try {
-        const [users] = await pool.query('SELECT id, username, email, role, created_at FROM users');
-        res.json(users);
-    } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-app.post('/api/users', authenticateToken, checkRole(['admin']), async (req, res) => {
-    const { username, password, email, role } = req.body;
-    if (!username || !password || !email || !role) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
+app.post('/api/products', async (req, res) => {
+    const { name, description, price, stock } = req.body;
+    const client = await pool.connect();
 
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await pool.query(
-            'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
-            [username, hashedPassword, email, role]
+        await client.query('BEGIN');
+
+        const result = await client.query(
+            'INSERT INTO products (name, description, price, stock) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, description, price, stock]
         );
-        res.status(201).json({ id: result.insertId, username, email, role });
+
+        await client.query('COMMIT');
+        res.status(201).json(result.rows[0]);
     } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        await client.query('ROLLBACK');
+        console.error('Error creating product:', error);
+        res.status(500).json({ error: 'Failed to create product' });
+    } finally {
+        client.release();
     }
 });
 
-app.put('/api/users/:id', authenticateToken, checkRole(['admin']), async (req, res) => {
-    const { id } = req.params;
-    const { username, email, role } = req.body;
-    if (!username || !email || !role) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
+app.put('/api/products/:id', async (req, res) => {
+    const { name, description, price, stock } = req.body;
+    const client = await pool.connect();
 
     try {
-        await pool.query(
-            'UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?',
-            [username, email, role, id]
+        await client.query('BEGIN');
+
+        const result = await client.query(
+            'UPDATE products SET name = $1, description = $2, price = $3, stock = $4 WHERE id = $5 RETURNING *',
+            [name, description, price, stock, req.params.id]
         );
-        res.json({ id, username, email, role });
+
+        await client.query('COMMIT');
+        res.json(result.rows[0]);
     } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating product:', error);
+        res.status(500).json({ error: 'Failed to update product' });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        res.status(500).json({ error: 'Failed to delete product' });
+    }
+});
+
+// Mount router
+app.use('/api', router);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something broke!' });
+});
+
+// Role management routes
+app.get('/api/roles', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM roles ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching roles:', error);
+        res.status(500).json({ error: 'Failed to fetch roles' });
+    }
+});
+
+app.post('/api/roles', async (req, res) => {
+    const { name, description, permissions } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        const roleResult = await client.query(
+            'INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *',
+            [name, description]
+        );
+        const role = roleResult.rows[0];
+
+        if (permissions && permissions.length > 0) {
+            const values = permissions.map(permissionId => `(${role.id}, ${permissionId})`).join(',');
+            await client.query(`
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ${values}
+            `);
+        }
+
+        await client.query('COMMIT');
+        res.json(role);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating role:', error);
+        res.status(500).json({ error: 'Failed to create role' });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/roles/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM roles WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Role deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting role:', error);
+        res.status(500).json({ error: 'Failed to delete role' });
+    }
+});
+
+// Permission management routes
+app.get('/api/permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM permissions ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch permissions' });
+    }
+});
+
+// User permissions endpoints
+app.get('/api/users/:id/permissions', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT p.* FROM permissions p
+            LEFT JOIN user_permissions up ON p.id = up.permission_id
+            LEFT JOIN role_permissions rp ON p.id = rp.permission_id
+            LEFT JOIN users u ON u.id = up.user_id OR u.role_id = rp.role_id
+            WHERE u.id = $1
+            GROUP BY p.id
+        `, [req.params.id]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch user permissions' });
+    }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+    const { username, email, password, role_id, permissions } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Update user
+        let query = 'UPDATE users SET username = $1, email = $2';
+        const values = [username, email];
+        let paramCount = 2;
+
+        if (password) {
+            query += `, password = $${++paramCount}`;
+            values.push(await bcrypt.hash(password, 10));
+        }
+
+        if (role_id) {
+            query += `, role_id = $${++paramCount}`;
+            values.push(role_id);
+        }
+
+        query += ` WHERE id = $${++paramCount} RETURNING *`;
+        values.push(req.params.id);
+
+        const result = await client.query(query, values);
+        const user = result.rows[0];
+
+        // Update user permissions
+        if (permissions) {
+            await client.query('DELETE FROM user_permissions WHERE user_id = $1', [user.id]);
+            if (permissions.length > 0) {
+                const values = permissions.map(permissionId => `(${user.id}, ${permissionId})`).join(',');
+                await client.query(`
+                    INSERT INTO user_permissions (user_id, permission_id)
+                    VALUES ${values}
+                `);
+            }
+        }
+
+        await client.query('COMMIT');
+        res.json(user);
+    } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error updating user:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Failed to update user' });
+    } finally {
+        client.release();
     }
 });
 
-app.delete('/api/users/:id', authenticateToken, checkRole(['admin']), async (req, res) => {
-    const { id } = req.params;
-    if (id === req.user.id) {
-        return res.status(400).json({ error: 'Cannot delete your own account' });
-    }
-
+app.get('/api/role_permissions', async (req, res) => {
     try {
-        await pool.query('DELETE FROM users WHERE id = ?', [id]);
-        res.json({ message: 'User deleted successfully' });
+        const result = await pool.query('SELECT * FROM role_permissions');
+        res.json(result.rows);
     } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error fetching role permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch role permissions' });
+    }
+});
+
+app.get('/api/user_permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM user_permissions');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch user permissions' });
     }
 }); 
