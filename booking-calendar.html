@@ -9,19 +9,26 @@
 </head>
 <body style="overflow: hidden; height: 100vh; margin: 0; padding: 0;">
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom ">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-bottom">
         <div class="container-fluid">
-             <div class="ms-auto d-flex align-items-center">
-                <span class="badge bg-warning text-dark me-3" id="envBadge"></span>
-                <a href="services.html" class="btn btn-outline-light me-2">
-                    <i class="bi bi-list-check"></i> Manage Services
-                </a>
-                <a href="clients.html" class="btn btn-outline-light">
-                    <i class="bi bi-people"></i> Manage Clients
-                </a>
-                <li class="nav-item">
-                    <a class="nav-link" href="products.html">Products</a>
-                </li>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="d-flex">
+                    <a href="booking-calendar.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
+                        <i class="bi bi-calendar"></i> Appointments
+                    </a>
+                    <a href="services.html" class="btn btn-outline-light me-2">
+                        <i class="bi bi-list-check"></i> Manage Services
+                    </a>
+                    <a href="clients.html" class="btn btn-outline-light me-2">
+                        <i class="bi bi-people"></i> Manage Clients
+                    </a>
+                    <a href="products.html" class="btn btn-outline-light me-2">
+                        <i class="bi bi-box"></i> Products
+                    </a>
+                    <button class="btn btn-outline-light" onclick="logout()">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </div>
             </div>
         </div>
     </nav>
@@ -253,13 +260,25 @@
             production: 'https://myshop-5hec.onrender.com'
         };
         
-        // Automatically detect environment
         const isLocalhost = window.location.hostname === 'localhost' || 
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Show environment badge
-        document.getElementById('envBadge').textContent = isLocalhost ? 'Development' : 'Production';
+        // Check authentication and role
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token || !['admin', 'staff'].includes(user.role)) {
+            window.location.href = 'index.html';
+        }
+
+        // Add token to all fetch requests
+        const fetchWithAuth = async (url, options = {}) => {
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            };
+            return fetch(url, { ...options, headers });
+        };
 
         let currentDate = new Date();
         let appointments = [];
@@ -277,11 +296,18 @@
                     const id = setTimeout(() => controller.abort(), timeout);
                     
                     try {
-                        const response = await fetch(`${API_URL}${url}`, {
+                        const response = await fetchWithAuth(`${API_URL}${url}`, {
                             ...options,
                             signal: controller.signal
                         });
                         clearTimeout(id);
+                        
+                        if (response.status === 401) {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            window.location.href = 'index.html';
+                            return;
+                        }
                         
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
@@ -727,6 +753,20 @@
                 console.error('Error updating appointment:', error);
             }
         });
+
+        async function logout() {
+            try {
+                await fetchWithAuth(`${API_URL}/api/logout`, {
+                    method: 'POST'
+                });
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                showToast('Failed to logout', 'danger');
+            }
+        }
 
         // Initialize
         loadData();

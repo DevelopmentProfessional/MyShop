@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -109,6 +111,38 @@ async function initializeTables() {
       );
     `);
 
+    // Create users table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'user',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create sessions table for managing user sessions
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        token VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Insert default admin user if not exists
+    const hashedPassword = await bcrypt.hash('pinto', 10);
+    await pool.query(`
+      INSERT INTO users (username, password, email, role)
+      VALUES ('pinto', $1, 'pinto@shopy.com', 'admin')
+      ON CONFLICT (username) DO NOTHING
+    `, [hashedPassword]);
+
     // Check if we need to insert initial data
     const servicesCount = await pool.query('SELECT COUNT(*) FROM services');
     if (servicesCount.rows[0].count === '0') {
@@ -174,6 +208,96 @@ initializeDatabase().then(success => {
     console.error('Server failed to start due to database initialization failure');
     process.exit(1);
   }
+});
+
+// Authentication middleware
+const authenticateToken = async (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
+
+    try {
+        const result = await pool.query(
+            'SELECT u.* FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = $1 AND s.expires_at > NOW()',
+            [token]
+        );
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+        req.user = result.rows[0];
+        next();
+    } catch (error) {
+        console.error('Authentication error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Login route
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
+    }
+
+    try {
+        // Find user by username
+        const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        // Generate session token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
+
+        // Store session in database
+        await pool.query(
+            'INSERT INTO sessions (user_id, token, expires_at) VALUES ($1, $2, $3)',
+            [user.id, token, expiresAt]
+        );
+
+        // Return user info and token
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Logout route
+app.post('/api/logout', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
+
+    try {
+        await pool.query('DELETE FROM sessions WHERE token = $1', [token]);
+        res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Client Routes
@@ -568,6 +692,24 @@ app.get('/products', async (req, res) => {
   }
 });
 
+app.get('/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching product:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch product',
+      details: err.message,
+      code: err.code 
+    });
+  }
+});
+
 app.post('/products', async (req, res) => {
   const { name, description, price, quantity, category, status } = req.body;
   try {
@@ -627,4 +769,81 @@ app.delete('/products/:id', async (req, res) => {
     console.error('Error deleting product:', err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// Add role-based access control middleware
+const checkRole = (roles) => {
+    return async (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        next();
+    };
+};
+
+// User management routes
+app.get('/api/users', authenticateToken, checkRole(['admin']), async (req, res) => {
+    try {
+        const [users] = await pool.query('SELECT id, username, email, role, created_at FROM users');
+        res.json(users);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/users', authenticateToken, checkRole(['admin']), async (req, res) => {
+    const { username, password, email, role } = req.body;
+    if (!username || !password || !email || !role) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const [result] = await pool.query(
+            'INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)',
+            [username, hashedPassword, email, role]
+        );
+        res.status(201).json({ id: result.insertId, username, email, role });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/users/:id', authenticateToken, checkRole(['admin']), async (req, res) => {
+    const { id } = req.params;
+    const { username, email, role } = req.body;
+    if (!username || !email || !role) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    try {
+        await pool.query(
+            'UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?',
+            [username, email, role, id]
+        );
+        res.json({ id, username, email, role });
+    } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.delete('/api/users/:id', authenticateToken, checkRole(['admin']), async (req, res) => {
+    const { id } = req.params;
+    if (id === req.user.id) {
+        return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    try {
+        await pool.query('DELETE FROM users WHERE id = ?', [id]);
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 }); 

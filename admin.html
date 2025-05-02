@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Services</title>
+    <title>Admin - User Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -32,7 +32,7 @@
                     <a href="booking-calendar.html" class="btn btn-outline-light me-2">
                         <i class="bi bi-calendar"></i> Appointments
                     </a>
-                    <a href="services.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
+                    <a href="services.html" class="btn btn-outline-light me-2">
                         <i class="bi bi-list-check"></i> Manage Services
                     </a>
                     <a href="clients.html" class="btn btn-outline-light me-2">
@@ -40,6 +40,9 @@
                     </a>
                     <a href="products.html" class="btn btn-outline-light me-2">
                         <i class="bi bi-box"></i> Products
+                    </a>
+                    <a href="admin.html" class="btn btn-outline-light me-2 disabled" style="box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);">
+                        <i class="bi bi-shield-lock"></i> Admin
                     </a>
                     <button class="btn btn-outline-light" onclick="logout()">
                         <i class="bi bi-box-arrow-right"></i> Logout
@@ -50,9 +53,9 @@
     </nav>
 
     <div class="d-flex justify-content-between align-items-center fixed-bottom mb-5 pb-5">
-        <h2>Manage Services</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newServiceModal">
-            <i class="bi bi-plus-circle"></i> Add New Service
+        <h2>User Management</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newUserModal">
+            <i class="bi bi-person-plus"></i> Add New User
         </button>
     </div>
 
@@ -62,92 +65,90 @@
                 <thead>
                     <tr>
                         <th>Delete</th>
-                        <th>Name</th>
-                        <th>Duration (min)</th>
-                        <th>Price ($)</th>
-                        <th>Status</th> 
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Created At</th>
                         <th>Edit</th>
                     </tr>
                 </thead>
-                <tbody id="servicesTableBody"></tbody>
+                <tbody id="usersTableBody"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- New Service Modal -->
-    <div class="modal fade" id="newServiceModal" tabindex="-1">
+    <!-- New User Modal -->
+    <div class="modal fade" id="newUserModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Add New Service</h5>
+                    <h5 class="modal-title">Add New User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="newServiceForm">
+                    <form id="newUserForm">
                         <div class="mb-3">
-                            <label for="serviceName" class="form-label">Service Name</label>
-                            <input type="text" class="form-control" id="serviceName" required>
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" required>
                         </div>
                         <div class="mb-3">
-                            <label for="serviceDuration" class="form-label">Duration (minutes)</label>
-                            <input type="number" class="form-control" id="serviceDuration" required min="15" step="15">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" required>
                         </div>
                         <div class="mb-3">
-                            <label for="servicePrice" class="form-label">Price ($)</label>
-                            <input type="number" class="form-control" id="servicePrice" required min="0" step="0.01">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
                         </div>
                         <div class="mb-3">
-                            <label for="serviceStatus" class="form-label">Status</label>
-                            <select class="form-select" id="serviceStatus">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                            <label for="role" class="form-label">Role</label>
+                            <select class="form-select" id="role" required>
+                                <option value="admin">Admin</option>
+                                <option value="staff">Staff</option>
+                                <option value="user">User</option>
                             </select>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveService">Save Service</button>
+                    <button type="button" class="btn btn-primary" id="saveUser">Save User</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Service Modal -->
-    <div class="modal fade" id="editServiceModal" tabindex="-1">
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Service</h5>
+                    <h5 class="modal-title">Edit User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editServiceForm">
-                        <input type="hidden" id="editServiceId">
+                    <form id="editUserForm">
+                        <input type="hidden" id="editUserId">
                         <div class="mb-3">
-                            <label for="editServiceName" class="form-label">Service Name</label>
-                            <input type="text" class="form-control" id="editServiceName" required>
+                            <label for="editUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="editUsername" required>
                         </div>
                         <div class="mb-3">
-                            <label for="editServiceDuration" class="form-label">Duration (minutes)</label>
-                            <input type="number" class="form-control" id="editServiceDuration" required min="15" step="15">
+                            <label for="editEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="editEmail" required>
                         </div>
                         <div class="mb-3">
-                            <label for="editServicePrice" class="form-label">Price ($)</label>
-                            <input type="number" class="form-control" id="editServicePrice" required min="0" step="0.01">
-                        </div>
-                        <div class="mb-3">
-                            <label for="editServiceStatus" class="form-label">Status</label>
-                            <select class="form-select" id="editServiceStatus">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                            <label for="editRole" class="form-label">Role</label>
+                            <select class="form-select" id="editRole" required>
+                                <option value="admin">Admin</option>
+                                <option value="staff">Staff</option>
+                                <option value="user">User</option>
                             </select>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateService">Update Service</button>
+                    <button type="button" class="btn btn-primary" id="updateUser">Update User</button>
                 </div>
             </div>
         </div>
@@ -168,10 +169,10 @@
                           window.location.hostname === '127.0.0.1';
         const API_URL = isLocalhost ? config.local : config.production;
 
-        // Check authentication and role
+        // Check authentication and admin role
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (!token || !['admin', 'staff'].includes(user.role)) {
+        if (!token || user.role !== 'admin') {
             window.location.href = 'index.html';
         }
 
@@ -184,12 +185,12 @@
             return fetch(url, { ...options, headers });
         };
 
-        let services = [];
+        let users = [];
 
-        async function loadServices() {
+        async function loadUsers() {
             try {
-                const response = await fetchWithAuth(`${API_URL}/services`);
-                if (response.status === 401) {
+                const response = await fetchWithAuth(`${API_URL}/api/users`);
+                if (response.status === 401 || response.status === 403) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     window.location.href = 'index.html';
@@ -198,39 +199,47 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                services = await response.json();
-                renderServicesTable();
+                users = await response.json();
+                renderUsersTable();
             } catch (error) {
-                console.error('Error loading services:', error);
-                showToast('Failed to load services', 'danger');
+                console.error('Error loading users:', error);
+                showToast('Failed to load users', 'danger');
             }
         }
 
-        function renderServicesTable() {
-            const tbody = document.getElementById('servicesTableBody');
-            tbody.innerHTML = services.map(service => `
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = users.map(user => `
                 <tr>
                     <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteService(${service.id})">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})" ${user.id === parseInt(user.id) ? 'disabled' : ''}>
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
-                   
-                    <td>${service.name}</td>
-                    <td>${service.duration}</td>
-                    <td>$${service.price}</td>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
                     <td>
-                        <span class="badge bg-${service.status === 'active' ? 'success' : 'secondary'}">
-                            ${service.status}
+                        <span class="badge bg-${getRoleColor(user.role)}">
+                            ${user.role}
                         </span>
                     </td>
-                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editService(${service.id})">
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
                             <i class="bi bi-pencil"></i>
                         </button>
                     </td>
                 </tr>
             `).join('');
+        }
+
+        function getRoleColor(role) {
+            switch (role) {
+                case 'admin': return 'danger';
+                case 'staff': return 'warning';
+                case 'user': return 'info';
+                default: return 'secondary';
+            }
         }
 
         function showToast(message, type = 'success') {
@@ -259,106 +268,109 @@
             });
         }
 
-        async function editService(id) {
-            const service = services.find(s => s.id === id);
-            if (!service) return;
+        async function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
 
-            document.getElementById('editServiceId').value = service.id;
-            document.getElementById('editServiceName').value = service.name;
-            document.getElementById('editServiceDuration').value = service.duration;
-            document.getElementById('editServicePrice').value = service.price;
-            document.getElementById('editServiceStatus').value = service.status;
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUsername').value = user.username;
+            document.getElementById('editEmail').value = user.email;
+            document.getElementById('editRole').value = user.role;
 
-            new bootstrap.Modal(document.getElementById('editServiceModal')).show();
+            new bootstrap.Modal(document.getElementById('editUserModal')).show();
         }
 
-        async function deleteService(id) {
-            if (!confirm('Are you sure you want to delete this service?')) return;
+        async function deleteUser(id) {
+            if (id === parseInt(user.id)) {
+                showToast('Cannot delete your own account', 'danger');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this user?')) return;
 
             try {
-                const response = await fetchWithAuth(`${API_URL}/services/${id}`, {
+                const response = await fetchWithAuth(`${API_URL}/api/users/${id}`, {
                     method: 'DELETE'
                 });
 
                 if (response.ok) {
-                    services = services.filter(s => s.id !== id);
-                    renderServicesTable();
-                    showToast('Service deleted successfully', 'success');
+                    users = users.filter(u => u.id !== id);
+                    renderUsersTable();
+                    showToast('User deleted successfully', 'success');
                 } else {
-                    throw new Error('Failed to delete service');
+                    throw new Error('Failed to delete user');
                 }
             } catch (error) {
-                console.error('Error deleting service:', error);
-                showToast('Failed to delete service', 'danger');
+                console.error('Error deleting user:', error);
+                showToast('Failed to delete user', 'danger');
             }
         }
 
-        document.getElementById('saveService').addEventListener('click', async () => {
-            const serviceData = {
-                name: document.getElementById('serviceName').value,
-                duration: parseInt(document.getElementById('serviceDuration').value),
-                price: parseFloat(document.getElementById('servicePrice').value),
-                status: document.getElementById('serviceStatus').value
+        document.getElementById('saveUser').addEventListener('click', async () => {
+            const userData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                email: document.getElementById('email').value,
+                role: document.getElementById('role').value
             };
 
             try {
-                const response = await fetchWithAuth(`${API_URL}/services`, {
+                const response = await fetchWithAuth(`${API_URL}/api/users`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(serviceData)
+                    body: JSON.stringify(userData)
                 });
 
                 if (response.ok) {
-                    const newService = await response.json();
-                    services.push(newService);
-                    renderServicesTable();
-                    bootstrap.Modal.getInstance(document.getElementById('newServiceModal')).hide();
-                    document.getElementById('newServiceForm').reset();
-                    showToast('Service added successfully', 'success');
+                    const newUser = await response.json();
+                    users.push(newUser);
+                    renderUsersTable();
+                    bootstrap.Modal.getInstance(document.getElementById('newUserModal')).hide();
+                    document.getElementById('newUserForm').reset();
+                    showToast('User added successfully', 'success');
                 } else {
-                    throw new Error('Failed to add service');
+                    throw new Error('Failed to add user');
                 }
             } catch (error) {
-                console.error('Error adding service:', error);
-                showToast('Failed to add service', 'danger');
+                console.error('Error adding user:', error);
+                showToast('Failed to add user', 'danger');
             }
         });
 
-        document.getElementById('updateService').addEventListener('click', async () => {
-            const id = document.getElementById('editServiceId').value;
-            const serviceData = {
-                name: document.getElementById('editServiceName').value,
-                duration: parseInt(document.getElementById('editServiceDuration').value),
-                price: parseFloat(document.getElementById('editServicePrice').value),
-                status: document.getElementById('editServiceStatus').value
+        document.getElementById('updateUser').addEventListener('click', async () => {
+            const id = document.getElementById('editUserId').value;
+            const userData = {
+                username: document.getElementById('editUsername').value,
+                email: document.getElementById('editEmail').value,
+                role: document.getElementById('editRole').value
             };
 
             try {
-                const response = await fetchWithAuth(`${API_URL}/services/${id}`, {
+                const response = await fetchWithAuth(`${API_URL}/api/users/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(serviceData)
+                    body: JSON.stringify(userData)
                 });
 
                 if (response.ok) {
-                    const updatedService = await response.json();
-                    const index = services.findIndex(s => s.id === parseInt(id));
+                    const updatedUser = await response.json();
+                    const index = users.findIndex(u => u.id === parseInt(id));
                     if (index !== -1) {
-                        services[index] = updatedService;
+                        users[index] = updatedUser;
                     }
-                    renderServicesTable();
-                    bootstrap.Modal.getInstance(document.getElementById('editServiceModal')).hide();
-                    showToast('Service updated successfully', 'success');
+                    renderUsersTable();
+                    bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                    showToast('User updated successfully', 'success');
                 } else {
-                    throw new Error('Failed to update service');
+                    throw new Error('Failed to update user');
                 }
             } catch (error) {
-                console.error('Error updating service:', error);
-                showToast('Failed to update service', 'danger');
+                console.error('Error updating user:', error);
+                showToast('Failed to update user', 'danger');
             }
         });
 
@@ -377,7 +389,7 @@
         }
 
         // Initialize
-        loadServices();
+        loadUsers();
     </script>
 </body>
 </html> 
