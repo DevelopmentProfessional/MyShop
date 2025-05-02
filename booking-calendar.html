@@ -23,52 +23,56 @@
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
+    <div class="container-fluid p-0">
         <!-- Appointments Section -->
-        <div style="height: calc(50vh - 56px); position: relative; border-top: 1px solid var(--bs-border-color);">
-            <div style="position: sticky; top: 0; background: var(--bs-primary); color: white; z-index: 1020; padding:2px;" 
-                 class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Appointments</h4>
-                <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
-                    <i class="bi bi-plus-circle"></i> New Appointment
-                </button>
-            </div>
-            <div style="height: calc(50vh - 60px); overflow-y: auto;">
-                <div id="appointmentsList" class="list-group"></div>
+        <div style="height: calc(50vh - 56px); position: relative;">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4 class="mb-0">Appointments</h4>
+                </div>
+                <div class="card-body p-0" style="overflow-y: auto; height: calc(100% - 120px);">
+                    <div id="appointmentsList" class="list-group"></div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                        <i class="bi bi-plus-circle"></i> New Appointment
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Calendar Section -->
         <div style="height: 50vh; position: relative; background: var(--bs-light);">
-            <div style="position: sticky; top: 0; background: var(--bs-primary); color: white; z-index: 1020; padding:2px;" 
-                 class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Calendar</h4>
-                <div class="d-flex align-items-center justify-content-center">
-                    <h5 id="currentMonth" class="mb-0 text-white me-2"></h5>
-                    <button class="btn btn-outline-light px-2 py-1 mx-1" id="prevMonth">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <button class="btn btn-outline-light px-2 py-1 mx-1" id="nextMonth">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Calendar</h4>
+                    <div class="d-flex align-items-center">
+                        <h5 id="currentMonth" class="mb-0 me-2"></h5>
+                        <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button class="btn btn-outline-primary px-2 py-1 mx-1" id="nextMonth">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
-            </div>
-            <div style="height: calc(50vh - 60px); overflow-y: auto;">
-                <div class="table-responsive" style="overflow-y: visible;">
-                    <table class="table table-bordered mb-0">
-                        <thead>
-                            <tr>
-                                <th>Sun</th>
-                                <th>Mon</th>
-                                <th>Tue</th>
-                                <th>Wed</th>
-                                <th>Thu</th>
-                                <th>Fri</th>
-                                <th>Sat</th>
-                            </tr>
-                        </thead>
-                        <tbody id="calendarBody"></tbody>
-                    </table>
+                <div class="card-body p-0" style="overflow-y: auto;">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sun</th>
+                                    <th>Mon</th>
+                                    <th>Tue</th>
+                                    <th>Wed</th>
+                                    <th>Thu</th>
+                                    <th>Fri</th>
+                                    <th>Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -186,6 +190,59 @@
         </div>
     </div>
 
+    <!-- Edit Appointment Modal -->
+    <div class="modal fade" id="editAppointmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Appointment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editAppointmentForm">
+                        <input type="hidden" id="editAppointmentId">
+                        <div class="mb-3">
+                            <label for="editServiceSelect" class="form-label">Service</label>
+                            <select class="form-select" id="editServiceSelect" required>
+                                <option value="">Select a service</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editClientSelect" class="form-label">Client</label>
+                            <select class="form-select" id="editClientSelect" required>
+                                <option value="">Select a client</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDateInput" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="editDateInput" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTimeSlots" class="form-label">Time</label>
+                            <select class="form-select" id="editTimeSlots" required>
+                                <option value="">Select a time</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editStatus" class="form-label">Status</label>
+                            <select class="form-select" id="editStatus" required>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="running-late">Running Late</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveAppointmentChanges">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const config = {
@@ -292,7 +349,6 @@
 
             let calendarHTML = '';
             let day = 1;
-            let date = new Date(year, month, day);
 
             for (let i = 0; i < 6; i++) {
                 calendarHTML += '<tr>';
@@ -302,6 +358,7 @@
                     } else if (day > totalDays) {
                         calendarHTML += '<td></td>';
                     } else {
+                        const date = new Date(year, month, day);
                         const dayAppointments = appointments.filter(a => {
                             const appointmentDate = new Date(a.date);
                             return appointmentDate.getDate() === day && 
@@ -309,9 +366,10 @@
                                    appointmentDate.getFullYear() === year;
                         });
 
+                        const dateString = date.toISOString().split('T')[0];
                         calendarHTML += `
                             <td class="calendar-day ${dayAppointments.length ? 'has-appointments' : ''}" 
-                                data-date="${date.toISOString().split('T')[0]}">
+                                data-date="${dateString}">
                                 ${day}
                                 ${dayAppointments.length ? 
                                     `<span class="badge bg-primary">${dayAppointments.length}</span>` : 
@@ -319,7 +377,6 @@
                             </td>
                         `;
                         day++;
-                        date.setDate(day);
                     }
                 }
                 calendarHTML += '</tr>';
@@ -333,11 +390,114 @@
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', () => {
                     const date = day.dataset.date;
-                    document.getElementById('dateInput').value = date;
-                    generateTimeSlots();
-                    new bootstrap.Modal(document.getElementById('bookingDetailsModal')).show();
+                    const selectedDate = new Date(date);
+                    selectedDate.setHours(0, 0, 0, 0);
+                    
+                    const dayAppointments = appointments.filter(a => {
+                        const appointmentDate = new Date(a.date);
+                        appointmentDate.setHours(0, 0, 0, 0);
+                        return appointmentDate.getTime() === selectedDate.getTime();
+                    });
+                    
+                    const appointmentsList = document.getElementById('appointmentsList');
+                    appointmentsList.innerHTML = dayAppointments.map(appointment => {
+                        const service = services.find(s => s.id === appointment.service_id);
+                        const client = clients.find(c => c.id === appointment.client_id);
+                        return `
+                            <div class="list-group-item appointment-item" data-appointment-id="${appointment.id}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${client?.name || 'Unknown Client'}</h6>
+                                        <small class="text-muted">${service?.name || 'Unknown Service'} - ${appointment.time}</small>
+                                    </div>
+                                    <span class="badge bg-${getStatusColor(appointment.status)}">${appointment.status}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Add click listeners to appointment items
+                    document.querySelectorAll('.appointment-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const appointmentId = parseInt(item.dataset.appointmentId);
+                            const appointment = appointments.find(a => a.id === appointmentId);
+                            if (appointment) {
+                                openEditAppointmentModal(appointment);
+                            }
+                        });
+                    });
                 });
             });
+        }
+
+        function openEditAppointmentModal(appointment) {
+            const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
+            
+            // Set the appointment ID
+            document.getElementById('editAppointmentId').value = appointment.id;
+            
+            // Populate service options
+            const editServiceSelect = document.getElementById('editServiceSelect');
+            editServiceSelect.innerHTML = `
+                <option value="">Select a service</option>
+                ${services.map(s => `
+                    <option value="${s.id}" ${s.id === appointment.service_id ? 'selected' : ''}>
+                        ${s.name} (${s.duration} min) - $${s.price}
+                    </option>
+                `).join('')}
+            `;
+
+            // Populate client options
+            const editClientSelect = document.getElementById('editClientSelect');
+            editClientSelect.innerHTML = `
+                <option value="">Select a client</option>
+                ${clients.map(c => `
+                    <option value="${c.id}" ${c.id === appointment.client_id ? 'selected' : ''}>
+                        ${c.name}
+                    </option>
+                `).join('')}
+            `;
+
+            // Set date and time
+            document.getElementById('editDateInput').value = appointment.date;
+            document.getElementById('editTimeSlots').value = appointment.time;
+            
+            // Set status
+            document.getElementById('editStatus').value = appointment.status;
+
+            // Generate time slots based on selected service
+            generateEditTimeSlots();
+
+            modal.show();
+        }
+
+        function generateEditTimeSlots() {
+            const timeSlots = document.getElementById('editTimeSlots');
+            const serviceSelect = document.getElementById('editServiceSelect');
+            const selectedService = services.find(s => s.id === parseInt(serviceSelect.value));
+            const currentTime = document.getElementById('editTimeSlots').value;
+            
+            if (!selectedService) {
+                timeSlots.innerHTML = '<option value="">Select a service first</option>';
+                return;
+            }
+
+            const slots = [];
+            const startTime = 9; // 9 AM
+            const endTime = 17; // 5 PM
+            const interval = 15; // 15 minutes
+
+            for (let hour = startTime; hour < endTime; hour++) {
+                for (let minute = 0; minute < 60; minute += interval) {
+                    const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    slots.push(`<option value="${time}" ${time === currentTime ? 'selected' : ''}>${time}</option>`);
+                }
+            }
+
+            timeSlots.innerHTML = `
+                <option value="">Select a time</option>
+                ${slots.join('')}
+            `;
         }
 
         function renderServiceOptions() {
@@ -401,6 +561,7 @@
             }
         }
 
+        /* Commented out toast functionality for now
         function showToast(message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -426,6 +587,7 @@
                 toast.remove();
             });
         }
+        */
 
         document.getElementById('serviceSelect').addEventListener('change', generateTimeSlots);
 
@@ -446,7 +608,7 @@
             const time = document.getElementById('timeSlots').value;
 
             if (!serviceId || !clientId || !date || !time) {
-                showToast('Please fill in all fields', 'danger');
+                // showToast('Please fill in all fields', 'danger');
                 return;
             }
 
@@ -471,13 +633,13 @@
                     renderCalendar();
                     bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
                     document.getElementById('bookingForm').reset();
-                    showToast('Appointment booked successfully', 'success');
+                    // showToast('Appointment booked successfully', 'success');
                 } else {
                     throw new Error('Failed to book appointment');
                 }
             } catch (error) {
                 console.error('Error booking appointment:', error);
-                showToast('Failed to book appointment', 'danger');
+                // showToast('Failed to book appointment', 'danger');
             }
         });
 
@@ -487,7 +649,7 @@
             const phone = document.getElementById('newClientPhone').value;
 
             if (!name || !email || !phone) {
-                showToast('Please fill in all fields', 'danger');
+                // showToast('Please fill in all fields', 'danger');
                 return;
             }
 
@@ -506,13 +668,59 @@
                     renderClientOptions();
                     bootstrap.Modal.getInstance(document.getElementById('newClientModal')).hide();
                     document.getElementById('newClientForm').reset();
-                    showToast('Client added successfully', 'success');
+                    // showToast('Client added successfully', 'success');
                 } else {
                     throw new Error('Failed to add client');
                 }
             } catch (error) {
                 console.error('Error adding client:', error);
-                showToast('Failed to add client', 'danger');
+                // showToast('Failed to add client', 'danger');
+            }
+        });
+
+        document.getElementById('editServiceSelect').addEventListener('change', generateEditTimeSlots);
+
+        document.getElementById('saveAppointmentChanges').addEventListener('click', async () => {
+            const appointmentId = document.getElementById('editAppointmentId').value;
+            const serviceId = document.getElementById('editServiceSelect').value;
+            const clientId = document.getElementById('editClientSelect').value;
+            const date = document.getElementById('editDateInput').value;
+            const time = document.getElementById('editTimeSlots').value;
+            const status = document.getElementById('editStatus').value;
+
+            if (!serviceId || !clientId || !date || !time || !status) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service_id: serviceId,
+                        client_id: clientId,
+                        date: date,
+                        time: time,
+                        status: status
+                    })
+                });
+
+                if (response.ok) {
+                    const updatedAppointment = await response.json();
+                    const index = appointments.findIndex(a => a.id === appointmentId);
+                    if (index !== -1) {
+                        appointments[index] = updatedAppointment;
+                    }
+                    renderAppointments();
+                    renderCalendar();
+                    bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal')).hide();
+                } else {
+                    throw new Error('Failed to update appointment');
+                }
+            } catch (error) {
+                console.error('Error updating appointment:', error);
             }
         });
 
