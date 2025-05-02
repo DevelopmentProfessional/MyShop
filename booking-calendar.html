@@ -256,14 +256,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const config = {
-            local: 'http://localhost:3000',
-            production: 'https://myshop-5hec.onrender.com'
-        };
-        
-        const isLocalhost = window.location.hostname === 'localhost' || 
-                          window.location.hostname === '127.0.0.1';
-        const API_URL = isLocalhost ? config.local : config.production;
+        const API_URL = 'https://myshop-5hec.onrender.com';
 
         async function fetchData(url, options = {}) {
             try {
