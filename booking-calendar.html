@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body style="overflow: hidden; height: 100vh; margin: 0; padding: 0;">
+<body class="vh-100 overflow-hidden m-0 p-0">
     <!-- Navigation Bar -->
     <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="d-flex ms-auto">
@@ -20,34 +20,33 @@
             </div>
      </nav>
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <h1 class="text-center mb-4"></h1>
+    <div class="container-fluid h-50">
+        <div class="row h-100">
+            <div class="col-md-6 h-100">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Available Time Slots</h5>
+                    </div>
+                    <div class="card-body overflow-auto" style="height: calc(100% - 120px);">
+                        <div id="timeSlots" class="list-group"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 h-100">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Appointments</h5>
+                    </div>
+                    <div class="card-body overflow-auto">
+                        <div id="appointments" class="list-group"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid p-0">
-        <!-- Appointments Section -->
-        <div style="height: calc(50vh - 56px); position: relative;">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h4 class="mb-0">Appointments</h4>
-                </div>
-                <div class="card-body p-0" style="overflow-y: auto; height: calc(100% - 120px);">
-                    <div id="appointmentsList" class="list-group"></div>
-                </div>
-                <div class="card-footer">
-                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
-                        <i class="bi bi-plus-circle"></i> New Appointment
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Calendar Section -->
-        <div style="height: 50vh; position: relative; background: var(--bs-light);">
+    <div style="height: 50vh; position: relative; background: var(--bs-light);">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Calendar</h4>
@@ -80,7 +79,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+    </div>
     </div>
 
     <!-- Booking Details Modal -->
@@ -163,44 +162,6 @@
         </div>
     </div>
 
-    <div class="position-fixed top-0 start-50 " style="z-index: 11">
-        <div id="toastContainer"></div>
-    </div>
-
-    <div class="position-fixed top-50 start-50 translate-middle" id="loadingSpinner" style="display:none;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-
-    <div class="modal fade" id="summaryModal">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Booking Summary</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="card">
-                        <div class="card-body">
-                            <h6 class="card-subtitle mb-2 text-muted">Appointment Details</h6>
-                            <p><strong>Date:</strong> <span id="summaryDate"></span></p>
-                            <p><strong>Time:</strong> <span id="summaryTime"></span></p>
-                            <p><strong>Service:</strong> <span id="summaryService"></span></p>
-                            <p><strong>Duration:</strong> <span id="summaryDuration"></span></p>
-                            <p><strong>Price:</strong> <span id="summaryPrice"></span></p>
-                            <p><strong>Client:</strong> <span id="summaryClient"></span></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Edit</button>
-                    <button type="button" class="btn btn-primary" id="finalConfirm">Confirm Booking</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Edit Appointment Modal -->
     <div class="modal fade" id="editAppointmentModal" tabindex="-1">
         <div class="modal-dialog">
@@ -258,6 +219,46 @@
     <script>
         const API_URL = 'https://myshop-5hec.onrender.com';
 
+        // Initialize all variables with default values
+        let currentDate = new Date();
+        let appointments = [];
+        let services = [];
+        let clients = [];
+        let employees = [];
+        let selectedService = null;
+        let selectedClient = null;
+        let selectedEmployee = null;
+        let selectedDate = "";
+        let selectedTime = "";
+
+        // Safe element getter with default value
+        function getElement(id, defaultValue = null) {
+            const element = document.getElementById(id);
+            return element || defaultValue;
+        }
+
+        // Safe number conversion
+        function safeNumber(value, defaultValue = 0) {
+            const num = Number(value);
+            return isNaN(num) ? defaultValue : num;
+        }
+
+        // Safe string conversion
+        function safeString(value, defaultValue = "") {
+            return String(value || defaultValue);
+        }
+
+        // Safe date conversion
+        function safeDate(value, defaultValue = new Date()) {
+            const date = new Date(value);
+            return isNaN(date.getTime()) ? defaultValue : date;
+        }
+
+        // Safe object conversion
+        function safeObject(value, defaultValue = {}) {
+            return value && typeof value === 'object' ? value : defaultValue;
+        }
+
         async function fetchData(url, options = {}) {
             try {
                 const response = await fetch(url, {
@@ -269,63 +270,81 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
                 
-                return response.json();
+                return await response.json();
             } catch (error) {
-                console.error('Fetch error:', error);
-                throw error;
+                console.error('Error:', error);
+                 throw error;
             }
         }
 
-        let currentDate = new Date();
-        let appointments = [];
-        let services = [];
-        let clients = [];
-        let employees = [];
-
         async function loadData() {
+            console.log("Starting loadData...");
             try {
                 const [servicesData, clientsData, appointmentsData] = await Promise.all([
-                    fetchData(`${API_URL}/api/services`),
-                    fetchData(`${API_URL}/api/clients`),
-                    fetchData(`${API_URL}/api/appointments`)
+                    fetchData(`${API_URL}/api/services`).catch(() => []),
+                    fetchData(`${API_URL}/api/clients`).catch(() => []),
+                    fetchData(`${API_URL}/api/appointments`).catch(() => [])
                 ]);
 
-                services = servicesData;
-                clients = clientsData;
-                appointments = appointmentsData;
+                console.log("Data loaded:", {
+                    services: servicesData,
+                    clients: clientsData,
+                    appointments: appointmentsData
+                });
+
+                services = safeObject(servicesData, []);
+                clients = safeObject(clientsData, []);
+                appointments = safeObject(appointmentsData, []);
+
+                console.log("Data processed:", {
+                    servicesCount: services.length,
+                    clientsCount: clients.length,
+                    appointmentsCount: appointments.length
+                });
 
                 renderCalendar();
                 renderAppointments();
                 populateFormSelects();
+                
+                console.log("loadData completed successfully");
             } catch (error) {
                 console.error('Error loading data:', error);
-                showToast('Failed to load data', 'danger');
             }
         }
 
         function populateFormSelects() {
-            // Populate service select
-            const serviceSelect = document.getElementById('serviceSelect');
-            serviceSelect.innerHTML = '<option value="">Select a service</option>' +
-                services.map(service => `<option value="${service.id}">${service.name} - $${service.price}</option>`).join('');
+            const serviceSelect = getElement('serviceSelect');
+            const clientSelect = getElement('clientSearch');
+            
+            if (serviceSelect) {
+                serviceSelect.innerHTML = '<option value="">Select a service</option>' +
+                    services.map(service => 
+                        `<option value="${safeNumber(service.id)}">${safeString(service.name)} - $${safeNumber(service.price).toFixed(2)}</option>`
+                    ).join('');
+            }
 
-            // Populate client select
-            const clientSelect = document.getElementById('clientSearch');
-            clientSelect.innerHTML = '<option value="">Select a client</option>' +
-                clients.map(client => `<option value="${client.id}">${client.name}</option>`).join('');
+            if (clientSelect) {
+                clientSelect.innerHTML = '<option value="">Select a client</option>' +
+                    clients.map(client => 
+                        `<option value="${safeNumber(client.id)}">${safeString(client.name)}</option>`
+                    ).join('');
+            }
         }
 
         function renderAppointments() {
-            const appointmentsList = document.getElementById('appointmentsList');
+            const appointmentsList = getElement('appointments');
+            if (!appointmentsList) return;
+
             appointmentsList.innerHTML = appointments.map(appointment => {
-                const service = services.find(s => s.id === appointment.service_id);
-                const client = clients.find(c => c.id === appointment.client_id);
-                const employee = employees.find(e => e.id === appointment.employee_id);
+                const service = services.find(s => s.id === appointment.service_id) || {};
+                const client = clients.find(c => c.id === appointment.client_id) || {};
+                const employee = employees.find(e => e.id === appointment.employee_id) || {};
                 
-                const appointmentDate = new Date(appointment.date);
+                const appointmentDate = safeDate(appointment.date);
                 const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
                     weekday: 'short', 
                     month: 'short', 
@@ -336,21 +355,24 @@
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">${client?.name || 'Unknown Client'}</h6>
+                                <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
                                 <small class="text-muted">
-                                    <div>${service?.name || 'Unknown Service'}</div>
-                                    <div>${formattedDate} at ${appointment.time}</div>
-                                    <div>Duration: ${appointment.duration} min</div>
-                                    <div>Price: $${Number(appointment.price).toFixed(2)}</div>
-                                    <div>Employee: ${employee?.username || 'Unassigned'}</div>
-                                    <div>Status: ${appointment.status}</div>
+                                    <div>${safeString(service.name, 'Unknown Service')}</div>
+                                    <div>${formattedDate} at ${safeString(appointment.time)}</div>
+                                    <div>Duration: ${safeNumber(appointment.duration)} min</div>
+                                    <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
+                                    <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>
+                                    <div>Status: ${safeString(appointment.status)}</div>
                                 </small>
                             </div>
                             <div class="d-flex flex-column align-items-end">
-                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${appointment.status}</span>
+                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
                                 <small class="text-muted">
-                                    Created: ${new Date(appointment.created_at).toLocaleDateString()}
+                                    Created: ${safeDate(appointment.created_at).toLocaleDateString()}
                                 </small>
+                                <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -359,12 +381,24 @@
         }
 
         function renderCalendar() {
+            console.log("Starting renderCalendar");
+            console.log("Current Date:", currentDate);
+            
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startingDay = firstDay.getDay();
             const totalDays = lastDay.getDate();
+
+            console.log("Calendar Parameters:", {
+                year,
+                month,
+                firstDay: firstDay.toDateString(),
+                lastDay: lastDay.toDateString(),
+                startingDay,
+                totalDays
+            });
 
             document.getElementById('currentMonth').textContent = 
                 `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
@@ -389,8 +423,11 @@
                         });
 
                         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const isToday = new Date().toDateString() === date.toDateString();
+                        const dayClass = isToday ? 'today' : '';
+                        
                         calendarHTML += `
-                            <td class="calendar-day ${dayAppointments.length ? 'has-appointments' : ''}" 
+                            <td class="calendar-day ${dayClass} ${dayAppointments.length ? 'has-appointments' : ''}" 
                                 data-date="${dateString}">
                                 ${day}
                                 ${dayAppointments.length ? 
@@ -404,17 +441,35 @@
                 calendarHTML += '</tr>';
             }
 
-            document.getElementById('calendarBody').innerHTML = calendarHTML;
-            addCalendarDayListeners();
+            console.log("Generated Calendar HTML:", calendarHTML);
+            const calendarBody = document.getElementById('calendarBody');
+            console.log("Calendar Body Element:", calendarBody);
+            
+            if (calendarBody) {
+                calendarBody.innerHTML = calendarHTML;
+                console.log("Calendar HTML set successfully");
+                addCalendarDayListeners();
+            } else {
+                console.error("Calendar body element not found!");
+            }
         }
 
         function addCalendarDayListeners() {
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', () => {
+                    // Remove active class from all days
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
+                    // Add active class to clicked day
+                    day.classList.add('active');
+                    
                     const date = day.dataset.date;
                     const [year, month, dayNum] = date.split('-').map(Number);
                     const selectedDate = new Date(year, month - 1, dayNum);
                     
+                    // Update the date input in the booking form
+                    document.getElementById('dateInput').value = date;
+                    
+                    // Filter appointments for the selected date
                     const dayAppointments = appointments.filter(a => {
                         const appointmentDate = new Date(a.date);
                         return appointmentDate.getDate() === dayNum && 
@@ -422,18 +477,33 @@
                                appointmentDate.getFullYear() === year;
                     });
                     
-                    const appointmentsList = document.getElementById('appointmentsList');
+                    // Update the appointments list
+                    const appointmentsList = document.getElementById('appointments');
                     appointmentsList.innerHTML = dayAppointments.map(appointment => {
-                        const service = services.find(s => s.id === appointment.service_id);
-                        const client = clients.find(c => c.id === appointment.client_id);
+                        const service = services.find(s => s.id === appointment.service_id) || {};
+                        const client = clients.find(c => c.id === appointment.client_id) || {};
+                        const employee = employees.find(e => e.id === appointment.employee_id) || {};
+                        
                         return `
                             <div class="list-group-item appointment-item" data-appointment-id="${appointment.id}">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="mb-1">${client?.name || 'Unknown Client'}</h6>
-                                        <small class="text-muted">${service?.name || 'Unknown Service'} - ${appointment.time}</small>
+                                        <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
+                                        <small class="text-muted">
+                                            <div>${safeString(service.name, 'Unknown Service')}</div>
+                                            <div>${safeString(appointment.time)}</div>
+                                            <div>Duration: ${safeNumber(appointment.duration)} min</div>
+                                            <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
+                                            <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>
+                                            <div>Status: ${safeString(appointment.status)}</div>
+                                        </small>
                                     </div>
-                                    <span class="badge bg-${getStatusColor(appointment.status)}">${appointment.status}</span>
+                                    <div class="d-flex flex-column align-items-end">
+                                        <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
+                                        <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -524,212 +594,238 @@
         }
 
         function getStatusColor(status) {
-            switch (status) {
-                case 'scheduled': return 'primary';
-                case 'in-progress': return 'warning';
-                case 'completed': return 'success';
-                case 'cancelled': return 'danger';
-                case 'running-late': return 'info';
-                default: return 'secondary';
+            const statusMap = {
+                'scheduled': 'primary',
+                'in-progress': 'warning',
+                'completed': 'success',
+                'cancelled': 'danger',
+                'running-late': 'info'
+            };
+            return statusMap[safeString(status)] || 'secondary';
+        }
+
+ 
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        function generateTimeSlots() {
+            const timeSlotsSelect = document.getElementById('timeSlots');
+            const serviceSelect = document.getElementById('serviceSelect');
+            const selectedService = services.find(s => s.id === parseInt(serviceSelect.value));
+            
+            if (!selectedService) {
+                timeSlotsSelect.innerHTML = '<option value="">Select a service first</option>';
+                return;
             }
-        }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            toast.innerHTML = `
-                <div class="d-flex justify-content-start">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
+            const slots = [];
+            const startTime = 9; // 9 AM
+            const endTime = 17; // 5 PM
+            const interval = 15; // 15 minutes
+            const serviceDuration = selectedService.duration || 60; // Default to 60 minutes if not specified
+
+            // Get the selected date
+            const selectedDate = document.getElementById('dateInput').value;
+            if (!selectedDate) {
+                timeSlotsSelect.innerHTML = '<option value="">Select a date first</option>';
+                return;
+            }
+
+            // Get existing appointments for the selected date
+            const existingAppointments = appointments.filter(a => a.date === selectedDate);
+
+            for (let hour = startTime; hour < endTime; hour++) {
+                for (let minute = 0; minute < 60; minute += interval) {
+                    const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    const slotEndTime = new Date(`2000-01-01T${time}`);
+                    slotEndTime.setMinutes(slotEndTime.getMinutes() + serviceDuration);
+                    
+                    // Check if this time slot overlaps with any existing appointments
+                    const isAvailable = !existingAppointments.some(appointment => {
+                        const appointmentTime = new Date(`2000-01-01T${appointment.time}`);
+                        const appointmentEndTime = new Date(appointmentTime);
+                        appointmentEndTime.setMinutes(appointmentEndTime.getMinutes() + appointment.duration);
+                        
+                        return (time >= appointment.time && time < appointmentEndTime.toTimeString().slice(0, 5)) ||
+                               (slotEndTime.toTimeString().slice(0, 5) > appointment.time && 
+                                time < appointmentEndTime.toTimeString().slice(0, 5));
+                    });
+
+                    if (isAvailable) {
+                        slots.push(`<option value="${time}">${time}</option>`);
+                    }
+                }
+            }
+
+            timeSlotsSelect.innerHTML = `
+                <option value="">Select a time</option>
+                ${slots.join('')}
             `;
-            
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
         }
 
-        document.getElementById('serviceSelect').addEventListener('change', generateTimeSlots);
-
-        document.getElementById('prevMonth').addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar();
-        });
-
-        document.getElementById('nextMonth').addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar();
-        });
-
-        document.getElementById('confirmBooking').addEventListener('click', async () => {
+        async function handleBookingSubmit(e) {
+            e.preventDefault();
+            
             const serviceId = document.getElementById('serviceSelect').value;
             const clientId = document.getElementById('clientSearch').value;
             const employeeId = document.getElementById('employeeSelect').value;
             const date = document.getElementById('dateInput').value;
             const time = document.getElementById('timeSlots').value;
-
-            if (!serviceId || !clientId || !employeeId || !date || !time) {
-                showToast('Please fill in all fields', 'danger');
-                return;
-            }
+   
 
             try {
+                const selectedService = services.find(s => s.id === parseInt(serviceId));
+                const appointmentData = {
+                    service_id: parseInt(serviceId),
+                    client_id: parseInt(clientId),
+                    employee_id: parseInt(employeeId),
+                    date: date,
+                    time: time,
+                    duration: selectedService.duration,
+                    price: selectedService.price,
+                    status: 'scheduled'
+                };
+
                 const response = await fetch(`${API_URL}/api/appointments`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        service_id: serviceId,
-                        client_id: clientId,
-                        employee_id: employeeId,
-                        date: date,
-                        time: time
-                    })
+                    body: JSON.stringify(appointmentData)
                 });
 
-                if (response.ok) {
-                    const newAppointment = await response.json();
-                    appointments.push(newAppointment);
-                    renderAppointments();
-                    renderCalendar();
-                    bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
-                    document.getElementById('bookingForm').reset();
-                    showToast('Appointment booked successfully', 'success');
-                } else {
-                    throw new Error('Failed to book appointment');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to create appointment');
                 }
-            } catch (error) {
+
+                const newAppointment = await response.json();
+                appointments.push(newAppointment);
+                
+                // Update UI
+                renderCalendar();
+                renderAppointments();
+                generateTimeSlots();
+                
+                // Reset form and close modal
+                document.getElementById('bookingForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('bookingDetailsModal')).hide();
+                
+             } catch (error) {
                 console.error('Error booking appointment:', error);
-                showToast('Failed to book appointment', 'danger');
-            }
-        });
+             }
+        }
 
-        document.getElementById('saveNewClient').addEventListener('click', async () => {
-            const name = document.getElementById('newClientName').value;
-            const email = document.getElementById('newClientEmail').value;
-            const phone = document.getElementById('newClientPhone').value;
-
-            if (!name || !email || !phone) {
-                // showToast('Please fill in all fields', 'danger');
+        async function deleteAppointment(id) {
+            if (!confirm('Are you sure you want to delete this appointment?')) {
                 return;
             }
 
             try {
-                const response = await fetch(`${API_URL}/api/clients`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name, email, phone })
+                const response = await fetch(`${API_URL}/api/appointments/${id}`, {
+                    method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    const newClient = await response.json();
-                    clients.push(newClient);
-                    renderClientOptions();
-                    bootstrap.Modal.getInstance(document.getElementById('newClientModal')).hide();
-                    document.getElementById('newClientForm').reset();
-                    // showToast('Client added successfully', 'success');
-                } else {
-                    throw new Error('Failed to add client');
+                if (!response.ok) {
+                    throw new Error('Failed to delete appointment');
                 }
-            } catch (error) {
-                console.error('Error adding client:', error);
-                // showToast('Failed to add client', 'danger');
+
+                // Remove appointment from local array
+                appointments = appointments.filter(a => a.id !== id);
+                
+                // Update UI
+                renderCalendar();
+                renderAppointments();
+                generateTimeSlots();
+                
+             } catch (error) {
+                console.error('Error deleting appointment:', error);
+             }
+        }
+
+        // Initialize event listeners safely
+        document.addEventListener('DOMContentLoaded', () => {
+            const serviceSelect = getElement('serviceSelect');
+            if (serviceSelect) {
+                serviceSelect.addEventListener('change', generateTimeSlots);
             }
-        });
 
-        document.getElementById('editServiceSelect').addEventListener('change', generateEditTimeSlots);
-
-        document.getElementById('saveAppointmentChanges').addEventListener('click', async () => {
-            const appointmentId = document.getElementById('editAppointmentId').value;
-            const serviceId = document.getElementById('editServiceSelect').value;
-            const clientId = document.getElementById('editClientSelect').value;
-            const date = document.getElementById('editDateInput').value;
-            const time = document.getElementById('editTimeSlots').value;
-            const status = document.getElementById('editStatus').value;
-
-            if (!serviceId || !clientId || !date || !time || !status) {
-                return;
+            const dateInput = getElement('dateInput');
+            if (dateInput) {
+                dateInput.addEventListener('change', generateTimeSlots);
             }
 
-            try {
-                const response = await fetch(`${API_URL}/api/appointments/${appointmentId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        service_id: serviceId,
-                        client_id: clientId,
-                        date: date,
-                        time: time,
-                        status: status
-                    })
-                });
+            const bookingForm = getElement('bookingForm');
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', handleBookingSubmit);
+            }
 
-                if (response.ok) {
-                    const updatedAppointment = await response.json();
-                    const index = appointments.findIndex(a => a.id === appointmentId);
-                    if (index !== -1) {
-                        appointments[index] = updatedAppointment;
-                    }
-                    renderAppointments();
+            const prevMonth = getElement('prevMonth');
+            if (prevMonth) {
+                prevMonth.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() - 1);
                     renderCalendar();
-                    bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal')).hide();
-                } else {
-                    throw new Error('Failed to update appointment');
-                }
-            } catch (error) {
-                console.error('Error updating appointment:', error);
+                });
+            }
+
+            const nextMonth = getElement('nextMonth');
+            if (nextMonth) {
+                nextMonth.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    renderCalendar();
+                });
             }
         });
-
-        async function logout() {
-            try {
-                await fetchData(`${API_URL}/api/logout`, {
-                    method: 'POST'
-                });
-                sessionStorage.removeItem('user');
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Failed to logout', 'danger');
-            }
-        }
- 
-        // Initialize dark mode
-        async function initializeDarkMode() {
-            try {
-                const user = JSON.parse(sessionStorage.getItem('user'));
-                if (!user) return;
-                
-                const response = await fetchData(`${API_URL}/api/users/${user.id}`);
-                const userData = response;
-                
-                if (userData.dark_mode) {
-                    document.body.classList.add('dark-mode');
-                    const icon = document.getElementById('darkModeToggle').querySelector('i');
-                    icon.className = 'bi bi-sun-fill';
-                }
-            } catch (error) {
-                console.error('Error initializing dark mode:', error);
-            }
-        }
 
         // Initialize
+        console.log("Starting initialization...");
         loadData();
+        console.log("Initialization complete");
+
+        // Add styles for calendar days
+        const style = document.createElement('style');
+        style.textContent = `
+            .calendar-day {
+                cursor: pointer;
+                padding: 10px;
+                text-align: center;
+                position: relative;
+                border: 1px solid #dee2e6;
+                min-height: 50px;
+                min-width: 50px;
+            }
+            .calendar-day:hover {
+                background-color: rgba(0, 123, 255, 0.1);
+            }
+            .calendar-day.active {
+                background-color: rgba(0, 123, 255, 0.2);
+                font-weight: bold;
+            }
+            .calendar-day.today {
+                background-color: rgba(255, 193, 7, 0.2);
+            }
+            .calendar-day.has-appointments {
+                font-weight: bold;
+            }
+            .calendar-day .badge {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+            }
+            .table {
+                background-color: white;
+            }
+            .table th {
+                text-align: center;
+                padding: 10px;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 
 
