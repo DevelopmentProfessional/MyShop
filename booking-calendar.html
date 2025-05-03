@@ -20,17 +20,15 @@
             </div>
      </nav>
 
-   
-            <div class="col-md-6 h-50">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Appointments</h5>
-                    </div>
-                    <div class="card-body overflow-auto">
-                        <div id="appointments" class="list-group"></div>
-                    </div>
-                </div>
+    
+        <div class="card h-50">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Appointments</h5>
             </div>
+            <div class="card-body overflow-auto">
+                <div id="appointments" class="list-group"></div>
+            </div>
+        </div> 
        
         <!-- Calendar Section -->
     <div style="height: 50vh; position: relative; background: var(--bs-light);">
@@ -38,6 +36,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Calendar</h4>
                     <div class="d-flex align-items-center">
+                        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                            <i class="bi bi-plus-circle"></i> New Appointment
+                        </button>
                         <h5 id="currentMonth" class="mb-0 me-2"></h5>
                         <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
                             <i class="bi bi-chevron-left"></i>
