@@ -6,12 +6,13 @@
     <title>Booking Calendar</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
 </head>
-<body class="vh-100 overflow-hidden m-0 p-0">
+<body class="vh-100 overflow-hidden m-0 p-0">   
     <!-- Navigation Bar -->
     <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="d-flex ms-auto">
-                <a class="btn btn-outline-light mx-1 disabled" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+            <div class="d-flex mx-auto">
+                <a class="btn btn-warning mx-1 disabled" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
                 <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
                 <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
                 <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
@@ -20,25 +21,31 @@
             </div>
      </nav>
 
-    
-        <div class="card h-50">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Appointments</h5>
-            </div>
-            <div class="card-body overflow-auto">
-                <div id="appointments" class="list-group"></div>
-            </div>
-        </div> 
-       
-        <!-- Calendar Section -->
-    <div style="height: 50vh; position: relative; background: var(--bs-light);">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Calendar</h4>
-                    <div class="d-flex align-items-center">
-                        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
-                            <i class="bi bi-plus-circle"></i> New Appointment
-                        </button>
+             <!-- Calendar Section -->
+            <div  class="card h-50"> 
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                    
+                    </div>
+                    <div class="card-body p-0" style="overflow-y: auto;">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Sun</th>
+                                        <th>Mon</th>
+                                        <th>Tue</th>
+                                        <th>Wed</th>
+                                        <th>Thu</th>
+                                        <th>Fri</th>
+                                        <th>Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calendarBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-end">
+                           
                         <h5 id="currentMonth" class="mb-0 me-2"></h5>
                         <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
                             <i class="bi bi-chevron-left"></i>
@@ -46,30 +53,23 @@
                         <button class="btn btn-outline-primary px-2 py-1 mx-1" id="nextMonth">
                             <i class="bi bi-chevron-right"></i>
                         </button>
-                    </div>
-                </div>
-                <div class="card-body p-0" style="overflow-y: auto;">
-                    <div class="table-responsive">
-                        <table class="table table-bordered mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Sun</th>
-                                    <th>Mon</th>
-                                    <th>Tue</th>
-                                    <th>Wed</th>
-                                    <th>Thu</th>
-                                    <th>Fri</th>
-                                    <th>Sat</th>
-                                </tr>
-                            </thead>
-                            <tbody id="calendarBody"></tbody>
-                        </table>
-                    </div>
-                </div>
+                    </div> 
+        </div>
+    
+        <div class="card">
+            <div class="card-header p-1 d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 me-auto">Appointments</h5>
+                <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                    <i class="bi bi-plus-circle"></i> New Appointment
+                </button>
             </div>
-    </div>
-    </div>
+            <div class="card-body overflow-auto p-0">
+                <div id="appointments" class="list-group"></div>
+            </div>
+        </div> 
+       
 
+ 
     <!-- Booking Details Modal -->
     <div class="modal fade" id="bookingDetailsModal" tabindex="-1">
         <div class="modal-dialog">
@@ -258,8 +258,7 @@
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 return await response.json();
@@ -268,9 +267,8 @@
                  throw error;
             }
         }
-
+        
         async function loadData() {
-            console.log("Starting loadData...");
             try {
                 const [servicesData, clientsData, appointmentsData] = await Promise.all([
                     fetchData(`${API_URL}/api/services`).catch(() => []),
@@ -278,27 +276,13 @@
                     fetchData(`${API_URL}/api/appointments`).catch(() => [])
                 ]);
 
-                console.log("Data loaded:", {
-                    services: servicesData,
-                    clients: clientsData,
-                    appointments: appointmentsData
-                });
-
                 services = safeObject(servicesData, []);
                 clients = safeObject(clientsData, []);
                 appointments = safeObject(appointmentsData, []);
 
-                console.log("Data processed:", {
-                    servicesCount: services.length,
-                    clientsCount: clients.length,
-                    appointmentsCount: appointments.length
-                });
-
                 renderCalendar();
-                renderAppointments();
+                //renderAppointments();
                 populateFormSelects();
-                
-                console.log("loadData completed successfully");
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -369,24 +353,14 @@
         }
 
         function renderCalendar() {
-            console.log("Starting renderCalendar");
-            console.log("Current Date:", currentDate);
-            
+          
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startingDay = firstDay.getDay();
             const totalDays = lastDay.getDate();
-
-            console.log("Calendar Parameters:", {
-                year,
-                month,
-                firstDay: firstDay.toDateString(),
-                lastDay: lastDay.toDateString(),
-                startingDay,
-                totalDays
-            });
+ 
 
             document.getElementById('currentMonth').textContent = 
                 `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
@@ -429,14 +403,11 @@
                 calendarHTML += '</tr>';
             }
 
-            console.log("Generated Calendar HTML:", calendarHTML);
-            const calendarBody = document.getElementById('calendarBody');
-            console.log("Calendar Body Element:", calendarBody);
-            
+             const calendarBody = document.getElementById('calendarBody');
+             
             if (calendarBody) {
                 calendarBody.innerHTML = calendarHTML;
-                console.log("Calendar HTML set successfully");
-                addCalendarDayListeners();
+                 addCalendarDayListeners();
             } else {
                 console.error("Calendar body element not found!");
             }
@@ -477,25 +448,29 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
-                                        <small class="text-muted">
+                                            <small class="text-muted">  
                                             <div>${safeString(service.name, 'Unknown Service')}</div>
                                             <div>${safeString(appointment.time)}</div>
                                             <div>Duration: ${safeNumber(appointment.duration)} min</div>
                                             <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
                                             <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>
-                                            <div>Status: ${safeString(appointment.status)}</div>
-                                        </small>
+                                         </small>
                                     </div>
                                     <div class="d-flex flex-column align-items-end">
+                                          <button class="btn btn-outline-primary mt-2 mb-1" onclick="sendEmail(${safeNumber(appointment.id)})">
+                                                <i class="bi bi-envelope"></i> Send Email
+                                            </button>
                                         <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
                                         <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
                                             <i class="bi bi-trash"></i>
-                                        </button>
+                                        </button> 
+                                           
                                     </div>
                                 </div>
                             </div>
                         `;
                     }).join('');
+ 
 
                     // Add click listeners to appointment items
                     document.querySelectorAll('.appointment-item').forEach(item => {
@@ -510,6 +485,30 @@
                 });
             });
         }
+
+        function sendEmail(appointmentId) {
+    // Find the appointment details
+    const appointment = appointments.find(a => a.id === appointmentId);
+    if (!appointment) {
+        alert("Appointment not found!");
+        return;
+    }
+
+    // Prepare the email content
+    const subject = `Appointment Confirmation - ${appointment.service.name}`;
+    const body = `Hello ${appointment.client.name},%0D%0A%0D%0A` +
+                 `Your appointment details:%0D%0A` +
+                 `Service: ${appointment.service.name}%0D%0A` +
+                 `Time: ${appointment.time}%0D%0A` +
+                 `Duration: ${appointment.duration} min%0D%0A` +
+                 `Price: $${appointment.price.toFixed(2)}%0D%0A` +
+                 `Employee: ${appointment.employee.username}%0D%0A` +
+                 `Status: ${appointment.status}%0D%0A%0D%0A` +
+                 `Thank you for booking with us!`;
+
+    // Open default mail client using "mailto" link
+    window.location.href = `mailto:${appointment.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
         function openEditAppointmentModal(appointment) {
             const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
@@ -771,10 +770,8 @@
         });
 
         // Initialize
-        console.log("Starting initialization...");
-        loadData();
-        console.log("Initialization complete");
-
+         loadData();
+ 
         // Add styles for calendar days
         const style = document.createElement('style');
         style.textContent = `

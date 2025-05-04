@@ -4,17 +4,34 @@ const { Pool } = require('pg');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const { body, validationResult } = require('express-validator');
 
 const app = express();
 const router = express.Router();
 const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later'
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
 // Middleware
 app.use(cors({
-  origin: '*',
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://myshop-5hec.onrender.com'] 
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
 }));
 
 app.use(express.json());
@@ -27,7 +44,7 @@ app.get('/', (req, res) => {
 
 // Database configuration
 const dbConfig = {
-  connectionString: 'postgresql://myshopdb_mbpm_user:YDPfxpjJXdYJcpqI1svSr9XquBfKCPQ4@dpg-d09vmq3ipnbc73b7f340-a.oregon-postgres.render.com/myshopdb_mbpm',
+  connectionString: process.env.DATABASE_URL || 'postgresql://myshopdb_mbpm_user:YDPfxpjJXdYJcpqI1svSr9XquBfKCPQ4@dpg-d09vmq3ipnbc73b7f340-a.oregon-postgres.render.com/myshopdb_mbpm',
   ssl: {
     rejectUnauthorized: false,
     require: true
@@ -56,263 +73,10 @@ async function testConnection(retries = 3, delay = 1000) {
   }
   return false;
 }
-
-// Create tables if they don't exist
-async function initializeTables() {
-  try {
-    // Create clients table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS clients (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) NOT NULL UNIQUE,
-        phone VARCHAR(20) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create services table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS services (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        duration INTEGER NOT NULL,
-        price NUMERIC(10,2) NOT NULL,
-        status VARCHAR(20) NOT NULL DEFAULT 'active',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create appointments table with foreign keys
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS appointments (
-        id SERIAL PRIMARY KEY,
-        date DATE NOT NULL,
-        time VARCHAR(10) NOT NULL,
-        service_id INTEGER REFERENCES services(id),
-        duration INTEGER NOT NULL,
-        price NUMERIC(10,2) NOT NULL,
-        client_id INTEGER REFERENCES clients(id),
-        employee_id INTEGER REFERENCES users(id),
-        status VARCHAR(30) NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create products table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS products (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        description TEXT,
-        price NUMERIC(10,2) NOT NULL,
-        quantity INTEGER NOT NULL DEFAULT 0,
-        category VARCHAR(50),
-        status VARCHAR(20) NOT NULL DEFAULT 'active',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    // Create users table
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        role VARCHAR(20) NOT NULL DEFAULT 'user',
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        dark_mode BOOLEAN DEFAULT FALSE
-      )
-    `);
-
-    // Create sessions table for managing user sessions
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS sessions (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        token VARCHAR(255) NOT NULL,
-        expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Insert default admin user if not exists
-    const hashedPassword = await bcrypt.hash('pinto', 10);
-    await pool.query(`
-      INSERT INTO users (username, password, email, role)
-      VALUES ('pinto', $1, 'pinto@shopy.com', 'admin')
-      ON CONFLICT (username) DO NOTHING
-    `, [hashedPassword]);
-
-    // Check if we need to insert initial data
-    const servicesCount = await pool.query('SELECT COUNT(*) FROM services');
-    if (servicesCount.rows[0].count === '0') {
-      // Insert initial services
-      await pool.query(`
-        INSERT INTO services (name, duration, price, status) VALUES
-        ('Haircut', 30, 25.00, 'active'),
-        ('Hair Coloring', 120, 75.00, 'active'),
-        ('Manicure', 45, 35.00, 'active'),
-        ('Pedicure', 60, 45.00, 'active'),
-        ('Massage', 60, 80.00, 'active'),
-        ('Facial', 45, 60.00, 'active'),
-        ('Waxing', 30, 40.00, 'active')
-      `);
-      console.log('Initial services inserted');
-    }
-
-    const clientsCount = await pool.query('SELECT COUNT(*) FROM clients');
-    if (clientsCount.rows[0].count === '0') {
-      // Insert initial clients
-      await pool.query(`
-        INSERT INTO clients (name, email, phone) VALUES
-        ('John Doe', 'john@example.com', '555-0101'),
-        ('Jane Smith', 'jane@example.com', '555-0102'),
-        ('Bob Johnson', 'bob@example.com', '555-0103'),
-        ('Alice Brown', 'alice@example.com', '555-0104'),
-        ('Charlie Wilson', 'charlie@example.com', '555-0105')
-      `);
-      console.log('Initial clients inserted');
-    }
-
-    console.log('Database tables initialized successfully');
-  } catch (err) {
-    console.error('Error initializing tables:', err);
-    throw err; // Re-throw to handle in the connection test
-  }
-}
-
-// Initialize database connection and tables
-async function initializeDatabase() {
-  try {
-    const connected = await testConnection();
-    if (!connected) {
-      throw new Error('Failed to establish database connection');
-    }
-    
-    await initializeTables();
-
-    // Create users table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) NOT NULL UNIQUE,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            role VARCHAR(50) DEFAULT 'user',
-            phone VARCHAR(20),
-            theme_color VARCHAR(20) DEFAULT '#0d6efd',
-            dark_mode BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Create roles table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS roles (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(50) NOT NULL UNIQUE,
-            description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Create permissions table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS permissions (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(50) NOT NULL UNIQUE,
-            description TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Create role_permissions table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS role_permissions (
-            role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
-            permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
-            PRIMARY KEY (role_id, permission_id)
-        )
-    `);
-
-    // Create user_permissions table
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS user_permissions (
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
-            PRIMARY KEY (user_id, permission_id)
-        )
-    `);
-
-    // Insert default permissions if they don't exist
-    await pool.query(`
-        INSERT INTO permissions (name, description) VALUES
-        ('view_admin', 'View admin page'),
-        ('view_services', 'View services page'),
-        ('edit_services', 'Edit services'),
-        ('view_clients', 'View clients page'),
-        ('edit_clients', 'Edit clients'),
-        ('view_products', 'View products page'),
-        ('edit_products', 'Edit products'),
-        ('view_appointments', 'View appointments'),
-        ('edit_appointments', 'Edit appointments')
-        ON CONFLICT (name) DO NOTHING
-    `);
-
-    // Insert default roles if they don't exist
-    await pool.query(`
-        INSERT INTO roles (name, description) VALUES
-        ('admin', 'Full access to all features'),
-        ('staff', 'Access to services, clients, and appointments'),
-        ('user', 'Basic access to view appointments')
-        ON CONFLICT (name) DO NOTHING
-    `);
-
-    // Assign permissions to admin role
-    await pool.query(`
-        INSERT INTO role_permissions (role_id, permission_id)
-        SELECT r.id, p.id
-        FROM roles r
-        CROSS JOIN permissions p
-        WHERE r.name = 'admin'
-        ON CONFLICT (role_id, permission_id) DO NOTHING
-    `);
-
-    // Assign permissions to staff role
-    await pool.query(`
-        INSERT INTO role_permissions (role_id, permission_id)
-        SELECT r.id, p.id
-        FROM roles r
-        CROSS JOIN permissions p
-        WHERE r.name = 'staff'
-        AND p.name IN ('view_services', 'edit_services', 'view_clients', 'edit_clients', 'view_appointments', 'edit_appointments')
-        ON CONFLICT (role_id, permission_id) DO NOTHING
-    `);
-
-    // Assign permissions to user role
-    await pool.query(`
-        INSERT INTO role_permissions (role_id, permission_id)
-        SELECT r.id, p.id
-        FROM roles r
-        CROSS JOIN permissions p
-        WHERE r.name = 'user'
-        AND p.name IN ('view_appointments')
-        ON CONFLICT (role_id, permission_id) DO NOTHING
-    `);
-
-    console.log('Database initialization completed successfully');
-    return true;
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
-}
+ 
 
 // Start server only after database is initialized
-initializeDatabase().then(success => {
+testConnection().then(success => {
   if (success) {
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
@@ -327,32 +91,56 @@ initializeDatabase().then(success => {
 app.get('/api/test', async (req, res) => {
   try {
     await pool.query('SELECT NOW()');
+    console.log('Database test successful');
     res.json({ message: 'Database connection successful' });
   } catch (error) {
+    console.error('Database test failed:', error);
     res.status(500).json({ error: 'Database connection failed' });
   }
 });
 
 app.get('/api/services', async (req, res) => {
+  console.log('Fetching services...');
   try {
     const result = await pool.query('SELECT * FROM services ORDER BY name');
+    console.log('Services fetched:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error fetching services:', error);
     res.status(500).json({ error: 'Failed to fetch services' });
   }
 });
 
-app.post('/api/services', async (req, res) => {
-  const { name, duration, price, status } = req.body;
-  try {
-    const result = await pool.query(
-      'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, duration, price, status || 'active']
-    );
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create service' });
-  }
+// Input validation middleware
+const validateService = [
+    body('name').trim().notEmpty().withMessage('Name is required'),
+    body('duration').isInt({ min: 1 }).withMessage('Duration must be a positive number'),
+    body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('status').optional().isIn(['active', 'inactive']).withMessage('Invalid status')
+];
+
+// Update service route with validation
+app.post('/api/services', validateService, async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    
+    const { name, duration, price, status } = req.body;
+    
+    try {
+        const result = await pool.query(
+            'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, duration, price, status || 'active']
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating service:', error);
+        res.status(500).json({ 
+            error: 'Failed to create service',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
 });
 
 app.put('/api/services/:id', async (req, res) => {
@@ -378,10 +166,13 @@ app.delete('/api/services/:id', async (req, res) => {
 });
 
 app.get('/api/clients', async (req, res) => {
+  console.log('Fetching clients...');
   try {
     const result = await pool.query('SELECT * FROM clients ORDER BY name');
+    console.log('Clients fetched:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error fetching clients:', error);
     res.status(500).json({ error: 'Failed to fetch clients' });
   }
 });
@@ -422,16 +213,19 @@ app.delete('/api/clients/:id', async (req, res) => {
 });
 
 app.get('/api/appointments', async (req, res) => {
+  console.log('Fetching appointments...');
   try {
     const result = await pool.query(`
-      SELECT a.*, s.name as service_name, c.name as client_name 
+      SELECT *
       FROM appointments a 
       LEFT JOIN services s ON a.service_id = s.id 
       LEFT JOIN clients c ON a.client_id = c.id 
       ORDER BY date, time
     `);
+    console.log('Appointments fetched:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error fetching appointments:', error);
     res.status(500).json({ error: 'Failed to fetch appointments' });
   }
 });
@@ -471,10 +265,11 @@ app.delete('/api/appointments/:id', async (req, res) => {
   }
 });
 
-// Update routes to remove authentication
 app.get('/api/products', async (req, res) => {
+    console.log('Fetching products...');
     try {
         const result = await pool.query('SELECT * FROM products ORDER BY name');
+        console.log('Products fetched:', result.rows.length); 
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching products:', error);
@@ -628,6 +423,186 @@ app.get('/api/permissions', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch permissions' });
     }
 });
+ 
+app.get('/api/role_permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM role_permissions');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching role permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch role permissions' });
+    }
+});
+
+// User management routes
+app.get('/api/users', async (req, res) => {
+    console.log('Fetching users...');
+    try {
+        const result = await pool.query(`
+            SELECT u.*, r.name as role_name 
+            FROM users u 
+            LEFT JOIN roles r ON u.role_id = r.id 
+            ORDER BY u.username
+        `);
+        console.log('Users fetched:', result.rows.length);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch users',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+app.post('/api/users', async (req, res) => {
+    const { username, email, password, role_id } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check if username or email already exists
+        const existingUser = await client.query(
+            'SELECT * FROM users WHERE username = $1 OR email = $2',
+            [username, email]
+        );
+
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({ 
+                error: 'User already exists',
+                details: 'Username or email is already in use'
+            });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Insert the new user
+        const result = await client.query(
+            'INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *',
+            [username, email, hashedPassword, role_id]
+        );
+
+        await client.query('COMMIT');
+        console.log('User created:', result.rows[0].username);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating user:', error);
+        res.status(500).json({ 
+            error: 'Failed to create user',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    } finally {
+        client.release();
+    }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+    const { username, email, password, role_id } = req.body;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check if user exists
+        const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if new username or email is already in use by another user
+        const existingUser = await client.query(
+            'SELECT * FROM users WHERE (username = $1 OR email = $2) AND id != $3',
+            [username, email, req.params.id]
+        );
+
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({ 
+                error: 'User already exists',
+                details: 'Username or email is already in use by another user'
+            });
+        }
+
+        let query = 'UPDATE users SET username = $1, email = $2';
+        const values = [username, email];
+        let paramCount = 2;
+
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query += `, password = $${++paramCount}`;
+            values.push(hashedPassword);
+        }
+
+        if (role_id) {
+            query += `, role_id = $${++paramCount}`;
+            values.push(role_id);
+        }
+
+        query += ` WHERE id = $${++paramCount} RETURNING *`;
+        values.push(req.params.id);
+
+        const result = await client.query(query, values);
+
+        await client.query('COMMIT');
+        console.log('User updated:', result.rows[0].username);
+        res.json(result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating user:', error);
+        res.status(500).json({ 
+            error: 'Failed to update user',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    } finally {
+        client.release();
+    }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // First check if the user exists
+        const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Prevent deletion of the last admin user
+        const adminCount = await client.query(
+            'SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = $1',
+            ['admin']
+        );
+
+        if (adminCount.rows[0].count === '1' && userCheck.rows[0].role_id === 
+            (await client.query('SELECT id FROM roles WHERE name = $1', ['admin'])).rows[0].id) {
+            return res.status(400).json({ 
+                error: 'Cannot delete user',
+                details: 'Cannot delete the last admin user'
+            });
+        }
+
+        // Delete the user
+        await client.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+
+        await client.query('COMMIT');
+        console.log('User deleted:', req.params.id);
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting user:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete user',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    } finally {
+        client.release();
+    }
+});
 
 // User permissions endpoints
 app.get('/api/users/:id/permissions', async (req, res) => {
@@ -643,68 +618,10 @@ app.get('/api/users/:id/permissions', async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching user permissions:', error);
-        res.status(500).json({ error: 'Failed to fetch user permissions' });
-    }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-    const { username, email, password, role_id, permissions } = req.body;
-    const client = await pool.connect();
-
-    try {
-        await client.query('BEGIN');
-
-        // Update user
-        let query = 'UPDATE users SET username = $1, email = $2';
-        const values = [username, email];
-        let paramCount = 2;
-
-        if (password) {
-            query += `, password = $${++paramCount}`;
-            values.push(await bcrypt.hash(password, 10));
-        }
-
-        if (role_id) {
-            query += `, role_id = $${++paramCount}`;
-            values.push(role_id);
-        }
-
-        query += ` WHERE id = $${++paramCount} RETURNING *`;
-        values.push(req.params.id);
-
-        const result = await client.query(query, values);
-        const user = result.rows[0];
-
-        // Update user permissions
-        if (permissions) {
-            await client.query('DELETE FROM user_permissions WHERE user_id = $1', [user.id]);
-            if (permissions.length > 0) {
-                const values = permissions.map(permissionId => `(${user.id}, ${permissionId})`).join(',');
-                await client.query(`
-                    INSERT INTO user_permissions (user_id, permission_id)
-                    VALUES ${values}
-                `);
-            }
-        }
-
-        await client.query('COMMIT');
-        res.json(user);
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error updating user:', error);
-        res.status(500).json({ error: 'Failed to update user' });
-    } finally {
-        client.release();
-    }
-});
-
-app.get('/api/role_permissions', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM role_permissions');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching role permissions:', error);
-        res.status(500).json({ error: 'Failed to fetch role permissions' });
+        res.status(500).json({ 
+            error: 'Failed to fetch user permissions',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
@@ -714,6 +631,11 @@ app.get('/api/user_permissions', async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching user permissions:', error);
-        res.status(500).json({ error: 'Failed to fetch user permissions' });
+        res.status(500).json({ 
+            error: 'Failed to fetch user permissions',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
-}); 
+});
+ 
+ 

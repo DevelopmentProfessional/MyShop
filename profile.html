@@ -1,57 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-    <style>
-        .dark-mode {
-            background-color: #212529;
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .card {
-            background-color: #343a40;
-            border-color: #495057;
-        }
-        
-        .dark-mode .card-header {
-            background-color: #495057;
-            border-color: #6c757d;
-        }
-        
-        .dark-mode .table {
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .modal-content {
-            background-color: #343a40;
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .form-control {
-            background-color: #495057;
-            border-color: #6c757d;
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .form-control:focus {
-            background-color: #495057;
-            border-color: #0d6efd;
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .form-select {
-            background-color: #495057;
-            border-color: #6c757d;
-            color: #f8f9fa;
-        }
-        
-        .dark-mode .form-select:focus {
-            background-color: #495057;
-            border-color: #0d6efd;
-            color: #f8f9fa;
-        }
-    </style>
-
+ 
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -89,14 +39,7 @@
                             <div class="mb-3">
                                 <label for="themeColor" class="form-label">Theme Color</label>
                                 <input type="color" class="form-control form-control-color" id="themeColor" value="#0d6efd">
-                            </div>
-                            <button class="btn btn-outline-light me-2" id="darkModeToggle">
-                                <i class="bi bi-moon"></i>
-                            </button>
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="darkMode">
-                                <label class="form-check-label" for="darkMode">Dark Mode</label>
-                            </div>
+                            </div>  
                             <div class="mb-3">
                                 <label for="currentPassword" class="form-label">Current Password</label>
                                 <input type="password" class="form-control" id="currentPassword">
@@ -109,7 +52,10 @@
                                 <label for="confirmPassword" class="form-label">Confirm New Password</label>
                                 <input type="password" class="form-control" id="confirmPassword">
                             </div>
-                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                            <div class="d-flex justify-content-between mt-3">
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
+                                <button type="button" class="btn btn-danger" onclick="deleteProfile()">Delete Profile</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -119,20 +65,19 @@
 
     <!-- Navigation Bar -->
     <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
-        <span class="navbar-text me-2" id="userDisplay">Loading...</span> 
-        <div class="d-flex ms-auto">
+         <div class="d-flex mx-auto">
             <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
             <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
             <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
             <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
             <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
-            <a class="btn btn-outline-light mx-1 disabled" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+            <a class="btn btn-warning mx-1 disabled" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
         </div>
     </nav>
 
     <script src="bootstrap.js"></script>
     <script>
-        const API_URL = 'http://localhost:3000';
+        const API_URL = 'https://myshop-5hec.onrender.com';
 
         async function fetchWithAuth(url, options = {}) {
             try {
@@ -168,14 +113,8 @@
                 document.getElementById('email').value = userData.email;
                 document.getElementById('phone').value = userData.phone || '';
                 document.getElementById('themeColor').value = userData.theme_color || '#0d6efd';
-                document.getElementById('darkMode').checked = userData.dark_mode;
+                 
                 
-                // Update UI based on dark mode
-                if (userData.dark_mode) {
-                    document.body.classList.add('dark-mode');
-                    const icon = document.getElementById('darkModeToggle').querySelector('i');
-                    icon.className = 'bi bi-sun-fill';
-                }
             } catch (error) {
                 console.error('Error loading profile:', error);
                 showToast('Failed to load profile', 'danger');
@@ -189,8 +128,7 @@
                 email: document.getElementById('email').value,
                 phone: document.getElementById('phone').value,
                 theme_color: document.getElementById('themeColor').value,
-                dark_mode: document.getElementById('darkMode').checked
-            };
+             };
 
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
@@ -248,29 +186,24 @@
         }
 
         
-        // Add event listener for dark mode toggle
-        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+      
+ 
+        
+        async function deleteProfile() {
+            if (!confirm('Are you sure you want to delete your profile? This action cannot be undone.')) return;
 
-
-                // Add dark mode functionality
-                async function toggleDarkMode() {
-            const isDarkMode = document.body.classList.toggle('dark-mode');
-            const icon = document.getElementById('darkModeToggle').querySelector('i');
-            icon.className = isDarkMode ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
-            
             try {
-                await fetchWithAuth(`${API_URL}/api/users/preferences`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ dark_mode: isDarkMode })
+                await fetchWithAuth(`${API_URL}/api/users/profile`, {
+                    method: 'DELETE'
                 });
+                
+                sessionStorage.removeItem('user');
+                window.location.href = 'index.html';
             } catch (error) {
-                console.error('Error updating dark mode preference:', error);
+                console.error('Error deleting profile:', error);
+                showToast('Failed to delete profile', 'danger');
             }
         }
-
 
         // Initialize
         loadProfile();
