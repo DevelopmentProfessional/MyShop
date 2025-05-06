@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+//const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const bcrypt = require('bcrypt');
@@ -22,17 +22,16 @@ const limiter = rateLimit({
 
 // Apply rate limiting to all routes
 app.use(limiter);
-
-// Middleware
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://myshop-5hec.onrender.com'] 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  maxAge: 86400
-}));
+// // Middleware
+// app.use(cors({
+//   origin: process.env.NODE_ENV === 'production' 
+//     ? ['https://myshop-5hec.onrender.com'] 
+//     : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'],
+//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   credentials: true,
+//   maxAge: 86400
+// }));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
