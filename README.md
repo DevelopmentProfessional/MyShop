@@ -2,6 +2,8 @@
 
 A comprehensive salon management system built with Node.js, Express, and PostgreSQL.
 
+[![GitHub](https://img.shields.io/badge/GitHub-DevelopmentProfessional/MyShop-blue)](https://github.com/DevelopmentProfessional/MyShop)
+
 ## Features
 
 - Appointment Management
@@ -30,8 +32,8 @@ A comprehensive salon management system built with Node.js, Express, and Postgre
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/shopy.git
-cd shopy
+git clone https://github.com/DevelopmentProfessional/MyShop.git
+cd MyShop
 ```
 
 2. Install dependencies:
@@ -91,6 +93,11 @@ npm start
 - POST /api/employees
 - PUT /api/employees/:id
 - DELETE /api/employees/:id
+
+## Deployment
+
+The application is deployed and can be accessed at:
+- GitHub Repository: [https://github.com/DevelopmentProfessional/MyShop](https://github.com/DevelopmentProfessional/MyShop)
 
 ## Contributing
 
