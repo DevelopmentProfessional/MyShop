@@ -88,6 +88,7 @@ testConnection().then(success => {
 
 // API Routes - No Authentication Required
 app.get('/api/test', async (req, res) => {
+  console.log('GET /api/test - Testing database connection');
   try {
     await pool.query('SELECT NOW()');
     console.log('Database test successful');
@@ -99,10 +100,10 @@ app.get('/api/test', async (req, res) => {
 });
 
 app.get('/api/services', async (req, res) => {
-  console.log('Fetching services...');
+  console.log('GET /api/services - Fetching all services');
   try {
     const result = await pool.query('SELECT * FROM services ORDER BY name');
-    console.log('Services fetched:', result.rows.length);
+    console.log(`Services fetched successfully: ${result.rows.length} services found`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching services:', error);
@@ -120,26 +121,29 @@ const validateService = [
 
 // Update service route with validation
 app.post('/api/services', validateService, async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-    
-    const { name, duration, price, status } = req.body;
-    
-    try {
-        const result = await pool.query(
-            'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, duration, price, status || 'active']
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Error creating service:', error);
-        res.status(500).json({ 
-            error: 'Failed to create service',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
+  console.log('POST /api/services - Creating new service:', req.body);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log('Service validation failed:', errors.array());
+    return res.status(400).json({ errors: errors.array() });
+  }
+  
+  const { name, duration, price, status } = req.body;
+  
+  try {
+    const result = await pool.query(
+      'INSERT INTO services (name, duration, price, status) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, duration, price, status || 'active']
+    );
+    console.log('Service created successfully:', result.rows[0]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating service:', error);
+    res.status(500).json({ 
+      error: 'Failed to create service',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 app.put('/api/services/:id', async (req, res) => {
@@ -165,10 +169,10 @@ app.delete('/api/services/:id', async (req, res) => {
 });
 
 app.get('/api/clients', async (req, res) => {
-  console.log('Fetching clients...');
+  console.log('GET /api/clients - Fetching all clients');
   try {
-    const result = await pool.query('SELECT * FROM clients where id < 10 ORDER BY name');
-    console.log('Clients fetched:', result.rows.length);
+    const result = await pool.query('SELECT * FROM clients ORDER BY name');
+    console.log(`Clients fetched successfully: ${result.rows.length} clients found`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching clients:', error);
@@ -177,14 +181,17 @@ app.get('/api/clients', async (req, res) => {
 });
 
 app.post('/api/clients', async (req, res) => {
+  console.log('POST /api/clients - Creating new client:', req.body);
   const { name, email, phone } = req.body;
   try {
     const result = await pool.query(
       'INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *',
       [name, email, phone]
     );
+    console.log('Client created successfully:', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    console.error('Error creating client:', error);
     res.status(500).json({ error: 'Failed to create client' });
   }
 });
@@ -213,10 +220,10 @@ app.delete('/api/clients/:id', async (req, res) => {
 
 // Employee API Routes
 app.get('/api/employees', async (req, res) => {
-  console.log('Fetching employees...');
+  console.log('GET /api/employees - Fetching all employees');
   try {
-    const result = await pool.query('SELECT * FROM employees where id < 10 ORDER BY name');
-    console.log('Employees fetched:', result.rows.length);
+    const result = await pool.query('SELECT * FROM employees ORDER BY name');
+    console.log(`Employees fetched successfully: ${result.rows.length} employees found`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching employees:', error);
@@ -234,8 +241,10 @@ const validateEmployee = [
 ];
 
 app.post('/api/employees', validateEmployee, async (req, res) => {
+  console.log('POST /api/employees - Creating new employee:', req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Employee validation failed:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -245,6 +254,7 @@ app.post('/api/employees', validateEmployee, async (req, res) => {
       'INSERT INTO employees (name, email, phone, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [name, email, phone, role, status || 'active']
     );
+    console.log('Employee created successfully:', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating employee:', error);
@@ -285,7 +295,7 @@ app.delete('/api/employees/:id', async (req, res) => {
 });
 
 app.get('/api/appointments', async (req, res) => {
-  console.log('Fetching appointments...');
+  console.log('GET /api/appointments - Fetching all appointments');
   try {
     const result = await pool.query(`
       SELECT a.*, s.name as service_name, c.name as client_name, e.name as employee_name
@@ -295,7 +305,7 @@ app.get('/api/appointments', async (req, res) => {
       LEFT JOIN employees e ON a.employee_id = e.id
       ORDER BY date, time
     `);
-    console.log('Appointments fetched:', result.rows.length);
+    console.log(`Appointments fetched successfully: ${result.rows.length} appointments found`);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching appointments:', error);
@@ -304,12 +314,14 @@ app.get('/api/appointments', async (req, res) => {
 });
 
 app.post('/api/appointments', async (req, res) => {
+  console.log('POST /api/appointments - Creating new appointment:', req.body);
   const { date, time, service_id, duration, price, client_id, employee_id } = req.body;
   try {
     const result = await pool.query(
       'INSERT INTO appointments (date, time, service_id, duration, price, client_id, employee_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
       [date, time, service_id, duration, price, client_id, employee_id, 'scheduled']
     );
+    console.log('Appointment created successfully:', result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating appointment:', error);
@@ -341,15 +353,15 @@ app.delete('/api/appointments/:id', async (req, res) => {
 });
 
 app.get('/api/products', async (req, res) => {
-    console.log('Fetching products...');
-    try {
-        const result = await pool.query('SELECT * FROM products where id < 10 ORDER BY name');
-        console.log('Products fetched:', result.rows.length); 
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+  console.log('GET /api/products - Fetching all products');
+  try {
+    const result = await pool.query('SELECT * FROM products ORDER BY name');
+    console.log(`Products fetched successfully: ${result.rows.length} products found`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.get('/products/:id', async (req, res) => {
@@ -371,26 +383,26 @@ app.get('/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { name, description, price, stock } = req.body;
-    const client = await pool.connect();
+  console.log('POST /api/products - Creating new product:', req.body);
+  const { name, description, price, stock } = req.body;
+  const client = await pool.connect();
 
-    try {
-        await client.query('BEGIN');
-
-        const result = await client.query(
-            'INSERT INTO products (name, description, price, stock) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, description, price, stock]
-        );
-
-        await client.query('COMMIT');
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Failed to create product' });
-    } finally {
-        client.release();
-    }
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      'INSERT INTO products (name, description, price, stock) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, description, price, stock]
+    );
+    await client.query('COMMIT');
+    console.log('Product created successfully:', result.rows[0]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Failed to create product' });
+  } finally {
+    client.release();
+  }
 });
 
 app.put('/api/products/:id', async (req, res) => {
