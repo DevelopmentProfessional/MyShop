@@ -32,7 +32,7 @@ temp/
 *.sqlite
 *.db
 
-# Coverage directory used by tools like istanbul
+# Coverage directory
 coverage/
 
 # Optional npm cache directory

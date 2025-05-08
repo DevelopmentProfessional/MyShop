@@ -167,7 +167,7 @@ app.delete('/api/services/:id', async (req, res) => {
 app.get('/api/clients', async (req, res) => {
   console.log('Fetching clients...');
   try {
-    const result = await pool.query('SELECT * FROM clients ORDER BY name');
+    const result = await pool.query('SELECT * FROM clients where id < 10 ORDER BY name');
     console.log('Clients fetched:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
@@ -215,7 +215,7 @@ app.delete('/api/clients/:id', async (req, res) => {
 app.get('/api/employees', async (req, res) => {
   console.log('Fetching employees...');
   try {
-    const result = await pool.query('SELECT * FROM employees ORDER BY name');
+    const result = await pool.query('SELECT * FROM employees where id < 10 ORDER BY name');
     console.log('Employees fetched:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
@@ -288,10 +288,11 @@ app.get('/api/appointments', async (req, res) => {
   console.log('Fetching appointments...');
   try {
     const result = await pool.query(`
-      SELECT *
+      SELECT a.*, s.name as service_name, c.name as client_name, e.name as employee_name
       FROM appointments a 
       LEFT JOIN services s ON a.service_id = s.id 
       LEFT JOIN clients c ON a.client_id = c.id 
+      LEFT JOIN employees e ON a.employee_id = e.id
       ORDER BY date, time
     `);
     console.log('Appointments fetched:', result.rows.length);
@@ -303,27 +304,29 @@ app.get('/api/appointments', async (req, res) => {
 });
 
 app.post('/api/appointments', async (req, res) => {
-  const { date, time, service_id, duration, price, client_id } = req.body;
+  const { date, time, service_id, duration, price, client_id, employee_id } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO appointments (date, time, service_id, duration, price, client_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [date, time, service_id, duration, price, client_id, 'scheduled']
+      'INSERT INTO appointments (date, time, service_id, duration, price, client_id, employee_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [date, time, service_id, duration, price, client_id, employee_id, 'scheduled']
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
+    console.error('Error creating appointment:', error);
     res.status(500).json({ error: 'Failed to create appointment' });
   }
 });
 
 app.put('/api/appointments/:id', async (req, res) => {
-  const { date, time, service_id, duration, price, client_id, status } = req.body;
+  const { date, time, service_id, duration, price, client_id, employee_id, status } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE appointments SET date = $1, time = $2, service_id = $3, duration = $4, price = $5, client_id = $6, status = $7 WHERE id = $8 RETURNING *',
-      [date, time, service_id, duration, price, client_id, status, req.params.id]
+      'UPDATE appointments SET date = $1, time = $2, service_id = $3, duration = $4, price = $5, client_id = $6, employee_id = $7, status = $8 WHERE id = $9 RETURNING *',
+      [date, time, service_id, duration, price, client_id, employee_id, status, req.params.id]
     );
     res.json(result.rows[0]);
   } catch (error) {
+    console.error('Error updating appointment:', error);
     res.status(500).json({ error: 'Failed to update appointment' });
   }
 });
@@ -340,7 +343,7 @@ app.delete('/api/appointments/:id', async (req, res) => {
 app.get('/api/products', async (req, res) => {
     console.log('Fetching products...');
     try {
-        const result = await pool.query('SELECT * FROM products ORDER BY name');
+        const result = await pool.query('SELECT * FROM products where id < 10 ORDER BY name');
         console.log('Products fetched:', result.rows.length); 
         res.json(result.rows);
     } catch (error) {
