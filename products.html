@@ -3,43 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Products - Shopy</title>
+    <title>Products</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body class="bg-light">
-    <!-- Navigation Bar -->
-    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
-         <div class="d-flex mx-auto">
-            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
-            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
-            <a class="btn btn-warning mx-1 disabled" href="products.html" title="Products"><i class="bi bi-box"></i></a>
-            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
-            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
-            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
-        </div>
-    </nav>
 
-    <div class="container mt-4 mb-5">
+<body class="bg-light p-0 d-flex flex-column">
+    <div class="p-1 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Manage Products</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProductModal">
+                <i class="bi bi-plus-circle"></i> Add New Product
+            </button>
+        </div>
+
         <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Products</h4>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                    <i class="bi bi-plus-circle"></i> Add Product
-                </button>
-            </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead class="table-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Price</th>
-                                <th>Quantity</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                                <th>Actions</th>
+                                <th class="py-0 px-1">Delete</th>
+                                <th class="py-0 px-1">Name</th>
+                                <th class="py-0 px-1">Description</th>
+                                <th class="py-0 px-1">Price</th>
+                                <th class="py-0 px-1">Quantity</th>
+                                <th class="py-0 px-1">Category</th>
+                                <th class="py-0 px-1">Status</th>
+                                <th class="py-0 px-1">Edit</th>
                             </tr>
                         </thead>
                         <tbody id="productsTableBody"></tbody>
@@ -49,48 +40,61 @@
         </div>
     </div>
 
-    <!-- Add Product Modal -->
-    <div class="modal fade" id="addProductModal" tabindex="-1">
-        <div class="modal-dialog">
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="toastContainer"></div>
+    </div>
+
+    <!-- New Product Modal -->
+    <div class="modal fade" id="newProductModal" tabindex="-1">
+        <div class="modal-dialog fixed-bottom">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header p-1">
                     <h5 class="modal-title">Add New Product</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="addProductForm">
-                        <div class="mb-3">
-                            <label for="productName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="productName" required>
+                <div class="modal-body py-1 px-0">
+                    <form id="newProductForm">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control w-100" id="productName" placeholder="Product Name" required>
+                            <label for="productName">Product Name</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="productDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control w-100" id="productDescription" placeholder="Description" style="height: 100px"></textarea>
+                            <label for="productDescription">Description</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="productPrice" class="form-label">Price</label>
-                            <input type="number" class="form-control" id="productPrice" step="0.01" required>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control w-100" id="productPrice" placeholder="Price" required min="0" step="0.01">
+                            <label for="productPrice">Price ($)</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="productQuantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="productQuantity" required>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control w-100" id="productQuantity" placeholder="Quantity" required min="0">
+                            <label for="productQuantity">Quantity</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="productCategory" class="form-label">Category</label>
-                            <input type="text" class="form-control" id="productCategory">
+                        <div class="form-floating mb-3">
+                            <select class="form-select w-100" id="productCategory" required>
+                                <option value="">Select a category</option>
+                                <option value="Styling Tools">Styling Tools</option>
+                                <option value="Hair Care">Hair Care</option>
+                                <option value="Hair Color">Hair Color</option>
+                                <option value="Accessories">Accessories</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Styling Products">Styling Products</option>
+                                <option value="Hair Extensions">Hair Extensions</option>
+                            </select>
+                            <label for="productCategory">Category</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="productStatus" class="form-label">Status</label>
-                            <select class="form-select" id="productStatus" required>
+                        <div class="form-floating mb-3">
+                            <select class="form-select w-100" id="productStatus" required>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                            <label for="productStatus">Status</label>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="addProduct()">Add Product</button>
+                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveProduct">Save</button>
                 </div>
             </div>
         </div>
@@ -98,62 +102,72 @@
 
     <!-- Edit Product Modal -->
     <div class="modal fade" id="editProductModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog fixed-bottom">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header p-1">
                     <h5 class="modal-title">Edit Product</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body py-1 px-0">
                     <form id="editProductForm">
                         <input type="hidden" id="editProductId">
-                        <div class="mb-3">
-                            <label for="editProductName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="editProductName" required>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control w-100" id="editProductName" placeholder="Product Name" required>
+                            <label for="editProductName">Product Name</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="editProductDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="editProductDescription" rows="3"></textarea>
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control w-100" id="editProductDescription" placeholder="Description" style="height: 100px"></textarea>
+                            <label for="editProductDescription">Description</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="editProductPrice" class="form-label">Price</label>
-                            <input type="number" class="form-control" id="editProductPrice" step="0.01" required>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control w-100" id="editProductPrice" placeholder="Price" required min="0" step="0.01">
+                            <label for="editProductPrice">Price ($)</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="editProductQuantity" class="form-label">Quantity</label>
-                            <input type="number" class="form-control" id="editProductQuantity" required>
+                        <div class="form-floating mb-3">
+                            <input type="number" class="form-control w-100" id="editProductQuantity" placeholder="Quantity" required min="0">
+                            <label for="editProductQuantity">Quantity</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="editProductCategory" class="form-label">Category</label>
-                            <input type="text" class="form-control" id="editProductCategory">
+                        <div class="form-floating mb-3">
+                            <select class="form-select w-100" id="editProductCategory" required>
+                                <option value="">Select a category</option>
+                                <option value="Styling Tools">Styling Tools</option>
+                                <option value="Hair Care">Hair Care</option>
+                                <option value="Hair Color">Hair Color</option>
+                                <option value="Accessories">Accessories</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Styling Products">Styling Products</option>
+                                <option value="Hair Extensions">Hair Extensions</option>
+                            </select>
+                            <label for="editProductCategory">Category</label>
                         </div>
-                        <div class="mb-3">
-                            <label for="editProductStatus" class="form-label">Status</label>
-                            <select class="form-select" id="editProductStatus" required>
+                        <div class="form-floating mb-3">
+                            <select class="form-select w-100" id="editProductStatus" required>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                            <label for="editProductStatus">Status</label>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateProduct()">Save Changes</button>
+                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="updateProduct">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="position-fixed top-50 start-50 translate-middle" id="loadingSpinner" style="z-index: 1060">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <!-- Navigation Bar -->
+    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="d-flex mx-auto">
+            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
+            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
+            <a class="btn btn-warning mx-1 disabled" href="products.html" title="Products"><i class="bi bi-box"></i></a>
+            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
+            <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
+            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
+            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
         </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="toastContainer"></div>
-    </div>
+    </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -175,80 +189,101 @@
                 
                 return await response.json();
             } catch (error) {
-                console.error('Fetch error:', error);
+                console.error('Error:', error);
                 throw error;
             }
         }
 
-        let products = []; 
+        let products = [];
 
         async function loadData() {
             try {
-                clients = await fetchData(`${API_URL}/api/products`);
+                products = await fetchData(`${API_URL}/api/products`);
                 renderProducts();
             } catch (error) {
                 console.error('Error loading data:', error);
-             }
+            }
         }
- 
+
         function renderProducts() {
             const tbody = document.getElementById('productsTableBody');
-             
             tbody.innerHTML = products.map(product => `
                 <tr>
-                    <td>${product.name}</td>
-                    <td>${product.description || ''}</td>
-                    <td>$${product.price.toFixed(2)}</td>
-                    <td>${product.stock}</td>
-                    <td>
-                        ${canManageProducts ? `
-                            <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        ` : ''}
+                    <td class="py-0 px-1">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                    <td class="py-0 px-1">${product.name}</td>
+                    <td class="py-0 px-1">${product.description || ''}</td>
+                    <td class="py-0 px-1">$${Number(product.price).toFixed(2)}</td>
+                    <td class="py-0 px-1">${product.quantity}</td>
+                    <td class="py-0 px-1">${product.category || ''}</td>
+                    <td class="py-0 px-1">
+                        <span class="badge bg-${product.status === 'active' ? 'success' : 'secondary'}">${product.status}</span>
+                    </td>
+                    <td class="py-0 px-1">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        async function addProduct() {
-            const name = document.getElementById('productName').value;
-            const description = document.getElementById('productDescription').value;
-            const price = document.getElementById('productPrice').value;
-            const quantity = document.getElementById('productQuantity').value;
-            const category = document.getElementById('productCategory').value;
-            const status = document.getElementById('productStatus').value;
+        async function saveProduct() {
+            // Set default values
+            let name = "";
+            let description = "";
+            let price = 0;
+            let quantity = 0;
+            let category = "";
+            let status = "";
 
-            if (!name || !price || !quantity) {
+            // Get references to form elements
+            const nameInput = document.getElementById("productName");
+            const descriptionInput = document.getElementById("productDescription");
+            const priceInput = document.getElementById("productPrice");
+            const quantityInput = document.getElementById("productQuantity");
+            const categoryElement = document.getElementById("productCategory");
+            const statusElement = document.getElementById("productStatus");
+
+            // Assign values if elements exist
+            if (nameInput) name = nameInput.value;
+            if (descriptionInput) description = descriptionInput.value;
+            if (priceInput) price = priceInput.value;
+            if (quantityInput) quantity = quantityInput.value;
+            if (categoryElement) category = categoryElement.options[categoryElement.selectedIndex]?.value;
+            if (statusElement) status = statusElement.options[statusElement.selectedIndex]?.value;
+
+            // Prevent API request if required values are missing
+            if (!name || !price || !quantity || !category || !status) {
+                console.error("Error: One or more required fields are empty!");
                 showToast('Please fill in all required fields', 'danger');
                 return;
             }
 
             try {
-                const response = await fetch(`${API_URL}/api/products`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name, description, price, quantity, category, status })
+                const response = await fetchData(`${API_URL}/api/products`, {
+                    method: "POST",
+                    body: JSON.stringify({ name, description, price, quantity, category, status }),
                 });
 
-                if (response.ok) {
-                    const newProduct = await response.json();
-                    products.push(newProduct);
-                    renderProductsTable();
-                    bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
-                    document.getElementById('addProductForm').reset();
-                    showToast('Product added successfully', 'success');
-                } else {
-                    throw new Error('Failed to add product');
-                }
+                products.push(response);
+                renderProducts();
+
+                // Close the modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById("newProductModal"));
+                modal.hide();
+
+                // Show success message
+                showToast('Product created successfully', 'success');
+
+                // Reset the form
+                document.getElementById("newProductForm").reset();
             } catch (error) {
-                console.error('Error adding product:', error);
-                showToast('Failed to add product', 'danger');
+                console.error("Error creating product:", error);
+                showToast('Failed to create product', 'danger');
             }
         }
 
@@ -277,32 +312,22 @@
             const category = document.getElementById('editProductCategory').value;
             const status = document.getElementById('editProductStatus').value;
 
-            if (!name || !price || !quantity) {
-                showToast('Please fill in all required fields', 'danger');
-                return;
-            }
-
             try {
-                const response = await fetch(`${API_URL}/api/products/${id}`, {
+                const response = await fetchData(`${API_URL}/api/products/${id}`, {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({ name, description, price, quantity, category, status })
                 });
 
-                if (response.ok) {
-                    const updatedProduct = await response.json();
-                    const index = products.findIndex(p => p.id === id);
-                    if (index !== -1) {
-                        products[index] = updatedProduct;
-                    }
-                    renderProductsTable();
-                    bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
-                    showToast('Product updated successfully', 'success');
-                } else {
-                    throw new Error('Failed to update product');
+                const index = products.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    products[index] = response;
                 }
+                renderProducts();
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
+                modal.hide();
+
+                showToast('Product updated successfully', 'success');
             } catch (error) {
                 console.error('Error updating product:', error);
                 showToast('Failed to update product', 'danger');
@@ -313,52 +338,49 @@
             if (!confirm('Are you sure you want to delete this product?')) return;
 
             try {
-                const response = await fetch(`${API_URL}/api/products/${id}`, {
+                await fetchData(`${API_URL}/api/products/${id}`, {
                     method: 'DELETE'
                 });
 
-                if (response.ok) {
-                    products = products.filter(p => p.id !== id);
-                    renderProductsTable();
-                    showToast('Product deleted successfully', 'success');
-                } else {
-                    throw new Error('Failed to delete product');
-                }
+                products = products.filter(p => p.id !== id);
+                renderProducts();
+                
+                showToast('Product deleted successfully', 'success');
             } catch (error) {
                 console.error('Error deleting product:', error);
                 showToast('Failed to delete product', 'danger');
             }
         }
 
-        async function logout() {
-            try {
-                await fetchWithAuth(`${API_URL}/api/logout`, {
-                    method: 'POST'
-                });
-                sessionStorage.removeItem('user');
-            } catch (error) {
-                console.error('Logout error:', error);
-                showToast('Failed to logout', 'danger');
-            }
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
         }
 
-        // Add user display functionality
-        function updateUserDisplay() {
-            const user = JSON.parse(localStorage.getItem('user'));
-            const userDisplay = document.getElementById('userDisplay');
-            userDisplay.innerHTML = user ? 
-                `<i class="bi bi-person-circle"></i> ${user.username}` : 
-                `<i class="bi bi-person-circle"></i> No user logged in`;
-        }
-
-        // Check login state
-        function checkLoginState() {
-            const token = localStorage.getItem('token');
-            const user = localStorage.getItem('user');
-            if (!token || !user) {
-                window.location.href = 'index.html';
-            }
-        }
+        // Event Listeners
+        document.getElementById('saveProduct').addEventListener('click', saveProduct);
+        document.getElementById('updateProduct').addEventListener('click', updateProduct);
 
         // Initialize
         loadData();

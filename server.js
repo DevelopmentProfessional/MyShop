@@ -211,6 +211,79 @@ app.delete('/api/clients/:id', async (req, res) => {
   }
 });
 
+// Employee API Routes
+app.get('/api/employees', async (req, res) => {
+  console.log('Fetching employees...');
+  try {
+    const result = await pool.query('SELECT * FROM employees ORDER BY name');
+    console.log('Employees fetched:', result.rows.length);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    res.status(500).json({ error: 'Failed to fetch employees' });
+  }
+});
+
+// Input validation middleware for employees
+const validateEmployee = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('phone').optional().matches(/^\(\d{3}\) \d{3}-\d{4}$/).withMessage('Phone must be in format (555) 555-5555'),
+  body('role').trim().notEmpty().withMessage('Role is required'),
+  body('status').optional().isIn(['active', 'inactive']).withMessage('Invalid status')
+];
+
+app.post('/api/employees', validateEmployee, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { name, email, phone, role, status } = req.body;
+  try {
+    const result = await pool.query(
+      'INSERT INTO employees (name, email, phone, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, email, phone, role, status || 'active']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    res.status(500).json({ 
+      error: 'Failed to create employee',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+app.put('/api/employees/:id', validateEmployee, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { name, email, phone, role, status } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE employees SET name = $1, email = $2, phone = $3, role = $4, status = $5 WHERE id = $6 RETURNING *',
+      [name, email, phone, role, status, req.params.id]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating employee:', error);
+    res.status(500).json({ error: 'Failed to update employee' });
+  }
+});
+
+app.delete('/api/employees/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM employees WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Employee deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(500).json({ error: 'Failed to delete employee' });
+  }
+});
+
 app.get('/api/appointments', async (req, res) => {
   console.log('Fetching appointments...');
   try {
