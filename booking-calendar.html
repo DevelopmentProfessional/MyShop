@@ -8,10 +8,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
 </head>
-<body class="vh-100 overflow-hidden m-0 p-0">   
+<body class="vh-100 overflow-scroll m-0 p-0">   
 
-
-    <div class="card-body p-0" style="overflow-y: auto;">
+    <div class="card-body p-0 sticky-top" style="overflow-y: auto;">
         <div class="table-responsive">
             <table class="table table-bordered mb-0">
                 <thead>
@@ -28,25 +27,35 @@
                 <tbody id="calendarBody"></tbody>
             </table>
         </div>
-    </div>
-
-    <div class="d-flex align-items-center justify-content-end">
+ 
+        
+        <div class="card-header p-1 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center justify-content-end">
            
-        <h5 id="currentMonth" class="mb-0 me-2"></h5>
-        <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
-            <i class="bi bi-chevron-left"></i>
-        </button>
-        <button class="btn btn-outline-primary px-2 py-1 mx-1" id="nextMonth">
-            <i class="bi bi-chevron-right"></i>
-        </button>
-    </div> 
+                <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-primary px-2 py-1 mx-1" id="nextMonth">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
 
-    <div class="card-header p-1 d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0 me-auto">Appointments</h5>
-        <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
-            <i class="bi bi-plus-circle"></i> New Appointment
-        </button>
+    
+            </div>
+
+            <h5 id="currentMonth" class="mb-0 me-2"></h5>
+
+             <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+                <i class="bi bi-plus-circle"></i> New Appointment
+            </button>
+
+          
+        </div>
+
     </div>
+
+
+
+
 
   
 <div class="card-body position-relative overflow-scroll p-0">
