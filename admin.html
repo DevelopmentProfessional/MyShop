@@ -10,7 +10,7 @@
 <body>
 
         <!-- Navigation Bar -->
-        <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="d-flex mx-auto">
                 <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
                 <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
@@ -19,8 +19,11 @@
                 <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
                 <a class="btn btn-warning mx-1 disabled" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
                 <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+                <button class="btn btn-secondary me-2" onclick="loadData()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
             </div>
-     </nav>
+        </nav>
 
     <div class="container-fluid">
         <div class="row">
@@ -440,6 +443,7 @@
         }
 
         // Initialize
+        //loadData();
         loadUsers();
         loadRoles();
         loadPermissions();

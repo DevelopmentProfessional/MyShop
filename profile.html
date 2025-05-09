@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
- 
-    
+<head> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - Shopy</title>
@@ -18,10 +16,9 @@
         </div>
     </div>
 
-    <div class="container mt-4 mb-5">
+    <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card">
+                 <div class="card">
                     <div class="card-body">
                         <form id="profileForm">
                             <div class="mb-3">
@@ -53,18 +50,18 @@
                                 <input type="password" class="form-control" id="confirmPassword">
                             </div>
                             <div class="d-flex justify-content-between mt-3">
-                                <button type="submit" class="btn btn-primary">Update Profile</button>
                                 <button type="button" class="btn btn-danger" onclick="deleteProfile()">Delete Profile</button>
+
+                                <button type="submit" class="btn btn-primary">Update Profile</button>
                             </div>
                         </form>
                     </div>
                 </div>
-            </div>
-        </div>
+         </div>
     </div>
 
     <!-- Navigation Bar -->
-    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
          <div class="d-flex mx-auto">
             <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
             <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
@@ -73,6 +70,9 @@
             <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
             <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
             <a class="btn btn-warning mx-1 disabled" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+            <button class="btn btn-secondary me-2" onclick="loadProfile()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
         </div>
     </nav>
 
@@ -207,7 +207,7 @@
         }
 
         // Initialize
-        loadProfile();
+        //loadProfile();
     </script>
 </body>
 </html> 

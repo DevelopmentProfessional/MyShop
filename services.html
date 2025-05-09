@@ -9,9 +9,7 @@
 </head>
 
 <body class="bg-light p-0 d-flex flex-column">
-
  
-            <div class="p-1 mb-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h2>Manage Services</h2>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newServiceModal">
@@ -39,7 +37,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            
         
             <!-- Toast Container -->
             <div class="toast-container position-fixed top-0 end-0 p-3">
@@ -150,7 +148,7 @@
        
  
         <!-- Navigation Bar -->
-        <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+        <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="d-flex mx-auto">
                 <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
                 <a class="btn btn-warning mx-1 disabled" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
@@ -159,8 +157,11 @@
                 <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
                 <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
                 <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+                <button class="btn btn-secondary me-2" onclick="loadData()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
             </div>
-     </nav>
+        </nav>
    
      
    
@@ -330,7 +331,7 @@
         document.getElementById('saveService').addEventListener('click', saveService);
 
         // Initialize
-        loadData();
+        //loadData();
     </script>
 </body>
 </html>

@@ -29,7 +29,7 @@
         </div>
  
         
-        <div class="card-header p-1 d-flex justify-content-between align-items-center">
+        <div class="card-header p-1 d-flex justify-content-between align-items-center bg-dark">
             <div class="d-flex align-items-center justify-content-end">
            
                 <button class="btn btn-outline-primary px-2 py-1 mx-1" id="prevMonth">
@@ -44,7 +44,7 @@
 
             <h5 id="currentMonth" class="mb-0 me-2"></h5>
 
-             <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal">
+             <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#bookingDetailsModal" onclick="LoadAppointmentFormData()">
                 <i class="bi bi-plus-circle"></i> New Appointment
             </button>
 
@@ -67,7 +67,7 @@
 
     
     <!-- Navigation Bar -->
-    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="d-flex mx-auto">
             <a class="btn btn-warning mx-1 disabled" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
             <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
@@ -76,8 +76,11 @@
             <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
             <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
             <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+            <button class="btn btn-secondary me-2" onclick="loadData()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
         </div>
- </nav>
+    </nav>
 
        
 
@@ -348,24 +351,24 @@
                     <div class="list-group-item">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
+                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
+                                <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
                                 <small class="text-muted">
-                                    <div>${safeString(service.name, 'Unknown Service')}</div>
-                                    <div>${formattedDate} at ${safeString(appointment.time)}</div>
-                                    <div>Duration: ${safeNumber(appointment.duration)} min</div>
-                                    <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
-                                    <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>
-                                    <div>Status: ${safeString(appointment.status)}</div>
+                                    <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
+                                    <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
                                 </small>
+                                <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
+                                    <i class="bi bi-x"></i>
+                                </button>
                             </div>
                             <div class="d-flex flex-column align-items-end">
-                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
-                                <small class="text-muted">
-                                    Created: ${safeDate(appointment.created_at).toLocaleDateString()}
-                                </small>
-                                <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                    <i class="bi bi-trash"></i>
+                                <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
+                                    <i class="bi bi-envelope"></i> Send Email
                                 </button>
+                                <div>${formattedDate} at ${safeString(appointment.time)}</div> 
+                                <small class="text-muted">
+                                    <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -476,28 +479,35 @@
                         const client = clients.find(c => c.id === appointment.client_id) || {};
                         const employee = employees.find(e => e.id === appointment.employee_id) || {};
                         
+                        const appointmentDate = safeDate(appointment.date);
+                        const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                        });
+                        
                         return `
-                            <div class="list-group-item appointment-item" data-appointment-id="${appointment.id}">
+                            <div class="list-group-item">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
-                                            <small class="text-muted">  
-                                            <div>${safeString(service.name, 'Unknown Service')}</div>
-                                            <div>${safeString(appointment.time)}</div>
-                                            <div>Duration: ${safeNumber(appointment.duration)} min</div>
-                                            <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
-                                            <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>
-                                         </small>
+                                        <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
+                                        <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
+                                        <small class="text-muted">
+                                            <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
+                                            <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
+                                        </small>
+                                        <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
+                                            <i class="bi bi-x"></i>
+                                        </button>
                                     </div>
                                     <div class="d-flex flex-column align-items-end">
-                                          <button class="btn btn-outline-primary mt-2 mb-1" onclick="sendEmail(${safeNumber(appointment.id)})">
-                                                <i class="bi bi-envelope"></i> Send Email
-                                            </button>
-                                        <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
-                                        <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                            <i class="bi bi-trash"></i>
-                                        </button> 
-                                           
+                                        <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
+                                            <i class="bi bi-envelope"></i> Send Email
+                                        </button>
+                                        <div>${formattedDate} at ${safeString(appointment.time)}</div> 
+                                        <small class="text-muted">
+                                            <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -623,7 +633,6 @@
             };
             return statusMap[safeString(status)] || 'secondary';
         }
-
  
         function createToastContainer() {
             const container = document.createElement('div');
@@ -803,7 +812,7 @@
         });
 
         // Initialize
-         loadData();
+         //loadData();
  
         // Add styles for calendar days
         const style = document.createElement('style');
@@ -894,13 +903,19 @@
              }
         }
 
-        // Update the initialization
-        document.addEventListener('DOMContentLoaded', () => {
-            // Load initial data
+        function LoadAppointmentFormData() {
             loadServices();
             loadClients();
             loadEmployees();
-            loadAppointments();
+        }
+
+
+        
+        // Update the initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load initial data
+  
+            //loadAppointments();
             
             // Add event listeners
             const confirmBookingBtn = getElement('confirmBooking');
@@ -988,8 +1003,7 @@
                 appointments = safeObject(response, []);
                 
                 // Update the calendar and appointments list
-                renderCalendar();
-                renderAppointments();
+                 renderAppointments();
                 
                 // If there's a selected date, update the appointments list for that date
                 const selectedDate = document.querySelector('.calendar-day.active');
@@ -1014,27 +1028,35 @@
                             const client = clients.find(c => c.id === appointment.client_id) || {};
                             const employee = employees.find(e => e.id === appointment.employee_id) || {};
                             
+                            const appointmentDate = safeDate(appointment.date);
+                            const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                month: 'short', 
+                                day: 'numeric' 
+                            });
+                            
                             return `
-                                <div class="list-group-item appointment-item" data-appointment-id="${appointment.id}">
+                                <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h6 class="mb-1">${safeString(client.name, 'Unknown Client')}</h6>
-                                            <small class="text-muted">  
-                                                <div>${safeString(service.name, 'Unknown Service')}</div>
-                                                <div>${safeString(appointment.time)}</div>
-                                                <div>Duration: ${safeNumber(appointment.duration)} min</div>
-                                                <div>Price: $${safeNumber(appointment.price).toFixed(2)}</div>
-                                                <div>Employee: ${safeString(employee.name, 'Unassigned')}</div>
+                                            <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
+                                            <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
+                                            <small class="text-muted">
+                                                <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
+                                                <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
                                             </small>
+                                            <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
+                                                <i class="bi bi-x"></i>
+                                            </button>
                                         </div>
                                         <div class="d-flex flex-column align-items-end">
-                                            <button class="btn btn-outline-primary mt-2 mb-1" onclick="sendEmail(${safeNumber(appointment.id)})">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
                                                 <i class="bi bi-envelope"></i> Send Email
                                             </button>
-                                            <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span>
-                                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <div>${formattedDate} at ${safeString(appointment.time)}</div> 
+                                            <small class="text-muted">
+                                                <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
@@ -1057,6 +1079,8 @@
                 console.error('Error loading appointments:', error);
              }
         }
+    
+        renderCalendar(); 
     </script>
 
 

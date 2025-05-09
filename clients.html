@@ -8,13 +8,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
-<body class="bg-light p-0 d-flex flex-column">
-    <div class="p-1 mb-5">
+<body class="bg-light p-0 vh-100">
+    <div class="p-0">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Manage Clients</h2>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
-                <i class="bi bi-plus-circle"></i> Add New Client
-            </button>
+            <div>
+                
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newClientModal">
+                    <i class="bi bi-plus-circle"></i> Add New Client
+                </button>
+            </div>
         </div>
 
         <div class="card">
@@ -36,12 +39,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="toastContainer"></div>
-    </div>
-
     <!-- New Client Modal -->
     <div class="modal fade" id="newClientModal" tabindex="-1">
         <div class="modal-dialog fixed-bottom">
@@ -106,7 +103,7 @@
     </div>
 
     <!-- Navigation Bar -->
-    <nav class="fixed-bottom navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="d-flex mx-auto">
             <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
             <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
@@ -115,6 +112,9 @@
             <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
             <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
             <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
+            <button class="btn btn-secondary me-2" onclick="loadData()">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
         </div>
     </nav>
 
@@ -192,11 +192,9 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById('newClientModal'));
                 modal.hide();
                 
-                showToast('Client created successfully', 'success');
-            } catch (error) {
+             } catch (error) {
                 console.error('Error creating client:', error);
-                showToast('Failed to create client', 'danger');
-            }
+             }
         }
 
         async function editClient(id) {
@@ -233,11 +231,9 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editClientModal'));
                 modal.hide();
 
-                showToast('Client updated successfully', 'success');
-            } catch (error) {
+             } catch (error) {
                 console.error('Error updating client:', error);
-                showToast('Failed to update client', 'danger');
-            }
+             }
         }
 
         async function deleteClient(id) {
@@ -251,37 +247,9 @@
                 clients = clients.filter(c => c.id !== id);
                 renderClients();
                 
-                showToast('Client deleted successfully', 'success');
-            } catch (error) {
+             } catch (error) {
                 console.error('Error deleting client:', error);
-                showToast('Failed to delete client', 'danger');
-            }
-        }
-
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
+             }
         }
 
         // Event Listeners
@@ -289,7 +257,8 @@
         document.getElementById('updateClient').addEventListener('click', updateClient);
 
         // Initialize
-        loadData();
+        //loadData();
+
     </script>
 </body>
 </html> 
