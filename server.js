@@ -316,6 +316,16 @@ app.get('/api/appointments', async (req, res) => {
 app.post('/api/appointments', async (req, res) => {
   console.log('POST /api/appointments - Creating new appointment:', req.body);
   const { date, time, service_id, duration, price, client_id, employee_id } = req.body;
+  
+  // Validate required fields
+  if (!date || !time || !service_id || !duration || !price || !client_id || !employee_id) {
+    console.error('Missing required fields:', { date, time, service_id, duration, price, client_id, employee_id });
+    return res.status(400).json({ 
+      error: 'Missing required fields',
+      details: 'All fields are required'
+    });
+  }
+
   try {
     const result = await pool.query(
       'INSERT INTO appointments (date, time, service_id, duration, price, client_id, employee_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
@@ -325,7 +335,11 @@ app.post('/api/appointments', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating appointment:', error);
-    res.status(500).json({ error: 'Failed to create appointment' });
+    res.status(500).json({ 
+      error: 'Failed to create appointment',
+      details: error.message,
+      code: error.code
+    });
   }
 });
 

@@ -949,7 +949,8 @@
             const employeeId = document.getElementById('appointmentEmployee').value;
             
             if (!date || !time || !serviceId || !clientId || !employeeId) {
-                 return;
+                alert('Please fill in all required fields');
+                return;
             }
 
             try {
@@ -967,20 +968,21 @@
                         date,
                         time,
                         service_id: parseInt(serviceId),
-                        duration: service.duration,
-                        price: service.price,
+                        duration: parseInt(service.duration),
+                        price: parseFloat(service.price),
                         client_id: parseInt(clientId),
                         employee_id: parseInt(employeeId),
                         status: 'scheduled'
                     })
                 });
 
+                const data = await response.json();
+
                 if (!response.ok) {
-                    throw new Error('Failed to create appointment');
+                    throw new Error(data.details || data.error || 'Failed to create appointment');
                 }
 
-                const appointment = await response.json();
-                appointments.push(appointment);
+                appointments.push(data);
                 
                 // Update UI
                 renderCalendar();
@@ -992,9 +994,10 @@
                 // Reset form
                 document.getElementById('appointmentForm').reset();
                 
-             } catch (error) {
+            } catch (error) {
                 console.error('Error creating appointment:', error);
-             }
+                alert(error.message || 'Failed to create appointment. Please try again.');
+            }
         }
 
         async function loadAppointments() {
