@@ -314,6 +314,23 @@ app.get('/api/appointments', async (req, res) => {
 });
 
 app.post('/api/appointments', async (req, res) => {
+
+
+  console.log(`
+    =============================
+         Appointment Details
+    =============================
+    📅 Date        : ${date}
+    ⏰ Time        : ${time}
+    🔧 Service ID  : ${service_id}
+    ⌛ Duration    : ${duration} minutes
+    💰 Price       : $${price.toFixed(2)}
+    👤 Client ID   : ${client_id}
+    🧑‍💼 Employee ID: ${employee_id}
+    =============================
+    `);
+
+    
   console.log('POST /api/appointments - Creating new appointment:', req.body);
   const { date, time, service_id, duration, price, client_id, employee_id } = req.body;
   
@@ -325,6 +342,11 @@ app.post('/api/appointments', async (req, res) => {
       details: 'All fields are required'
     });
   }
+
+
+
+
+
 
   try {
     const result = await pool.query(

@@ -52,20 +52,11 @@
         </div>
 
     </div>
-
-
-
-
-
-  
+ 
 <div class="card-body position-relative overflow-scroll p-0">
     <div id="appointments" class="list-group"></div>
 </div> 
- 
-             <!-- Calendar Section -->
-
-
-    
+  
     <!-- Navigation Bar -->
     <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="d-flex mx-auto">
@@ -76,14 +67,11 @@
             <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
             <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
             <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
-            <button class="btn btn-secondary me-2" onclick="loadData()">
+            <button class="btn btn-secondary me-2" onclick="debouncedLoadData()">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
     </nav>
-
-       
-
  
     <!-- Booking Details Modal -->
     <div class="modal fade" id="bookingDetailsModal" tabindex="-1">
@@ -210,12 +198,13 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveAppointmentChanges">Save Changes</button>
+                    <button type="button" class="btn btn-primary" id="saveEditAppointment">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = 'https://myshop-5hec.onrender.com';
@@ -231,6 +220,45 @@
         let selectedEmployee = null;
         let selectedDate = "";
         let selectedTime = "";
+                // Add styles for calendar days
+                const style = document.createElement('style');
+        style.textContent = `
+            .calendar-day {
+                cursor: pointer;
+                padding: 10px;
+                text-align: center;
+                position: relative;
+                border: 1px solid #dee2e6;
+                min-height: 50px;
+                min-width: 50px;
+            }
+            .calendar-day:hover {
+                background-color: rgba(0, 123, 255, 0.1);
+            }
+            .calendar-day.active {
+                background-color: rgba(0, 123, 255, 0.2);
+                font-weight: bold;
+            }
+            .calendar-day.today {
+                background-color: rgba(255, 193, 7, 0.2);
+            }
+            .calendar-day.has-appointments {
+                font-weight: bold;
+            }
+            .calendar-day .badge {
+                position: absolute;
+                top: 2px;
+                right: 2px;
+            }
+            .table {
+                background-color: white;
+            }
+            .table th {
+                text-align: center;
+                padding: 10px;
+            }
+        `;
+        document.head.appendChild(style);
 
         // Safe element getter with default value
         function getElement(id, defaultValue = null) {
@@ -331,16 +359,26 @@
             }
         }
 
-        function renderAppointments() {
-            const appointmentsList = getElement('appointments');
+        function renderAppointmentsForDate(date) {
+            const appointmentsList = document.getElementById('appointments');
             if (!appointmentsList) return;
 
-            appointmentsList.innerHTML = appointments.map(appointment => {
+            const dayAppointments = appointments.filter(a => {
+                const appointmentDate = new Date(a.date);
+                appointmentDate.setDate(appointmentDate.getDate()+1);
+                return appointmentDate.getDate() === date.getDate() && 
+                       appointmentDate.getMonth() === date.getMonth() && 
+                       appointmentDate.getFullYear() === date.getFullYear();
+            });
+
+            appointmentsList.innerHTML = dayAppointments.map(appointment => {
                 const service = services.find(s => s.id === appointment.service_id) || {};
                 const client = clients.find(c => c.id === appointment.client_id) || {};
                 const employee = employees.find(e => e.id === appointment.employee_id) || {};
                 
                 const appointmentDate = safeDate(appointment.date);
+                appointmentDate.setDate(appointmentDate.getDate()+1);
+
                 const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
                     weekday: 'short', 
                     month: 'short', 
@@ -354,7 +392,7 @@
                                 <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
                                 <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
                                 <small class="text-muted">
-                                    <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
+                                    <div>Employee: ${safeString(employee.name, 'Unassigned')} (${safeString(employee.role, 'No Role')})</div>  
                                     <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
                                 </small>
                                 <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
@@ -369,6 +407,9 @@
                                 <small class="text-muted">
                                     <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
                                 </small>
+                                <button class="btn btn-sm btn-outline-secondary mt-1" onclick="openEditAppointmentModal(${safeNumber(appointment.id)})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -377,20 +418,26 @@
         }
 
         function renderCalendar() {
-          
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const startingDay = firstDay.getDay();
             const totalDays = lastDay.getDate();
- 
 
             document.getElementById('currentMonth').textContent = 
                 `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
 
             let calendarHTML = '';
             let day = 1;
+            let today = new Date();
+            let selectedDate = null;
+
+            // Check if there's an active day selected
+            const activeDay = document.querySelector('.calendar-day.active');
+            if (activeDay) {
+                selectedDate = activeDay.dataset.date;
+            }
 
             for (let i = 0; i < 6; i++) {
                 calendarHTML += '<tr>';
@@ -403,17 +450,20 @@
                         const date = new Date(year, month, day);
                         const dayAppointments = appointments.filter(a => {
                             const appointmentDate = new Date(a.date);
-                            return appointmentDate.getDate() === day-1 && 
+                            appointmentDate.setDate(appointmentDate.getDate() + 1);
+                            return appointmentDate.getDate() === day && 
                                    appointmentDate.getMonth() === month && 
                                    appointmentDate.getFullYear() === year;
                         });
 
                         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        const isToday = new Date().toDateString() === date.toDateString();
+                        const isToday = today.toDateString() === date.toDateString();
+                        const isSelected = selectedDate === dateString;
                         const dayClass = isToday ? 'today' : '';
+                        const activeClass = isSelected ? 'active' : '';
                         
                         calendarHTML += `
-                            <td class="calendar-day ${dayClass} ${dayAppointments.length ? 'has-appointments' : ''}" 
+                            <td class="calendar-day ${dayClass} ${activeClass} ${dayAppointments.length ? 'has-appointments' : ''}" 
                                 data-date="${dateString}">
                                 ${day}
                                 ${dayAppointments.length ? 
@@ -427,16 +477,23 @@
                 calendarHTML += '</tr>';
             }
 
-             const calendarBody = document.getElementById('calendarBody');
-             
+            const calendarBody = document.getElementById('calendarBody');
             if (calendarBody) {
                 calendarBody.innerHTML = calendarHTML;
-                 addCalendarDayListeners();
+                addCalendarDayListeners();
+
+                // If no day is selected, select today's date
+                if (!selectedDate) {
+                    const todayCell = document.querySelector('.calendar-day.today');
+                    if (todayCell) {
+                        todayCell.click();
+                    }
+                }
             } else {
                 console.error("Calendar body element not found!");
             }
         }
- 
+
         function addCalendarDayListeners() {
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', () => {
@@ -449,82 +506,17 @@
                     const [year, month, dayNum] = date.split('-').map(Number);
                     const selectedDate = new Date(year, month - 1, dayNum);
                     
-                    // Update the date input in the booking form
-                  //  document.getElementById('dateInput').value = String(date);
-
-
-
-                  document.addEventListener("DOMContentLoaded", function () {
-                    const dateInput = document.getElementById('dateInput');
-
-                    if (dateInput) {
-                        dateInput.value = date || "No date selected";
-                    } else {
-                        console.error("Error: #dateInput element not found in the DOM.");
-                    }
-                });
-                    
                     // Filter appointments for the selected date
                     const dayAppointments = appointments.filter(a => {
                         const appointmentDate = new Date(a.date);
-                        return appointmentDate.getDate() === dayNum-1 && 
+                        appointmentDate.setDate(appointmentDate.getDate() + 1);
+                        return appointmentDate.getDate() === dayNum && 
                                appointmentDate.getMonth() === month - 1 && 
                                appointmentDate.getFullYear() === year;
                     });
                     
                     // Update the appointments list
-                    const appointmentsList = document.getElementById('appointments');
-                    appointmentsList.innerHTML = dayAppointments.map(appointment => {
-                        const service = services.find(s => s.id === appointment.service_id) || {};
-                        const client = clients.find(c => c.id === appointment.client_id) || {};
-                        const employee = employees.find(e => e.id === appointment.employee_id) || {};
-                        
-                        const appointmentDate = safeDate(appointment.date);
-                        const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-                            weekday: 'short', 
-                            month: 'short', 
-                            day: 'numeric' 
-                        });
-                        
-                        return `
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
-                                        <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
-                                        <small class="text-muted">
-                                            <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
-                                            <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
-                                        </small>
-                                        <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                    <div class="d-flex flex-column align-items-end">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
-                                            <i class="bi bi-envelope"></i> Send Email
-                                        </button>
-                                        <div>${formattedDate} at ${safeString(appointment.time)}</div> 
-                                        <small class="text-muted">
-                                            <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
- 
-
-                    // Add click listeners to appointment items
-                    document.querySelectorAll('.appointment-item').forEach(item => {
-                        item.addEventListener('click', () => {
-                            const appointmentId = parseInt(item.dataset.appointmentId);
-                            const appointment = appointments.find(a => a.id === appointmentId);
-                            if (appointment) {
-                                openEditAppointmentModal(appointment);
-                            }
-                        });
-                    });
+                    renderAppointmentsForDate(selectedDate);
                 });
             });
         }
@@ -553,7 +545,13 @@
     window.location.href = `mailto:${appointment.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-        function openEditAppointmentModal(appointment) {
+        function openEditAppointmentModal(appointmentId) {
+            const appointment = appointments.find(a => a.id === appointmentId);
+            if (!appointment) {
+                console.error('Appointment not found:', appointmentId);
+                return;
+            }
+
             const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
             
             // Set the appointment ID
@@ -583,13 +581,17 @@
 
             // Set date and time
             document.getElementById('editDateInput').value = appointment.date;
-            document.getElementById('editTimeSlots').value = appointment.time;
+            
+            // Generate time slots first
+            generateEditTimeSlots();
+            
+            // Then set the time after slots are generated
+            setTimeout(() => {
+                document.getElementById('editTimeSlots').value = appointment.time;
+            }, 0);
             
             // Set status
             document.getElementById('editStatus').value = appointment.status;
-
-            // Generate time slots based on selected service
-            generateEditTimeSlots();
 
             modal.show();
         }
@@ -599,21 +601,53 @@
             const serviceSelect = document.getElementById('editServiceSelect');
             const selectedService = services.find(s => s.id === parseInt(serviceSelect.value));
             const currentTime = document.getElementById('editTimeSlots').value;
+            const selectedDate = document.getElementById('editDateInput').value;
             
             if (!selectedService) {
                 timeSlots.innerHTML = '<option value="">Select a service first</option>';
                 return;
             }
 
+            if (!selectedDate) {
+                timeSlots.innerHTML = '<option value="">Select a date first</option>';
+                return;
+            }
+
             const slots = [];
-            const startTime = 9; // 9 AM
-            const endTime = 17; // 5 PM
+            const startTime = 6; // 6 AM
+            const endTime = 23; // 11 PM
             const interval = 15; // 15 minutes
+            const serviceDuration = selectedService.duration || 60;
+
+            // Get existing appointments for the selected date, excluding current appointment
+            const currentAppointmentId = document.getElementById('editAppointmentId').value;
+            const existingAppointments = appointments.filter(a => {
+                const appointmentDate = new Date(a.date);
+                appointmentDate.setDate(appointmentDate.getDate() + 1);
+                return appointmentDate.toDateString() === new Date(selectedDate).toDateString() && 
+                       a.id !== parseInt(currentAppointmentId);
+            });
 
             for (let hour = startTime; hour < endTime; hour++) {
                 for (let minute = 0; minute < 60; minute += interval) {
                     const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                    slots.push(`<option value="${time}" ${time === currentTime ? 'selected' : ''}>${time}</option>`);
+                    const slotEndTime = new Date(`2000-01-01T${time}`);
+                    slotEndTime.setMinutes(slotEndTime.getMinutes() + serviceDuration);
+                    
+                    // Check if this time slot overlaps with any existing appointments
+                    const isAvailable = !existingAppointments.some(appointment => {
+                        const appointmentTime = new Date(`2000-01-01T${appointment.time}`);
+                        const appointmentEndTime = new Date(appointmentTime);
+                        appointmentEndTime.setMinutes(appointmentEndTime.getMinutes() + appointment.duration);
+                        
+                        return (time >= appointment.time && time < appointmentEndTime.toTimeString().slice(0, 5)) ||
+                               (slotEndTime.toTimeString().slice(0, 5) > appointment.time && 
+                                time < appointmentEndTime.toTimeString().slice(0, 5));
+                    });
+
+                    if (isAvailable) {
+                        slots.push(`<option value="${time}" ${time === currentTime ? 'selected' : ''}>${time}</option>`);
+                    }
                 }
             }
 
@@ -653,8 +687,8 @@
             }
 
             const slots = [];
-            const startTime = 9; // 9 AM
-            const endTime = 17; // 5 PM
+            const startTime = 6; // 6 AM
+            const endTime = 23; // 11 PM
             const interval = 15; // 15 minutes
             const serviceDuration = selectedService.duration || 60; // Default to 60 minutes if not specified
 
@@ -666,7 +700,11 @@
             }
 
             // Get existing appointments for the selected date
-            const existingAppointments = appointments.filter(a => a.date === selectedDate);
+            const existingAppointments = appointments.filter(a => {
+                const appointmentDate = new Date(a.date);
+                appointmentDate.setDate(appointmentDate.getDate() + 1);
+                return appointmentDate.toDateString() === new Date(selectedDate).toDateString();
+            });
 
             for (let hour = startTime; hour < endTime; hour++) {
                 for (let minute = 0; minute < 60; minute += interval) {
@@ -738,7 +776,7 @@
                 
                 // Update UI
                 renderCalendar();
-                renderAppointments();
+                renderAppointmentsForDate(new Date(date));
                 generateTimeSlots();
                 
                 // Reset form and close modal
@@ -769,91 +807,12 @@
                 
                 // Update UI
                 renderCalendar();
-                renderAppointments();
-                generateTimeSlots();
                 
-             } catch (error) {
+            } catch (error) {
                 console.error('Error deleting appointment:', error);
-             }
+            }
         }
-
-        // Initialize event listeners safely
-        document.addEventListener('DOMContentLoaded', () => {
-            const serviceSelect = getElement('serviceSelect');
-            if (serviceSelect) {
-                serviceSelect.addEventListener('change', generateTimeSlots);
-            }
-
-            const dateInput = getElement('dateInput');
-            if (dateInput) {
-                dateInput.addEventListener('change', generateTimeSlots);
-            }
-
-            const bookingForm = getElement('bookingForm');
-            if (bookingForm) {
-                bookingForm.addEventListener('submit', handleBookingSubmit);
-            }
-
-            const prevMonth = getElement('prevMonth');
-            if (prevMonth) {
-                prevMonth.addEventListener('click', () => {
-                    currentDate.setMonth(currentDate.getMonth() - 1);
-                    renderCalendar();
-                });
-            }
-
-            const nextMonth = getElement('nextMonth');
-            if (nextMonth) {
-                nextMonth.addEventListener('click', () => {
-                    currentDate.setMonth(currentDate.getMonth() + 1);
-                    renderCalendar();
-                });
-            }
-        });
-
-        // Initialize
-         //loadData();
  
-        // Add styles for calendar days
-        const style = document.createElement('style');
-        style.textContent = `
-            .calendar-day {
-                cursor: pointer;
-                padding: 10px;
-                text-align: center;
-                position: relative;
-                border: 1px solid #dee2e6;
-                min-height: 50px;
-                min-width: 50px;
-            }
-            .calendar-day:hover {
-                background-color: rgba(0, 123, 255, 0.1);
-            }
-            .calendar-day.active {
-                background-color: rgba(0, 123, 255, 0.2);
-                font-weight: bold;
-            }
-            .calendar-day.today {
-                background-color: rgba(255, 193, 7, 0.2);
-            }
-            .calendar-day.has-appointments {
-                font-weight: bold;
-            }
-            .calendar-day .badge {
-                position: absolute;
-                top: 2px;
-                right: 2px;
-            }
-            .table {
-                background-color: white;
-            }
-            .table th {
-                text-align: center;
-                padding: 10px;
-            }
-        `;
-        document.head.appendChild(style);
-
         // Individual loading functions
         async function loadServices() {
             try {
@@ -903,24 +862,35 @@
              }
         }
 
+        async function loadAppointments() {
+            try {
+                const response = await fetchData(`${API_URL}/api/appointments`);
+                appointments = safeObject(response, []);
+                
+                // Update the calendar and show appointments for selected date
+                renderCalendar();
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+            }
+        }
+    
         function LoadAppointmentFormData() {
             loadServices();
             loadClients();
             loadEmployees();
         }
-
-
         
         // Update the initialization
         document.addEventListener('DOMContentLoaded', () => {
-            // Load initial data
-  
-            //loadAppointments();
-            
-            // Add event listeners
+                    // Add event listeners
             const confirmBookingBtn = getElement('confirmBooking');
             if (confirmBookingBtn) {
                 confirmBookingBtn.addEventListener('click', saveAppointment);
+            }
+
+            const saveEditAppointmentBtn = getElement('saveEditAppointment');
+            if (saveEditAppointmentBtn) {
+                saveEditAppointmentBtn.addEventListener('click', saveEditAppointment);
             }
 
             const prevMonth = getElement('prevMonth');
@@ -1000,90 +970,163 @@
             }
         }
 
-        async function loadAppointments() {
-            try {
-                const response = await fetchData(`${API_URL}/api/appointments`);
-                appointments = safeObject(response, []);
-                
-                // Update the calendar and appointments list
-                 renderAppointments();
-                
-                // If there's a selected date, update the appointments list for that date
-                const selectedDate = document.querySelector('.calendar-day.active');
-                if (selectedDate) {
-                    const date = selectedDate.dataset.date;
-                    const [year, month, day] = date.split('-').map(Number);
-                    const selectedDateObj = new Date(year, month - 1, day);
-                    
-                    // Filter appointments for the selected date
-                    const dayAppointments = appointments.filter(a => {
-                        const appointmentDate = new Date(a.date);
-                        return appointmentDate.getDate() === day && 
-                               appointmentDate.getMonth() === month - 1 && 
-                               appointmentDate.getFullYear() === year;
-                    });
-                    
-                    // Update the appointments list
-                    const appointmentsList = getElement('appointments');
-                    if (appointmentsList) {
-                        appointmentsList.innerHTML = dayAppointments.map(appointment => {
-                            const service = services.find(s => s.id === appointment.service_id) || {};
-                            const client = clients.find(c => c.id === appointment.client_id) || {};
-                            const employee = employees.find(e => e.id === appointment.employee_id) || {};
-                            
-                            const appointmentDate = safeDate(appointment.date);
-                            const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                            });
-                            
-                            return `
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
-                                            <h6 class="mb-1">${safeString(service.name, 'Unknown Service')}</h6>
-                                            <small class="text-muted">
-                                                <div>Employee: ${safeString(employee.username, 'Unassigned')}</div>  
-                                                <div>Client: ${safeString(client.name, 'Unknown Client')}</div>
-                                            </small>
-                                            <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                                <i class="bi bi-x"></i>
-                                            </button>
-                                        </div>
-                                        <div class="d-flex flex-column align-items-end">
-                                            <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
-                                                <i class="bi bi-envelope"></i> Send Email
-                                            </button>
-                                            <div>${formattedDate} at ${safeString(appointment.time)}</div> 
-                                            <small class="text-muted">
-                                                <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('');
+        renderCalendar(); 
 
-                        // Add click listeners to appointment items
-                        document.querySelectorAll('.appointment-item').forEach(item => {
-                            item.addEventListener('click', () => {
-                                const appointmentId = parseInt(item.dataset.appointmentId);
-                                const appointment = appointments.find(a => a.id === appointmentId);
-                                if (appointment) {
-                                    openEditAppointmentModal(appointment);
-                                }
-                            });
-                        });
-                    }
+        async function saveEditAppointment() {
+            const appointmentId = document.getElementById('editAppointmentId').value;
+            const serviceId = document.getElementById('editServiceSelect').value;
+            const clientId = document.getElementById('editClientSelect').value;
+            const date = document.getElementById('editDateInput').value;
+            const time = document.getElementById('editTimeSlots').value;
+            const status = document.getElementById('editStatus').value;
+
+            if (!serviceId || !clientId || !date || !time) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            try {
+                const service = services.find(s => s.id === parseInt(serviceId));
+                if (!service) {
+                    throw new Error('Selected service not found');
                 }
+
+                const response = await fetch(`${API_URL}/api/appointments/${appointmentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service_id: parseInt(serviceId),
+                        client_id: parseInt(clientId),
+                        date: date,
+                        time: time,
+                        duration: parseInt(service.duration),
+                        price: parseFloat(service.price),
+                        status: status
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.details || data.error || 'Failed to update appointment');
+                }
+
+                // Update the appointment in the local array
+                const index = appointments.findIndex(a => a.id === parseInt(appointmentId));
+                if (index !== -1) {
+                    appointments[index] = data;
+                }
+
+                // Update UI
+                renderCalendar();
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                
+                // Reset form
+                document.getElementById('editAppointmentForm').reset();
+                
+                // Show success message
+                alert('Appointment updated successfully!');
+                
             } catch (error) {
-                console.error('Error loading appointments:', error);
-             }
+                console.error('Error updating appointment:', error);
+                alert(error.message || 'Failed to update appointment. Please try again.');
+            }
         }
     
-        renderCalendar(); 
+
+        async function debouncedLoadData() {
+            const button = document.querySelector('button[onclick="debouncedLoadData()"]');
+            if (!button) return;
+
+            // Save original inner HTML
+            const originalHTML = button.innerHTML;
+
+            // Disable button and show loading spinner
+            button.disabled = true;
+            button.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                
+            `;
+
+            try {
+                // Run the actual loadData function
+                await loadData();
+            } catch (error) {
+                console.error("Error during loadData:", error);
+            } finally {
+                // Wait at least 5 seconds before re-enabling
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = originalHTML;
+                }, 1000);
+            }
+        }
+
+
+       // Initialize event listeners safely
+       document.addEventListener('DOMContentLoaded', () => {
+            const serviceSelect = getElement('serviceSelect');
+            if (serviceSelect) {
+                serviceSelect.addEventListener('change', generateTimeSlots);
+            }
+
+            const dateInput = getElement('dateInput');
+            if (dateInput) {
+                dateInput.addEventListener('change', generateTimeSlots);
+            }
+
+            const bookingForm = getElement('bookingForm');
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', handleBookingSubmit);
+            }
+
+            const prevMonth = getElement('prevMonth');
+            if (prevMonth) {
+                prevMonth.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() - 1);
+                    renderCalendar();
+                });
+            }
+
+            const nextMonth = getElement('nextMonth');
+            if (nextMonth) {
+                nextMonth.addEventListener('click', () => {
+                    currentDate.setMonth(currentDate.getMonth() + 1);
+                    renderCalendar();
+                });
+            }
+
+            // Add event listeners
+            const confirmBookingBtn = getElement('confirmBooking');
+            if (confirmBookingBtn) {
+                confirmBookingBtn.addEventListener('click', saveAppointment);
+            }
+
+            const saveEditAppointmentBtn = getElement('saveEditAppointment');
+            if (saveEditAppointmentBtn) {
+                saveEditAppointmentBtn.addEventListener('click', saveEditAppointment);
+            }
+
+            // Add event listeners for edit modal
+            const editServiceSelect = getElement('editServiceSelect');
+            if (editServiceSelect) {
+                editServiceSelect.addEventListener('change', generateEditTimeSlots);
+            }
+
+            const editDateInput = getElement('editDateInput');
+            if (editDateInput) {
+                editDateInput.addEventListener('change', generateEditTimeSlots);
+            }
+        });
+  
+    
     </script>
 
 
