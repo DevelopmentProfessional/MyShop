@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Workload View</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar { height: 100vh; background: #343a40; color: #fff; padding-top: 30px; position: fixed; width: 220px; }
+        .sidebar a { color: #fff; display: block; padding: 10px 20px; text-decoration: none; }
+        .sidebar a.active, .sidebar a:hover { background: #495057; border-radius: 4px; }
+        .content { margin-left: 240px; padding: 30px 20px; }
+        .workload-bar { height: 24px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center">Manager</h4>
+        <a href="gantt_charts.html">Gantt Charts</a>
+        <a href="resource_allocation.html">Resource Allocation</a>
+        <a href="milestone_tracking.html">Milestone Tracking</a>
+        <a href="task_prioritization.html">Task Prioritization</a>
+        <a href="team_workload_view.html" class="active">Team Workload View</a>
+        <a href="deadline_alerts.html">Deadline Alerts</a>
+        <a href="exportable_reports.html">Exportable Reports</a>
+    </div>
+    <div class="content">
+        <h2>Team Workload View</h2>
+        <table class="table table-bordered bg-white">
+            <thead class="thead-light">
+                <tr>
+                    <th>Team Member</th>
+                    <th>Assigned Tasks</th>
+                    <th>Workload (%)</th>
+                    <th>Workload Bar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Alice Stylist</td>
+                    <td>Inventory Restock, Floor Cleaning</td>
+                    <td>80%</td>
+                    <td><div class="workload-bar bg-danger" style="width:80%"></div></td>
+                </tr>
+                <tr>
+                    <td>Bob Reception</td>
+                    <td>Client Follow-up</td>
+                    <td>40%</td>
+                    <td><div class="workload-bar bg-warning" style="width:40%"></div></td>
+                </tr>
+                <tr>
+                    <td>Carol Manager</td>
+                    <td>Inventory Restock</td>
+                    <td>60%</td>
+                    <td><div class="workload-bar bg-info" style="width:60%"></div></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="content">
+        <h4>SQL Schema & Sample Data</h4>
+        <pre style="background:#222;color:#eee;padding:15px;border-radius:6px;font-size:13px;">
+-- Employees
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+
+-- Tasks
+CREATE TABLE tasks (
+    task_id INT PRIMARY KEY,
+    title VARCHAR(100),
+    assigned_to INT,
+    workload_percent INT,
+    FOREIGN KEY (assigned_to) REFERENCES employees(employee_id)
+);
+
+-- Sample Data
+INSERT INTO employees VALUES
+(1, 'Alice Stylist'),
+(2, 'Bob Reception'),
+(3, 'Carol Manager');
+
+INSERT INTO tasks VALUES
+(1, 'Inventory Restock', 1, 40),
+(2, 'Floor Cleaning', 1, 40),
+(3, 'Client Follow-up', 2, 40),
+(4, 'Inventory Restock', 3, 60);
+        </pre>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

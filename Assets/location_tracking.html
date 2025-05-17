@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Tracking - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Location Tracking</h1>
+                                <p class="text-muted mb-0">Track and manage asset locations</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Add New Location
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Location Overview -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Location Overview</h2>
+                        <canvas id="locationOverview" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Current Locations -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Current Locations</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Main Office - Floor 3</h3>
+                                        <p class="text-muted mb-0">25 assets assigned</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-success">Active</span>
+                                            <span class="badge bg-info">Last updated: 2h ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Update</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Warehouse - Building B</h3>
+                                        <p class="text-muted mb-0">15 assets assigned</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-success">Active</span>
+                                            <span class="badge bg-info">Last updated: 1h ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Update</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Remote Office - Branch 1</h3>
+                                        <p class="text-muted mb-0">10 assets assigned</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-warning">Needs Update</span>
+                                            <span class="badge bg-info">Last updated: 2d ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Update</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Location Distribution -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Location Distribution</h2>
+                        <canvas id="locationDistribution" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">50</h3>
+                                    <p class="text-muted mb-0">Total Assets</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">3</h3>
+                                    <p class="text-muted mb-0">Locations</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">95%</h3>
+                                    <p class="text-muted mb-0">Tracked</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">2</h3>
+                                    <p class="text-muted mb-0">Needs Update</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Movements -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Movements</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Laptop #1234</h3>
+                                        <p class="text-muted mb-0">Moved to Floor 3</p>
+                                    </div>
+                                    <small class="text-muted">2h ago</small>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Printer #5678</h3>
+                                        <p class="text-muted mb-0">Moved to Warehouse</p>
+                                    </div>
+                                    <small class="text-muted">4h ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Location Overview Chart
+        const overviewCtx = document.getElementById('locationOverview').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Assets Tracked',
+                    data: [35, 40, 45, 48, 50, 50],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Locations',
+                    data: [2, 2, 2, 3, 3, 3],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Location Distribution Chart
+        const distributionCtx = document.getElementById('locationDistribution').getContext('2d');
+        new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Main Office', 'Warehouse', 'Remote Office'],
+                datasets: [{
+                    data: [50, 30, 20],
+                    backgroundColor: [
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 205, 86)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

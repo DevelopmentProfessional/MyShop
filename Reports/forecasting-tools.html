@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forecasting Tools - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html">Reports</a></li>
+                <li class="breadcrumb-item active">Forecasting Tools</li>
+            </ol>
+        </nav>
+
+        <!-- Forecasting Overview -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h4 mb-0">Sales Forecast</h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Next Month</h6>
+                                    <h3 class="mb-0">$145,000</h3>
+                                    <small class="text-success">+16%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Next Quarter</h6>
+                                    <h3 class="mb-0">$425,000</h3>
+                                    <small class="text-success">+12%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Next Year</h6>
+                                    <h3 class="mb-0">$1.8M</h3>
+                                    <small class="text-success">+18%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="height: 300px;">
+                            <!-- Forecast Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Forecast trend chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forecast Settings -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Forecast Settings</h2>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Forecast Period</label>
+                                <select class="form-select">
+                                    <option>Next Month</option>
+                                    <option>Next Quarter</option>
+                                    <option>Next Year</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confidence Level</label>
+                                <select class="form-select">
+                                    <option>95%</option>
+                                    <option>90%</option>
+                                    <option>85%</option>
+                                    <option>80%</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Include Factors</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label">Seasonal Trends</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label">Market Conditions</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label">Historical Data</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Update Forecast</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forecast Analysis -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Forecast Analysis</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Forecast</th>
+                                        <th>Growth</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Electronics</td>
+                                        <td>$45,000</td>
+                                        <td><span class="badge bg-success">+15%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Clothing</td>
+                                        <td>$35,000</td>
+                                        <td><span class="badge bg-success">+12%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Home & Garden</td>
+                                        <td>$28,000</td>
+                                        <td><span class="badge bg-success">+8%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Others</td>
+                                        <td>$37,000</td>
+                                        <td><span class="badge bg-success">+10%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forecast Factors -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Forecast Factors</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Seasonal Impact</h6>
+                                        <small class="text-muted">Holiday season boost</small>
+                                    </div>
+                                    <span class="badge bg-success">+15%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Market Growth</h6>
+                                        <small class="text-muted">Industry expansion</small>
+                                    </div>
+                                    <span class="badge bg-success">+8%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Competition</h6>
+                                        <small class="text-muted">Market share impact</small>
+                                    </div>
+                                    <span class="badge bg-warning">-3%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Economic Factors</h6>
+                                        <small class="text-muted">Economic conditions</small>
+                                    </div>
+                                    <span class="badge bg-info">Neutral</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

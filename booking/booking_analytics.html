@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Analytics - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="booking.html">Calendar</a></li>
+                <li class="breadcrumb-item active">Analytics</li>
+            </ol>
+        </nav>
+
+        <!-- Date Range Selector -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="h4 mb-0">Booking Analytics</h2>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-end">
+                            <select class="form-select w-auto me-2">
+                                <option>Last 7 Days</option>
+                                <option>Last 30 Days</option>
+                                <option>Last 90 Days</option>
+                                <option>Custom Range</option>
+                            </select>
+                            <button class="btn btn-primary">Apply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Total Bookings</h6>
+                        <h3 class="mb-0">1,234</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up"></i> 12% from last period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Completion Rate</h6>
+                        <h3 class="mb-0">92%</h3>
+                        <small class="text-success"><i class="bi bi-arrow-up"></i> 3% from last period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Average Booking Value</h6>
+                        <h3 class="mb-0">$85.50</h3>
+                        <small class="text-danger"><i class="bi bi-arrow-down"></i> 2% from last period</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted mb-2">Cancellation Rate</h6>
+                        <h3 class="mb-0">8%</h3>
+                        <small class="text-success"><i class="bi bi-arrow-down"></i> 1% from last period</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row">
+            <!-- Booking Trends -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Booking Trends</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <!-- Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Booking trends chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Distribution -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Service Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <!-- Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Service distribution chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Performance -->
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Staff Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Staff</th>
+                                        <th>Bookings</th>
+                                        <th>Completion Rate</th>
+                                        <th>Avg. Rating</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Sarah Wilson</td>
+                                        <td>156</td>
+                                        <td>95%</td>
+                                        <td>4.8/5</td>
+                                    </tr>
+                                    <tr>
+                                        <td>David Brown</td>
+                                        <td>142</td>
+                                        <td>92%</td>
+                                        <td>4.6/5</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Lisa Anderson</td>
+                                        <td>128</td>
+                                        <td>90%</td>
+                                        <td>4.7/5</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Peak Hours -->
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="h5 mb-0">Peak Hours</h3>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;">
+                            <!-- Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Peak hours chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

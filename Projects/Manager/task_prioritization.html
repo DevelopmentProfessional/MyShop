@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Prioritization</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar { height: 100vh; background: #343a40; color: #fff; padding-top: 30px; position: fixed; width: 220px; }
+        .sidebar a { color: #fff; display: block; padding: 10px 20px; text-decoration: none; }
+        .sidebar a.active, .sidebar a:hover { background: #495057; border-radius: 4px; }
+        .content { margin-left: 240px; padding: 30px 20px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center">Manager</h4>
+        <a href="gantt_charts.html">Gantt Charts</a>
+        <a href="resource_allocation.html">Resource Allocation</a>
+        <a href="milestone_tracking.html">Milestone Tracking</a>
+        <a href="task_prioritization.html" class="active">Task Prioritization</a>
+        <a href="team_workload_view.html">Team Workload View</a>
+        <a href="deadline_alerts.html">Deadline Alerts</a>
+        <a href="exportable_reports.html">Exportable Reports</a>
+    </div>
+    <div class="content">
+        <h2>Task Prioritization</h2>
+        <table class="table table-bordered bg-white">
+            <thead class="thead-light">
+                <tr>
+                    <th>Task</th>
+                    <th>Project</th>
+                    <th>Assignee</th>
+                    <th>Priority</th>
+                    <th>Deadline</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Inventory Restock</td>
+                    <td>Salon Supplies</td>
+                    <td>Alice Stylist</td>
+                    <td><span class="badge badge-danger">High</span></td>
+                    <td>2023-07-15</td>
+                </tr>
+                <tr>
+                    <td>Client Follow-up</td>
+                    <td>Marketing Campaign</td>
+                    <td>Bob Reception</td>
+                    <td><span class="badge badge-info">Medium</span></td>
+                    <td>2023-07-18</td>
+                </tr>
+                <tr>
+                    <td>Floor Cleaning</td>
+                    <td>Salon Renovation</td>
+                    <td>Alice Stylist</td>
+                    <td><span class="badge badge-success">Low</span></td>
+                    <td>2023-07-20</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="content">
+        <h4>SQL Schema & Sample Data</h4>
+        <pre style="background:#222;color:#eee;padding:15px;border-radius:6px;font-size:13px;">
+-- Projects
+CREATE TABLE projects (
+    project_id INT PRIMARY KEY,
+    name VARCHAR(100),
+    description TEXT
+);
+
+-- Employees
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+
+-- Tasks
+CREATE TABLE tasks (
+    task_id INT PRIMARY KEY,
+    project_id INT,
+    title VARCHAR(100),
+    assigned_to INT,
+    priority VARCHAR(10),
+    deadline DATE,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id),
+    FOREIGN KEY (assigned_to) REFERENCES employees(employee_id)
+);
+
+-- Sample Data
+INSERT INTO projects VALUES
+(1, 'Salon Renovation', 'Renovate the main salon area'),
+(2, 'Salon Supplies', 'Restock and organize supplies'),
+(3, 'Marketing Campaign', 'Promote new services');
+
+INSERT INTO employees VALUES
+(1, 'Alice Stylist'),
+(2, 'Bob Reception');
+
+INSERT INTO tasks VALUES
+(1, 2, 'Inventory Restock', 1, 'High', '2023-07-15'),
+(2, 3, 'Client Follow-up', 2, 'Medium', '2023-07-18'),
+(3, 1, 'Floor Cleaning', 1, 'Low', '2023-07-20');
+        </pre>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

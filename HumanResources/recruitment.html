@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruitment & Onboarding</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar { 
+            height: 100vh; 
+            background: #343a40; 
+            color: #fff; 
+            padding-top: 30px; 
+            position: fixed; 
+            width: 220px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar a { 
+            color: #fff; 
+            display: block; 
+            padding: 10px 20px; 
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .sidebar a.active, .sidebar a:hover { 
+            background: #495057; 
+            border-radius: 4px;
+            transform: translateX(5px);
+        }
+        .content { 
+            margin-left: 240px; 
+            padding: 30px 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center mb-4">HR Dashboard</h4>
+        <a href="humanresources.html"><i class="fas fa-home mr-2"></i>Home</a>
+        <a href="payroll.html"><i class="fas fa-money-bill-wave mr-2"></i>Payroll</a>
+        <a href="recruitment.html" class="active"><i class="fas fa-user-plus mr-2"></i>Recruitment</a>
+        <a href="org_chart.html"><i class="fas fa-sitemap mr-2"></i>Org Chart</a>
+        <a href="attendance.html"><i class="fas fa-clock mr-2"></i>Attendance</a>
+        <a href="leave_management.html"><i class="fas fa-calendar-alt mr-2"></i>Leave</a>
+        <a href="shift_scheduling.html"><i class="fas fa-calendar-week mr-2"></i>Shifts</a>
+        <a href="performance_reviews.html"><i class="fas fa-star mr-2"></i>Performance</a>
+    </div>
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-plus mr-2"></i>Recruitment & Onboarding</h2>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addCandidateModal">
+                <i class="fas fa-plus mr-2"></i>Add Candidate
+            </button>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Applications</h5>
+                        <h3 class="card-text" id="totalApplications">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Positions</h5>
+                        <h3 class="card-text" id="activePositions">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Interviews Scheduled</h5>
+                        <h3 class="card-text" id="interviewsScheduled">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending Offers</h5>
+                        <h3 class="card-text" id="pendingOffers">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="recruitmentTabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="candidates-tab" data-toggle="tab" href="#candidates" role="tab">
+                            <i class="fas fa-users mr-2"></i>Candidates
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="positions-tab" data-toggle="tab" href="#positions" role="tab">
+                            <i class="fas fa-briefcase mr-2"></i>Open Positions
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="interviews-tab" data-toggle="tab" href="#interviews" role="tab">
+                            <i class="fas fa-calendar-check mr-2"></i>Interviews
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-4" id="recruitmentTabContent">
+                    <div class="tab-pane fade show active" id="candidates" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="candidatesTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Position</th>
+                                        <th>Status</th>
+                                        <th>Applied Date</th>
+                                        <th>Experience</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="positions" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="positionsTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Department</th>
+                                        <th>Type</th>
+                                        <th>Posted Date</th>
+                                        <th>Applications</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="interviews" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="interviewsTable">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Candidate</th>
+                                        <th>Position</th>
+                                        <th>Date & Time</th>
+                                        <th>Interviewers</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Candidate Modal -->
+    <div class="modal fade" id="addCandidateModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Candidate</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="candidateForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>First Name</label>
+                                    <input type="text" class="form-control" id="firstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="tel" class="form-control" id="phone" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Position</label>
+                                    <select class="form-control" id="position" required>
+                                        <!-- Will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Experience (Years)</label>
+                                    <input type="number" class="form-control" id="experience" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Resume</label>
+                            <input type="file" class="form-control-file" id="resume" accept=".pdf,.doc,.docx">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea class="form-control" id="notes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveCandidate">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Fetch and display candidates
+        async function loadCandidates() {
+            try {
+                $('.loading-spinner').show();
+                const response = await fetch('/api/candidates');
+                const data = await response.json();
+                
+                const tbody = $('#candidatesTable tbody');
+                tbody.empty();
+                
+                data.forEach(candidate => {
+                    tbody.append(`
+                        <tr>
+                            <td>${candidate.first_name} ${candidate.last_name}</td>
+                            <td>${candidate.position}</td>
+                            <td>
+                                <span class="status-badge bg-${getStatusColor(candidate.status)}">
+                                    ${candidate.status}
+                                </span>
+                            </td>
+                            <td>${new Date(candidate.applied_date).toLocaleDateString()}</td>
+                            <td>${candidate.experience} years</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewCandidate(${candidate.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="scheduleInterview(${candidate.id})">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteCandidate(${candidate.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+                
+                // Update dashboard cards
+                $('#totalApplications').text(data.length);
+                $('#interviewsScheduled').text(data.filter(c => c.status === 'Interview Scheduled').length);
+                $('#pendingOffers').text(data.filter(c => c.status === 'Offer Pending').length);
+                
+            } catch (error) {
+                console.error('Error loading candidates:', error);
+                console.error('Failed to load candidates');
+            } finally {
+                $('.loading-spinner').hide();
+            }
+        }
+
+        // Load open positions
+        async function loadPositions() {
+            try {
+                const response = await fetch('/api/positions');
+                const data = await response.json();
+                
+                const tbody = $('#positionsTable tbody');
+                tbody.empty();
+                
+                data.forEach(position => {
+                    tbody.append(`
+                        <tr>
+                            <td>${position.title}</td>
+                            <td>${position.department}</td>
+                            <td>${position.type}</td>
+                            <td>${new Date(position.posted_date).toLocaleDateString()}</td>
+                            <td>${position.application_count}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewPosition(${position.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="editPosition(${position.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deletePosition(${position.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+                
+                // Update dashboard card
+                $('#activePositions').text(data.length);
+                
+            } catch (error) {
+                console.error('Error loading positions:', error);
+                console.error('Failed to load positions');
+            }
+        }
+
+        // Load interviews
+        async function loadInterviews() {
+            try {
+                const response = await fetch('/api/interviews');
+                const data = await response.json();
+                
+                const tbody = $('#interviewsTable tbody');
+                tbody.empty();
+                
+                data.forEach(interview => {
+                    tbody.append(`
+                        <tr>
+                            <td>${interview.candidate_name}</td>
+                            <td>${interview.position}</td>
+                            <td>${new Date(interview.date_time).toLocaleString()}</td>
+                            <td>${interview.interviewers.join(', ')}</td>
+                            <td>
+                                <span class="status-badge bg-${getStatusColor(interview.status)}">
+                                    ${interview.status}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewInterview(${interview.id})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="updateInterviewStatus(${interview.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+                
+            } catch (error) {
+                console.error('Error loading interviews:', error);
+                console.error('Failed to load interviews');
+            }
+        }
+
+        // Helper function to get status color
+        function getStatusColor(status) {
+            const colors = {
+                'New': 'secondary',
+                'Screening': 'info',
+                'Interview Scheduled': 'primary',
+                'Interviewed': 'warning',
+                'Offer Pending': 'success',
+                'Hired': 'success',
+                'Rejected': 'danger'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        // Save new candidate
+        $('#saveCandidate').click(async () => {
+            const form = $('#candidateForm');
+            if (!form[0].checkValidity()) {
+                form[0].reportValidity();
+                return;
+            }
+            
+            const candidateData = {
+                first_name: $('#firstName').val(),
+                last_name: $('#lastName').val(),
+                email: $('#email').val(),
+                phone: $('#phone').val(),
+                position_id: $('#position').val(),
+                experience: $('#experience').val(),
+                notes: $('#notes').val()
+            };
+            
+            try {
+                const response = await fetch('/api/candidates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(candidateData)
+                });
+                
+                if (response.ok) {
+                    $('#addCandidateModal').modal('hide');
+                    form[0].reset();
+                    loadCandidates();
+                } else {
+                    throw new Error('Failed to save candidate');
+                }
+            } catch (error) {
+                console.error('Error saving candidate:', error);
+                console.error('Failed to save candidate');
+            }
+        });
+
+        // Initialize
+        $(document).ready(() => {
+            loadCandidates();
+            loadPositions();
+            loadInterviews();
+        });
+    </script>
+</body>
+</html> 

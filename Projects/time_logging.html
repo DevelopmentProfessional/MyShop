@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Logging</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar {
+            height: 100vh;
+            background: #343a40;
+            color: #fff;
+            padding-top: 30px;
+            position: fixed;
+            width: 220px;
+        }
+        .sidebar a { color: #fff; display: block; padding: 10px 20px; text-decoration: none; }
+        .sidebar a.active, .sidebar a:hover { background: #495057; border-radius: 4px; }
+        .content { margin-left: 240px; padding: 30px 20px; }
+        .log-form { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px #0001; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center">Projects</h4>
+        <a href="task_assignments.html">Task Assignments</a>
+        <a href="project_timelines.html">Project Timelines</a>
+        <a href="team_collaboration_boards.html">Team Collaboration Boards</a>
+        <a href="task_dependencies.html">Task Dependencies</a>
+        <a href="progress_tracking.html">Progress Tracking</a>
+        <a href="time_logging.html" class="active">Time Logging</a>
+    </div>
+    <div class="content">
+        <h2>Time Logging</h2>
+        <div class="log-form mb-4">
+            <h5>Log Time for a Task</h5>
+            <form class="form-row">
+                <div class="form-group col-md-2">
+                    <label for="date">Date</label>
+                    <input type="date" class="form-control" id="date">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="start">Start Time</label>
+                    <input type="time" class="form-control" id="start">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="end">End Time</label>
+                    <input type="time" class="form-control" id="end">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="task">Task</label>
+                    <select class="form-control" id="task">
+                        <option>Inventory Restock</option>
+                        <option>Client Follow-up</option>
+                        <option>Floor Cleaning</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="project">Project</label>
+                    <select class="form-control" id="project">
+                        <option>Salon Supplies</option>
+                        <option>Marketing Campaign</option>
+                        <option>Salon Renovation</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-12 mt-2">
+                    <label for="notes">Notes (optional)</label>
+                    <input type="text" class="form-control" id="notes">
+                </div>
+                <div class="form-group col-md-12 mt-3">
+                    <button type="submit" class="btn btn-primary">Log Time</button>
+                </div>
+            </form>
+        </div>
+        <h4>Recent Time Logs</h4>
+        <table class="table table-bordered bg-white">
+            <thead class="thead-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Task</th>
+                    <th>Project</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2023-07-10</td>
+                    <td>09:00</td>
+                    <td>11:00</td>
+                    <td>Inventory Restock</td>
+                    <td>Salon Supplies</td>
+                    <td>Ordered new hair color products</td>
+                </tr>
+                <tr>
+                    <td>2023-07-11</td>
+                    <td>13:00</td>
+                    <td>15:00</td>
+                    <td>Floor Cleaning</td>
+                    <td>Salon Renovation</td>
+                    <td>Deep cleaned main area</td>
+                </tr>
+                <tr>
+                    <td>2023-07-12</td>
+                    <td>10:00</td>
+                    <td>11:30</td>
+                    <td>Client Follow-up</td>
+                    <td>Marketing Campaign</td>
+                    <td>Called 10 clients</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="content">
+        <h4>SQL Schema & Sample Data</h4>
+        <pre style="background:#222;color:#eee;padding:15px;border-radius:6px;font-size:13px;">
+-- Projects
+CREATE TABLE projects (
+    project_id INT PRIMARY KEY,
+    name VARCHAR(100),
+    description TEXT
+);
+
+-- Tasks
+CREATE TABLE tasks (
+    task_id INT PRIMARY KEY,
+    title VARCHAR(100),
+    project_id INT,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id)
+);
+
+-- Employees
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    name VARCHAR(100)
+);
+
+-- Time Logs
+CREATE TABLE time_logs (
+    log_id INT PRIMARY KEY,
+    employee_id INT,
+    task_id INT,
+    project_id INT,
+    log_date DATE,
+    start_time TIME,
+    end_time TIME,
+    notes TEXT,
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (task_id) REFERENCES tasks(task_id),
+    FOREIGN KEY (project_id) REFERENCES projects(project_id)
+);
+
+-- Sample Data
+INSERT INTO projects VALUES
+(1, 'Salon Renovation', 'Renovate the main salon area'),
+(2, 'Salon Supplies', 'Restock and organize supplies'),
+(3, 'Marketing Campaign', 'Promote new services');
+
+INSERT INTO tasks VALUES
+(1, 'Inventory Restock', 2),
+(2, 'Client Follow-up', 3),
+(3, 'Floor Cleaning', 1);
+
+INSERT INTO employees VALUES
+(1, 'Alice Stylist'),
+(2, 'Bob Reception'),
+(3, 'Carol Manager');
+
+INSERT INTO time_logs VALUES
+(1, 1, 1, 2, '2023-07-10', '09:00', '11:00', 'Ordered new hair color products'),
+(2, 1, 3, 1, '2023-07-11', '13:00', '15:00', 'Deep cleaned main area'),
+(3, 2, 2, 3, '2023-07-12', '10:00', '11:30', 'Called 10 clients');
+        </pre>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

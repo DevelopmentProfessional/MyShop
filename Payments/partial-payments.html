@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partial Payments - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html">Payments & Invoicing</a></li>
+                <li class="breadcrumb-item active">Partial Payments</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h1 class="h4 mb-0">Partial Payments</h1>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Create Partial Payment</h5>
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Invoice Number</label>
+                                        <input type="text" class="form-control" placeholder="Enter invoice number">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Total Amount</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" placeholder="0.00" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Partial Payment Amount</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" placeholder="0.00" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Payment Method</label>
+                                        <select class="form-select">
+                                            <option>Credit Card</option>
+                                            <option>Bank Transfer</option>
+                                            <option>Cash</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Process Payment</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Recent Partial Payments</h5>
+                                <div class="list-group">
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">Invoice #1234</h6>
+                                                <small class="text-muted">$500.00 / $1,000.00 paid</small>
+                                            </div>
+                                            <span class="badge bg-warning">Partial</span>
+                                        </div>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-0">Invoice #1235</h6>
+                                                <small class="text-muted">$250.00 / $750.00 paid</small>
+                                            </div>
+                                            <span class="badge bg-warning">Partial</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline-primary w-100 mt-3">View All Partial Payments</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

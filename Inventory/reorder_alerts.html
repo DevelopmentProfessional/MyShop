@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reorder Alerts - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Reorder Alerts</h1>
+                                <p class="text-muted mb-0">Monitor and manage inventory reorder points</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Set New Alert
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Alert Overview -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Alert Overview</h2>
+                        <canvas id="alertOverview" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Active Alerts -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Active Alerts</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Super Gadget Pro</h3>
+                                        <p class="text-muted mb-0">Current: 25 units | Reorder Point: 30 units</p>
+                                        <div class="progress mt-2" style="height: 10px;">
+                                            <div class="progress-bar bg-danger" style="width: 25%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-danger">Critical</span>
+                                        <button class="btn btn-sm btn-outline-primary">Order Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Ultra Tool Kit</h3>
+                                        <p class="text-muted mb-0">Current: 5 units | Reorder Point: 10 units</p>
+                                        <div class="progress mt-2" style="height: 10px;">
+                                            <div class="progress-bar bg-warning" style="width: 50%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-warning">Low Stock</span>
+                                        <button class="btn btn-sm btn-outline-primary">Order Now</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Premium Widget X1</h3>
+                                        <p class="text-muted mb-0">Current: 75 units | Reorder Point: 20 units</p>
+                                        <div class="progress mt-2" style="height: 10px;">
+                                            <div class="progress-bar bg-success" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success">In Stock</span>
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Alert Distribution -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Alert Distribution</h2>
+                        <canvas id="alertDistribution" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">12</h3>
+                                    <p class="text-muted mb-0">Critical</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">33</h3>
+                                    <p class="text-muted mb-0">Low Stock</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">45</h3>
+                                    <p class="text-muted mb-0">Total Alerts</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">8</h3>
+                                    <p class="text-muted mb-0">Pending Orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Orders</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Super Gadget Pro</h3>
+                                        <p class="text-muted mb-0">50 units ordered</p>
+                                    </div>
+                                    <span class="badge bg-info">Processing</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Ultra Tool Kit</h3>
+                                        <p class="text-muted mb-0">20 units ordered</p>
+                                    </div>
+                                    <span class="badge bg-success">Delivered</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Alert Overview Chart
+        const overviewCtx = document.getElementById('alertOverview').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Critical Alerts',
+                    data: [8, 10, 12, 15, 14, 12],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }, {
+                    label: 'Low Stock Alerts',
+                    data: [25, 28, 30, 35, 32, 33],
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Alert Distribution Chart
+        const distributionCtx = document.getElementById('alertDistribution').getContext('2d');
+        new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Critical', 'Low Stock', 'In Stock'],
+                datasets: [{
+                    data: [12, 33, 55],
+                    backgroundColor: [
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 205, 86)',
+                        'rgb(75, 192, 192)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

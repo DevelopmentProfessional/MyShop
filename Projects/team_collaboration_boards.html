@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Collaboration Boards - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Team Collaboration Boards</h1>
+                                <p class="text-muted mb-0">Manage team tasks and track progress</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> New Board
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Active Boards -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Active Boards</h2>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h3 class="h5 mb-3">Frontend Development</h3>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="badge bg-primary">12 Tasks</span>
+                                            <span class="badge bg-success">On Track</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Last updated: 2h ago</small>
+                                            <button class="btn btn-sm btn-outline-primary">View Board</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h3 class="h5 mb-3">Backend Services</h3>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="badge bg-primary">8 Tasks</span>
+                                            <span class="badge bg-warning">At Risk</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 45%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Last updated: 1h ago</small>
+                                            <button class="btn btn-sm btn-outline-primary">View Board</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h3 class="h5 mb-3">UI/UX Design</h3>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="badge bg-primary">6 Tasks</span>
+                                            <span class="badge bg-success">On Track</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 90%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Last updated: 30m ago</small>
+                                            <button class="btn btn-sm btn-outline-primary">View Board</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h3 class="h5 mb-3">Testing & QA</h3>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span class="badge bg-primary">10 Tasks</span>
+                                            <span class="badge bg-danger">Delayed</span>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Last updated: 5m ago</small>
+                                            <button class="btn btn-sm btn-outline-primary">View Board</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Activity -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Team Activity</h2>
+                        <canvas id="teamActivityChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Recent Updates -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Updates</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-person-circle fs-4"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h3 class="h6 mb-1">John completed "User Authentication"</h3>
+                                        <p class="text-muted mb-0">Frontend Development</p>
+                                        <small class="text-muted">2 hours ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-person-circle fs-4"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h3 class="h6 mb-1">Jane added comment to "API Integration"</h3>
+                                        <p class="text-muted mb-0">Backend Services</p>
+                                        <small class="text-muted">1 hour ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <i class="bi bi-person-circle fs-4"></i>
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h3 class="h6 mb-1">Mike updated "UI/UX Design"</h3>
+                                        <p class="text-muted mb-0">Design</p>
+                                        <small class="text-muted">30 minutes ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Performance -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Team Performance</h2>
+                        <canvas id="teamPerformanceChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">4</h3>
+                                    <p class="text-muted mb-0">Boards</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">36</h3>
+                                    <p class="text-muted mb-0">Tasks</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">8</h3>
+                                    <p class="text-muted mb-0">Members</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">60%</h3>
+                                    <p class="text-muted mb-0">Overall</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Team Activity Chart
+        const activityCtx = document.getElementById('teamActivityChart').getContext('2d');
+        new Chart(activityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Tasks Completed',
+                    data: [12, 19, 15, 17, 14, 8, 5],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }, {
+                    label: 'Tasks Created',
+                    data: [8, 12, 10, 9, 11, 6, 3],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Team Performance Chart
+        const performanceCtx = document.getElementById('teamPerformanceChart').getContext('2d');
+        new Chart(performanceCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Productivity', 'Collaboration', 'Communication', 'Quality', 'Timeliness'],
+                datasets: [{
+                    label: 'Current Week',
+                    data: [85, 90, 75, 80, 85],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    pointBackgroundColor: 'rgb(75, 192, 192)'
+                }, {
+                    label: 'Last Week',
+                    data: [75, 80, 70, 75, 80],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

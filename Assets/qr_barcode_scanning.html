@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR/Barcode Scanning - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">QR/Barcode Scanning</h1>
+                                <p class="text-muted mb-0">Scan and track assets using QR codes and barcodes</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Generate New Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Scanner Interface -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Scanner Interface</h2>
+                        <div class="text-center p-4 border rounded">
+                            <div class="mb-3">
+                                <i class="bi bi-upc-scan display-1 text-primary"></i>
+                            </div>
+                            <p class="text-muted mb-3">Position the QR code or barcode within the frame</p>
+                            <button class="btn btn-primary">
+                                <i class="bi bi-camera"></i> Start Scanning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Scans -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Scans</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Laptop - Dell XPS 15</h3>
+                                        <p class="text-muted mb-0">QR Code: ASSET-1234</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-success">Scanned</span>
+                                            <span class="badge bg-info">2h ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Print Label</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Monitor - Dell 27"</h3>
+                                        <p class="text-muted mb-0">Barcode: ASSET-5678</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-success">Scanned</span>
+                                            <span class="badge bg-info">4h ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Print Label</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Printer - HP LaserJet</h3>
+                                        <p class="text-muted mb-0">QR Code: ASSET-9012</p>
+                                        <div class="d-flex gap-3 mt-2">
+                                            <span class="badge bg-warning">Failed</span>
+                                            <span class="badge bg-info">1d ago</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Print Label</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Scan Statistics -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Scan Statistics</h2>
+                        <canvas id="scanStatistics" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">150</h3>
+                                    <p class="text-muted mb-0">Total Scans</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">95%</h3>
+                                    <p class="text-muted mb-0">Success Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">45</h3>
+                                    <p class="text-muted mb-0">QR Codes</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">105</h3>
+                                    <p class="text-muted mb-0">Barcodes</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Scans -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Pending Scans</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Tablet - iPad Pro</h3>
+                                        <p class="text-muted mb-0">Needs QR Code</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary">Generate</button>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Server Rack</h3>
+                                        <p class="text-muted mb-0">Needs Barcode</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary">Generate</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Scan Statistics Chart
+        const statisticsCtx = document.getElementById('scanStatistics').getContext('2d');
+        new Chart(statisticsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['QR Codes', 'Barcodes', 'Failed', 'Pending'],
+                datasets: [{
+                    label: 'Scans',
+                    data: [45, 105, 5, 10],
+                    backgroundColor: [
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 99, 132)',
+                        'rgb(255, 205, 86)',
+                        'rgb(54, 162, 235)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

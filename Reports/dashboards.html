@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboards - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html">Reports</a></li>
+                <li class="breadcrumb-item active">Dashboards</li>
+            </ol>
+        </nav>
+
+        <!-- Dashboard Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-graph-up-arrow fs-1 text-primary mb-2"></i>
+                        <h3 class="h5">Sales Dashboard</h3>
+                        <p class="text-muted">Track sales performance</p>
+                        <a href="#" class="btn btn-primary">View Dashboard</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-cash-stack fs-1 text-success mb-2"></i>
+                        <h3 class="h5">Financial Dashboard</h3>
+                        <p class="text-muted">Monitor financial metrics</p>
+                        <a href="#" class="btn btn-primary">View Dashboard</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people fs-1 text-info mb-2"></i>
+                        <h3 class="h5">Customer Dashboard</h3>
+                        <p class="text-muted">Customer insights</p>
+                        <a href="#" class="btn btn-primary">View Dashboard</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="bi bi-box-seam fs-1 text-warning mb-2"></i>
+                        <h3 class="h5">Inventory Dashboard</h3>
+                        <p class="text-muted">Stock management</p>
+                        <a href="#" class="btn btn-primary">View Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0">Main Dashboard</h2>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-light">Daily</button>
+                            <button class="btn btn-sm btn-light">Weekly</button>
+                            <button class="btn btn-sm btn-light">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Total Sales</h6>
+                                    <h3 class="mb-0">$125,000</h3>
+                                    <small class="text-success">+15.5%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Orders</h6>
+                                    <h3 class="mb-0">1,462</h3>
+                                    <small class="text-success">+8.3%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Customers</h6>
+                                    <h3 class="mb-0">892</h3>
+                                    <small class="text-success">+12.1%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Revenue</h6>
+                                    <h3 class="mb-0">$98,500</h3>
+                                    <small class="text-success">+9.8%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="height: 300px;">
+                            <!-- Main Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Main dashboard chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Quick Stats</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Top Product</h6>
+                                        <small class="text-muted">Product A - $25,000</small>
+                                    </div>
+                                    <span class="badge bg-success">+12%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Best Category</h6>
+                                        <small class="text-muted">Electronics - $45,000</small>
+                                    </div>
+                                    <span class="badge bg-success">+8%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Conversion Rate</h6>
+                                        <small class="text-muted">3.2%</small>
+                                    </div>
+                                    <span class="badge bg-success">+0.5%</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Average Order</h6>
+                                        <small class="text-muted">$85.50</small>
+                                    </div>
+                                    <span class="badge bg-success">+6.9%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

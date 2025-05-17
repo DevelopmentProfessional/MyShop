@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Budgeting - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html">Expenses</a></li>
+                <li class="breadcrumb-item active">Monthly Budgeting</li>
+            </ol>
+        </nav>
+
+        <!-- Budget Overview -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h4 mb-0">Monthly Budget Overview</h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Total Budget</h6>
+                                    <h3 class="mb-0">$25,000</h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Spent</h6>
+                                    <h3 class="mb-0">$18,500</h3>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 text-center">
+                                    <h6 class="text-muted mb-2">Remaining</h6>
+                                    <h3 class="mb-0">$6,500</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="height: 300px;">
+                            <!-- Budget vs Actual Chart will be rendered here -->
+                            <div class="d-flex justify-content-center align-items-center h-100">
+                                <p class="text-muted">Budget vs Actual chart will be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Categories -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Budget Categories</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Office Supplies</h6>
+                                        <small class="text-muted">$2,000 / $2,500</small>
+                                    </div>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar bg-success" style="width: 80%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Utilities</h6>
+                                        <small class="text-muted">$1,800 / $2,000</small>
+                                    </div>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar bg-warning" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Marketing</h6>
+                                        <small class="text-muted">$4,500 / $5,000</small>
+                                    </div>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar bg-info" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Travel</h6>
+                                        <small class="text-muted">$3,200 / $3,000</small>
+                                    </div>
+                                    <div class="progress" style="width: 100px;">
+                                        <div class="progress-bar bg-danger" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Planning -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Budget Planning</h2>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <select class="form-select">
+                                    <option>Office Supplies</option>
+                                    <option>Utilities</option>
+                                    <option>Marketing</option>
+                                    <option>Travel</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Budget Amount</label>
+                                <input type="number" class="form-control" placeholder="Enter amount">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Month</label>
+                                <input type="month" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-control" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Budget</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget History -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Budget History</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Category</th>
+                                        <th>Budgeted</th>
+                                        <th>Actual</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Mar 2024</td>
+                                        <td>Office Supplies</td>
+                                        <td>$2,500</td>
+                                        <td>$2,000</td>
+                                        <td><span class="badge bg-success">Under Budget</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mar 2024</td>
+                                        <td>Utilities</td>
+                                        <td>$2,000</td>
+                                        <td>$1,800</td>
+                                        <td><span class="badge bg-success">Under Budget</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mar 2024</td>
+                                        <td>Marketing</td>
+                                        <td>$5,000</td>
+                                        <td>$4,500</td>
+                                        <td><span class="badge bg-success">Under Budget</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mar 2024</td>
+                                        <td>Travel</td>
+                                        <td>$3,000</td>
+                                        <td>$3,200</td>
+                                        <td><span class="badge bg-danger">Over Budget</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

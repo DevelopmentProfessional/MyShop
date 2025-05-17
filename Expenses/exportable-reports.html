@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exportable Reports - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html">Expenses</a></li>
+                <li class="breadcrumb-item active">Exportable Reports</li>
+            </ol>
+        </nav>
+
+        <!-- Report Generator -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h4 mb-0">Generate Report</h1>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select">
+                                    <option>Expense Summary</option>
+                                    <option>Category Analysis</option>
+                                    <option>Vendor Report</option>
+                                    <option>Budget vs Actual</option>
+                                    <option>Tax Report</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <div class="row">
+                                    <div class="col">
+                                        <input type="date" class="form-control" placeholder="Start Date">
+                                    </div>
+                                    <div class="col">
+                                        <input type="date" class="form-control" placeholder="End Date">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Format</label>
+                                <select class="form-select">
+                                    <option>PDF</option>
+                                    <option>Excel</option>
+                                    <option>CSV</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Include</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeCharts">
+                                    <label class="form-check-label" for="includeCharts">Charts & Graphs</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeDetails">
+                                    <label class="form-check-label" for="includeDetails">Detailed Transactions</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeNotes">
+                                    <label class="form-check-label" for="includeNotes">Notes & Comments</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="h4 mb-0">Recent Reports</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Report Name</th>
+                                        <th>Generated</th>
+                                        <th>Format</th>
+                                        <th>Size</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Expense Summary - Mar 2024</td>
+                                        <td>Mar 15, 2024</td>
+                                        <td>PDF</td>
+                                        <td>2.4 MB</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Download</button>
+                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Category Analysis - Q1 2024</td>
+                                        <td>Mar 10, 2024</td>
+                                        <td>Excel</td>
+                                        <td>1.8 MB</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Download</button>
+                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Vendor Report - Feb 2024</td>
+                                        <td>Mar 1, 2024</td>
+                                        <td>CSV</td>
+                                        <td>0.9 MB</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Download</button>
+                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduled Reports -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h2 class="h4 mb-0">Scheduled Reports</h2>
+                        <button class="btn btn-light btn-sm">Schedule New Report</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Report Name</th>
+                                        <th>Frequency</th>
+                                        <th>Recipients</th>
+                                        <th>Format</th>
+                                        <th>Last Sent</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Monthly Expense Summary</td>
+                                        <td>Monthly</td>
+                                        <td>finance@company.com</td>
+                                        <td>PDF</td>
+                                        <td>Mar 1, 2024</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Quarterly Budget Analysis</td>
+                                        <td>Quarterly</td>
+                                        <td>management@company.com</td>
+                                        <td>Excel</td>
+                                        <td>Jan 1, 2024</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Annual Tax Report</td>
+                                        <td>Annually</td>
+                                        <td>tax@company.com</td>
+                                        <td>PDF</td>
+                                        <td>Dec 31, 2023</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

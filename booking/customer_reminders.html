@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Reminders - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
+            <h1 class="display-4 text-primary">Customer Reminders</h1>
+            <p class="lead text-muted">Manage appointment reminders and notifications</p>
+        </header>
+
+        <!-- Reminder Settings -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h2 class="h5 mb-0">Reminder Settings</h2>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Reminder Timing</label>
+                                <select class="form-select">
+                                    <option>24 hours before</option>
+                                    <option>12 hours before</option>
+                                    <option>6 hours before</option>
+                                    <option>2 hours before</option>
+                                    <option>1 hour before</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Reminder Method</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label">Email</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label">SMS</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox">
+                                    <label class="form-check-label">Push Notification</label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reminder Templates -->
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h2 class="h5 mb-0">Reminder Templates</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Email Template</label>
+                            <textarea class="form-control" rows="4">Dear {customer_name},
+
+This is a friendly reminder about your upcoming appointment on {appointment_date} at {appointment_time}.
+
+Location: {business_address}
+Service: {service_name}
+
+Please arrive 10 minutes before your scheduled time.
+
+To reschedule or cancel, please click here: {reschedule_link}
+
+Best regards,
+{business_name}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMS Template</label>
+                            <textarea class="form-control" rows="2">Reminder: Your appointment with {business_name} is scheduled for {appointment_date} at {appointment_time}. Reply Y to confirm or N to cancel.</textarea>
+                        </div>
+                        <button class="btn btn-primary">Save Templates</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Reminders -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0">Upcoming Reminders</h2>
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus-lg"></i> Add Reminder
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Date & Time</th>
+                                <th>Reminder Time</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>John Doe</td>
+                                <td>Haircut</td>
+                                <td>2024-03-20 14:00</td>
+                                <td>2024-03-19 14:00</td>
+                                <td>Email, SMS</td>
+                                <td><span class="badge bg-warning">Pending</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Jane Smith</td>
+                                <td>Massage</td>
+                                <td>2024-03-21 10:00</td>
+                                <td>2024-03-20 10:00</td>
+                                <td>Email</td>
+                                <td><span class="badge bg-success">Sent</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                    <button class="btn btn-sm btn-outline-danger">Cancel</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminder History -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h2 class="h5 mb-0">Reminder History</h2>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Date & Time</th>
+                                <th>Reminder Sent</th>
+                                <th>Method</th>
+                                <th>Response</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Mike Johnson</td>
+                                <td>Facial</td>
+                                <td>2024-03-18 15:00</td>
+                                <td>2024-03-17 15:00</td>
+                                <td>Email, SMS</td>
+                                <td><span class="badge bg-success">Confirmed</span></td>
+                            </tr>
+                            <tr>
+                                <td>Sarah Wilson</td>
+                                <td>Manicure</td>
+                                <td>2024-03-19 11:00</td>
+                                <td>2024-03-18 11:00</td>
+                                <td>Email</td>
+                                <td><span class="badge bg-danger">Cancelled</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

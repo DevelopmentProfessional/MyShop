@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satisfaction Surveys - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .survey-card {
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+        .survey-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .survey-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .survey-body {
+            padding: 20px;
+        }
+        .survey-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .rating-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            background: #198754;
+            color: white;
+        }
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .category-tag {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .survey-metrics {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        .star-rating {
+            color: #ffc107;
+            font-size: 1.2rem;
+        }
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        .sentiment-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .sentiment-positive {
+            background: #198754;
+            color: white;
+        }
+        .sentiment-neutral {
+            background: #ffc107;
+            color: black;
+        }
+        .sentiment-negative {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Satisfaction Surveys</h1>
+                                <p class="text-muted mb-0">Customer feedback and satisfaction tracking</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> New Survey
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="col-12 mb-4">
+                <div class="search-box">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" class="form-control" placeholder="Search surveys...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option>All Categories</option>
+                                <option>Technical Support</option>
+                                <option>Product Quality</option>
+                                <option>Service Delivery</option>
+                                <option>Overall Experience</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option>Sort By</option>
+                                <option>Highest Rating</option>
+                                <option>Most Recent</option>
+                                <option>Most Responses</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Recent Surveys -->
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="survey-card shadow-sm">
+                            <div class="rating-badge">4.8/5</div>
+                            <div class="survey-header">
+                                <span class="category-tag bg-primary text-white">Technical Support</span>
+                                <h3 class="h5 mt-2 mb-1">Software Update Survey</h3>
+                                <div class="survey-metrics">
+                                    <span class="metric"><i class="bi bi-people"></i> 150 responses</span>
+                                    <span class="metric"><i class="bi bi-calendar"></i> 2 days ago</span>
+                                </div>
+                            </div>
+                            <div class="survey-body">
+                                <div class="survey-preview">
+                                    "How satisfied are you with the recent software update? Please rate your experience..."
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Overall Satisfaction</span>
+                                        <span>4.8/5</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 96%"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Export</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="survey-card shadow-sm">
+                            <div class="rating-badge">4.5/5</div>
+                            <div class="survey-header">
+                                <span class="category-tag bg-success text-white">Product Quality</span>
+                                <h3 class="h5 mt-2 mb-1">Product Feedback</h3>
+                                <div class="survey-metrics">
+                                    <span class="metric"><i class="bi bi-people"></i> 200 responses</span>
+                                    <span class="metric"><i class="bi bi-calendar"></i> 5 days ago</span>
+                                </div>
+                            </div>
+                            <div class="survey-body">
+                                <div class="survey-preview">
+                                    "Please share your thoughts on our latest product features and quality..."
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Product Rating</span>
+                                        <span>4.5/5</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Export</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="survey-card shadow-sm">
+                            <div class="rating-badge">4.2/5</div>
+                            <div class="survey-header">
+                                <span class="category-tag bg-info text-white">Service Delivery</span>
+                                <h3 class="h5 mt-2 mb-1">Support Experience</h3>
+                                <div class="survey-metrics">
+                                    <span class="metric"><i class="bi bi-people"></i> 180 responses</span>
+                                    <span class="metric"><i class="bi bi-calendar"></i> 1 week ago</span>
+                                </div>
+                            </div>
+                            <div class="survey-body">
+                                <div class="survey-preview">
+                                    "How would you rate your recent support experience with our team?"
+                                </div>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Service Rating</span>
+                                        <span>4.2/5</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 84%"></div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Export</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Satisfaction Overview -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Satisfaction Overview</h2>
+                        <canvas id="satisfactionOverview" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">530</h3>
+                                    <p class="text-muted mb-0">Total Responses</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">4.5</h3>
+                                    <p class="text-muted mb-0">Avg. Rating</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">85%</h3>
+                                    <p class="text-muted mb-0">Response Rate</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">92%</h3>
+                                    <p class="text-muted mb-0">Satisfaction</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Feedback -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Feedback</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex gap-3">
+                                    <div class="sentiment-indicator sentiment-positive">
+                                        <i class="bi bi-emoji-smile"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="h6 mb-1">Excellent Support Experience</h3>
+                                        <p class="text-muted mb-0">"The support team was very helpful and resolved my issue quickly..."</p>
+                                        <small class="text-muted">2h ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex gap-3">
+                                    <div class="sentiment-indicator sentiment-neutral">
+                                        <i class="bi bi-emoji-neutral"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="h6 mb-1">Good Product, Room for Improvement</h3>
+                                        <p class="text-muted mb-0">"The product works well, but could use some additional features..."</p>
+                                        <small class="text-muted">4h ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Satisfaction Overview Chart
+        const overviewCtx = document.getElementById('satisfactionOverview').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Average Rating',
+                    data: [4.2, 4.3, 4.4, 4.5, 4.6, 4.5],
+                    borderColor: 'rgb(13, 110, 253)',
+                    tension: 0.4
+                }, {
+                    label: 'Response Rate',
+                    data: [75, 78, 80, 82, 85, 85],
+                    borderColor: 'rgb(25, 135, 84)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

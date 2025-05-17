@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Front & Back Cameras</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1rem;
+      background: #f4f4f4;
+      text-align: center;
+    }
+
+    video {
+      width: 90%;
+      max-width: 360px;
+      height: auto;
+      margin: 1rem;
+      border-radius: 12px;
+      border: 2px solid #ccc;
+      background: black;
+    }
+
+    h2 {
+      margin-top: 1rem;
+    }
+
+    select {
+      margin: 1rem auto;
+      display: block;
+      width: min(90%, 300px);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📱 Camera Test</h1>
+
+  <!-- Dropdown for camera selection -->
+  <label for="cameraSelect">Select Camera:</label>
+  <select id="cameraSelect">
+    <option value="">Loading cameras...</option>
+  </select>
+
+  <h2>Front Camera</h2>
+  <video id="frontVideo" autoplay playsinline></video>
+
+  <h2>Back Camera</h2>
+  <video id="backVideo" autoplay playsinline></video>
+
+  <script>
+    // DOM Elements
+    const frontVideo = document.getElementById('frontVideo');
+    const backVideo = document.getElementById('backVideo');
+    const cameraSelect = document.getElementById('cameraSelect');
+
+    let currentStream = null;
+
+    // Get front camera
+    async function startFrontCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" }
+        });
+        if (frontVideo.srcObject !== stream) {
+          frontVideo.srcObject = stream;
+        }
+      } catch (err) {
+        frontVideo.innerText = 'Front camera access denied';
+        console.error("Front camera error:", err);
+      }
+    }
+
+    // Get back camera using facingMode
+    async function startBackCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+        if (backVideo.srcObject !== stream) {
+          backVideo.srcObject = stream;
+        }
+      } catch (err) {
+        backVideo.innerText = 'Back camera access denied';
+        console.error("Back camera error:", err);
+      }
+    }
+
+    // Load available cameras into dropdown
+    async function getAvailableCameras() {
+      try {
+        // Request permission to enumerate devices
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+
+        if (videoDevices.length === 0) {
+          cameraSelect.innerHTML = '<option>No cameras found</option>';
+          return;
+        }
+
+        cameraSelect.innerHTML = '';
+        videoDevices.forEach((device, index) => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.textContent = device.label || `Camera ${index + 1}`;
+          cameraSelect.appendChild(option);
+        });
+
+        // Default to last camera (often the back one)
+        cameraSelect.selectedIndex = videoDevices.length - 1;
+
+        // Start preview with selected camera
+        startSelectedCamera();
+
+      } catch (error) {
+        console.error("Error enumerating cameras:", error);
+        cameraSelect.innerHTML = '<option>Camera access denied</option>';
+      }
+    }
+
+    // Get selected camera and show it
+    async function startSelectedCamera() {
+      const selectedDeviceId = cameraSelect.value;
+
+      stopAllStreams(); // Stop existing streams
+
+      if (!selectedDeviceId) {
+        console.warn("No camera selected");
+        return;
+      }
+
+      try {
+        const constraints = {
+          video: {
+            deviceId: { exact: selectedDeviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        frontVideo.srcObject = stream; // Show selected camera in frontVideo
+        backVideo.srcObject = stream;  // Also update back video if needed
+      } catch (err) {
+        console.error("Failed to start selected camera:", err);
+        frontVideo.innerText = 'Selected camera failed to load';
+      }
+    }
+
+    // Stop all active video streams
+    function stopAllStreams() {
+      [frontVideo, backVideo].forEach(video => {
+        if (video.srcObject) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+      });
+    }
+
+    // Start both front/back previews on load
+    document.addEventListener('DOMContentLoaded', async () => {
+      await getAvailableCameras(); // Load camera list
+      startFrontCamera();          // Show front cam preview
+      startBackCamera();           // Show back cam preview
+    });
+
+    // Handle camera selection change
+    cameraSelect.addEventListener('change', () => {
+      startSelectedCamera();
+    });
+  </script>
+</body>
+</html>

@@ -1,103 +1,81 @@
-# Shopy - Salon Management System
+# Shopy - Business Management Solution
 
-A comprehensive salon management system built with Node.js, Express, and PostgreSQL.
-
-[![GitHub](https://img.shields.io/badge/GitHub-DevelopmentProfessional/MyShop-blue)](https://github.com/DevelopmentProfessional/MyShop)
+Shopy is a comprehensive business management solution that helps businesses manage their operations, bookings, inventory, and more. The application is built using modern web technologies and provides a user-friendly interface for managing various aspects of a business.
 
 ## Features
 
-- Appointment Management
-- Client Management
-- Service Management
-- Product Inventory
-- Employee Management
-- User Authentication & Authorization
-- Role-based Access Control
+- **Booking Management**
+  - Appointment scheduling
+  - Customer reminders
+  - Service catalogue
+  - Booking analytics
 
-## Tech Stack
+- **Business Management**
+  - Point of Sale (POS)
+  - Payments & Invoicing
+  - Expense Tracking
 
-- Backend: Node.js, Express.js
-- Database: PostgreSQL
-- Frontend: HTML, CSS, JavaScript
-- UI Framework: Bootstrap 5
-- Icons: Bootstrap Icons
+- **Human Resources**
+  - Employee management
+  - Payroll
+  - Attendance tracking
+  - Leave management
+  - Performance reviews
 
-## Prerequisites
+- **Project Management**
+  - Task assignments
+  - Project timelines
+  - Progress tracking
+  - Team collaboration
 
-- Node.js (v14 or higher)
-- PostgreSQL (v12 or higher)
-- npm or yarn
+- **Asset Management**
+  - Check-in/out system
+  - Maintenance logs
+  - Location tracking
+  - QR/Barcode scanning
 
-## Installation
+- **Reports & Analytics**
+  - Sales trends
+  - Expense reports
+  - Real-time analytics
+  - Custom dashboards
+
+## Technology Stack
+
+- HTML5
+- CSS3 (Bootstrap 5)
+- JavaScript
+- Bootstrap Icons
+
+## Getting Started
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/DevelopmentProfessional/MyShop.git
-cd MyShop
+git clone https://github.com/yourusername/shopy.git
 ```
 
-2. Install dependencies:
+2. Navigate to the project directory:
 ```bash
-npm install
+cd shopy
 ```
 
-3. Create a `.env` file in the root directory with the following variables:
+3. Open `index.html` in your web browser to view the application.
+
+## Project Structure
+
 ```
-DATABASE_URL=your_database_connection_string
-PORT=3000
-NODE_ENV=development
+shopy/
+├── booking/              # Booking management related pages
+├── POS/                 # Point of Sale system
+├── Payments/            # Payment processing
+├── Expenses/            # Expense management
+├── Projects/            # Project management
+├── IT/                  # IT support system
+├── Assets/              # Asset management
+├── Reports/             # Reports and analytics
+├── My/                  # Employee profile
+└── index.html          # Main navigation page
 ```
-
-4. Initialize the database:
-```bash
-psql -U your_username -d your_database -f schema.sql
-```
-
-5. Start the server:
-```bash
-npm start
-```
-
-## API Endpoints
-
-### Authentication
-- POST /api/auth/login
-- POST /api/auth/logout
-
-### Appointments
-- GET /api/appointments
-- POST /api/appointments
-- PUT /api/appointments/:id
-- DELETE /api/appointments/:id
-
-### Clients
-- GET /api/clients
-- POST /api/clients
-- PUT /api/clients/:id
-- DELETE /api/clients/:id
-
-### Services
-- GET /api/services
-- POST /api/services
-- PUT /api/services/:id
-- DELETE /api/services/:id
-
-### Products
-- GET /api/products
-- POST /api/products
-- PUT /api/products/:id
-- DELETE /api/products/:id
-
-### Employees
-- GET /api/employees
-- POST /api/employees
-- PUT /api/employees/:id
-- DELETE /api/employees/:id
-
-## Deployment
-
-The application is deployed and can be accessed at:
-- GitHub Repository: [https://github.com/DevelopmentProfessional/MyShop](https://github.com/DevelopmentProfessional/MyShop)
 
 ## Contributing
 
@@ -111,6 +89,8 @@ The application is deployed and can be accessed at:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Support
+## Contact
 
-For support, email support@shopy.com or create an issue in the repository. 
+Your Name - your.email@example.com
+
+Project Link: [https://github.com/yourusername/shopy](https://github.com/yourusername/shopy) 

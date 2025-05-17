@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Chat - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chat-card {
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+        .chat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .chat-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .chat-body {
+            padding: 20px;
+        }
+        .chat-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        .status-active {
+            background: #198754;
+            color: white;
+        }
+        .status-waiting {
+            background: #ffc107;
+            color: black;
+        }
+        .status-closed {
+            background: #6c757d;
+            color: white;
+        }
+        .search-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .category-tag {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .chat-metrics {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Support Chat</h1>
+                                <p class="text-muted mb-0">Real-time customer support chat system</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary">
+                                    <i class="bi bi-funnel"></i> Filter
+                                </button>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> New Chat
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="col-12 mb-4">
+                <div class="search-box">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" class="form-control" placeholder="Search chats...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option>All Categories</option>
+                                <option>Technical</option>
+                                <option>Billing</option>
+                                <option>General</option>
+                                <option>Sales</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select">
+                                <option>Sort By</option>
+                                <option>Most Recent</option>
+                                <option>Longest Active</option>
+                                <option>Priority</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Active Chats -->
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="chat-card shadow-sm">
+                            <div class="status-badge status-active">Active</div>
+                            <div class="chat-header">
+                                <span class="category-tag bg-primary text-white">Technical</span>
+                                <h3 class="h5 mt-2 mb-1">Sarah Johnson</h3>
+                                <div class="chat-metrics">
+                                    <span class="metric"><i class="bi bi-clock"></i> 15m</span>
+                                    <span class="metric"><i class="bi bi-chat"></i> 12 messages</span>
+                                    <span class="metric"><i class="bi bi-star"></i> 4.8</span>
+                                </div>
+                            </div>
+                            <div class="chat-body">
+                                <div class="chat-preview">
+                                    "I'm having trouble accessing the new software update. The system keeps showing an error message..."
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">Join</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Transfer</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chat-card shadow-sm">
+                            <div class="status-badge status-waiting">Waiting</div>
+                            <div class="chat-header">
+                                <span class="category-tag bg-success text-white">Billing</span>
+                                <h3 class="h5 mt-2 mb-1">Michael Brown</h3>
+                                <div class="chat-metrics">
+                                    <span class="metric"><i class="bi bi-clock"></i> 5m</span>
+                                    <span class="metric"><i class="bi bi-chat"></i> 3 messages</span>
+                                    <span class="metric"><i class="bi bi-star"></i> 4.5</span>
+                                </div>
+                            </div>
+                            <div class="chat-body">
+                                <div class="chat-preview">
+                                    "I need help understanding my recent invoice. There seems to be an extra charge that I don't recognize..."
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">Join</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Transfer</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chat-card shadow-sm">
+                            <div class="status-badge status-closed">Closed</div>
+                            <div class="chat-header">
+                                <span class="category-tag bg-info text-white">General</span>
+                                <h3 class="h5 mt-2 mb-1">Emily Davis</h3>
+                                <div class="chat-metrics">
+                                    <span class="metric"><i class="bi bi-clock"></i> 2h</span>
+                                    <span class="metric"><i class="bi bi-chat"></i> 8 messages</span>
+                                    <span class="metric"><i class="bi bi-star"></i> 5.0</span>
+                                </div>
+                            </div>
+                            <div class="chat-body">
+                                <div class="chat-preview">
+                                    "Thank you for your help! The issue has been resolved and I'm very satisfied with the service..."
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-sm btn-outline-primary">View</button>
+                                        <button class="btn btn-sm btn-outline-secondary">Export</button>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Chat Overview -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Chat Overview</h2>
+                        <canvas id="chatOverview" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">12</h3>
+                                    <p class="text-muted mb-0">Active Chats</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">4.7</h3>
+                                    <p class="text-muted mb-0">Avg. Rating</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">5m</h3>
+                                    <p class="text-muted mb-0">Avg. Response</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">15m</h3>
+                                    <p class="text-muted mb-0">Avg. Resolution</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Recent Activity</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">New Chat Started</h3>
+                                        <p class="text-muted mb-0">Sarah Johnson - Technical</p>
+                                    </div>
+                                    <small class="text-muted">15m ago</small>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Chat Resolved</h3>
+                                        <p class="text-muted mb-0">Emily Davis - General</p>
+                                    </div>
+                                    <small class="text-muted">2h ago</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Chat Overview Chart
+        const overviewCtx = document.getElementById('chatOverview').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Active Chats',
+                    data: [65, 59, 80, 81, 56, 55],
+                    borderColor: 'rgb(13, 110, 253)',
+                    tension: 0.4
+                }, {
+                    label: 'Resolution Time',
+                    data: [25, 22, 20, 18, 15, 15],
+                    borderColor: 'rgb(25, 135, 84)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html> 

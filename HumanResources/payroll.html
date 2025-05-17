@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll Management</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar { 
+            height: 100vh; 
+            background: #343a40; 
+            color: #fff; 
+            padding-top: 30px; 
+            position: fixed; 
+            width: 220px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar a { 
+            color: #fff; 
+            display: block; 
+            padding: 10px 20px; 
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .sidebar a.active, .sidebar a:hover { 
+            background: #495057; 
+            border-radius: 4px;
+            transform: translateX(5px);
+        }
+        .content { 
+            margin-left: 240px; 
+            padding: 30px 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .table th {
+            background: #f8f9fa;
+            border-top: none;
+        }
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            padding: 0.5em 1em;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center mb-4">HR Dashboard</h4>
+        <a href="humanresources.html"><i class="fas fa-home mr-2"></i>Home</a>
+        <a href="payroll.html" class="active"><i class="fas fa-money-bill-wave mr-2"></i>Payroll</a>
+        <a href="recruitment.html"><i class="fas fa-user-plus mr-2"></i>Recruitment</a>
+        <a href="org_chart.html"><i class="fas fa-sitemap mr-2"></i>Org Chart</a>
+        <a href="attendance.html"><i class="fas fa-clock mr-2"></i>Attendance</a>
+        <a href="leave_management.html"><i class="fas fa-calendar-alt mr-2"></i>Leave</a>
+        <a href="shift_scheduling.html"><i class="fas fa-calendar-week mr-2"></i>Shifts</a>
+        <a href="performance_reviews.html"><i class="fas fa-star mr-2"></i>Performance</a>
+    </div>
+    <div class="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-money-bill-wave mr-2"></i>Payroll Management</h2>
+            <button class="btn btn-primary" data-toggle="modal" data-target="#addPayrollModal">
+                <i class="fas fa-plus mr-2"></i>Add Payroll Record
+            </button>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Payroll</h5>
+                        <h3 class="card-text" id="totalPayroll">$0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Employees Paid</h5>
+                        <h3 class="card-text" id="employeesPaid">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Average Salary</h5>
+                        <h3 class="card-text" id="avgSalary">$0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Pending Payments</h5>
+                        <h3 class="card-text" id="pendingPayments">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="payrollTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Email</th>
+                                <th>Hire Date</th>
+                                <th>Salary</th>
+                                <th>Gross</th>
+                                <th>Deductions</th>
+                                <th>Net</th>
+                                <th>Pay Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Payroll Modal -->
+    <div class="modal fade" id="addPayrollModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Payroll Record</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="payrollForm">
+                        <div class="form-group">
+                            <label>Employee</label>
+                            <select class="form-control" id="employeeSelect" required>
+                                <!-- Will be populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Pay Date</label>
+                            <input type="date" class="form-control" id="payDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Gross Salary</label>
+                            <input type="number" class="form-control" id="grossSalary" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deductions</label>
+                            <input type="number" class="form-control" id="deductions" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="savePayroll">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // Fetch and display payroll data
+        async function loadPayrollData() {
+            try {
+                $('.loading-spinner').show();
+                const response = await fetch('/api/payroll');
+                const data = await response.json();
+                
+                const tbody = $('#payrollTable tbody');
+                tbody.empty();
+                
+                let totalPayroll = 0;
+                let totalDeductions = 0;
+                
+                data.forEach(record => {
+                    const netSalary = record.gross_salary - record.deductions;
+                    totalPayroll += netSalary;
+                    totalDeductions += record.deductions;
+                    
+                    tbody.append(`
+                        <tr>
+                            <td>${record.first_name} ${record.last_name}</td>
+                            <td>${record.email}</td>
+                            <td>${new Date(record.hire_date).toLocaleDateString()}</td>
+                            <td>$${record.salary.toLocaleString()}</td>
+                            <td>$${record.gross_salary.toLocaleString()}</td>
+                            <td>$${record.deductions.toLocaleString()}</td>
+                            <td>$${netSalary.toLocaleString()}</td>
+                            <td>${new Date(record.pay_date).toLocaleDateString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info btn-action" onclick="editPayroll(${record.payroll_id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger btn-action" onclick="deletePayroll(${record.payroll_id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+                
+                // Update dashboard cards
+                $('#totalPayroll').text(`$${totalPayroll.toLocaleString()}`);
+                $('#employeesPaid').text(data.length);
+                $('#avgSalary').text(`$${(totalPayroll / data.length).toLocaleString()}`);
+                
+            } catch (error) {
+                console.error('Error loading payroll data:', error);
+                console.error('Failed to load payroll data');
+            } finally {
+                $('.loading-spinner').hide();
+            }
+        }
+
+        // Load employees for dropdown
+        async function loadEmployees() {
+            try {
+                const response = await fetch('/api/employees');
+                const employees = await response.json();
+                
+                const select = $('#employeeSelect');
+                select.empty();
+                
+                employees.forEach(employee => {
+                    select.append(`
+                        <option value="${employee.employee_id}">
+                            ${employee.first_name} ${employee.last_name}
+                        </option>
+                    `);
+                });
+            } catch (error) {
+                console.error('Error loading employees:', error);
+                console.error('Failed to load employees');
+            }
+        }
+
+        // Save new payroll record
+        $('#savePayroll').click(async () => {
+            const form = $('#payrollForm');
+            if (!form[0].checkValidity()) {
+                form[0].reportValidity();
+                return;
+            }
+            
+            const payrollData = {
+                employee_id: $('#employeeSelect').val(),
+                pay_date: $('#payDate').val(),
+                gross_salary: parseFloat($('#grossSalary').val()),
+                deductions: parseFloat($('#deductions').val()),
+                net_salary: parseFloat($('#grossSalary').val()) - parseFloat($('#deductions').val())
+            };
+            
+            try {
+                const response = await fetch('/api/payroll', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payrollData)
+                });
+                
+                if (response.ok) {
+                    $('#addPayrollModal').modal('hide');
+                    form[0].reset();
+                    loadPayrollData();
+                } else {
+                    throw new Error('Failed to save payroll record');
+                }
+            } catch (error) {
+                console.error('Error saving payroll:', error);
+                console.error('Failed to save payroll record');
+            }
+        });
+
+        // Initialize
+        $(document).ready(() => {
+            loadPayrollData();
+            loadEmployees();
+        });
+    </script>
+</body>
+</html>
+ 

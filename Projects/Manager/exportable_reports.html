@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exportable Reports</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar { height: 100vh; background: #343a40; color: #fff; padding-top: 30px; position: fixed; width: 220px; }
+        .sidebar a { color: #fff; display: block; padding: 10px 20px; text-decoration: none; }
+        .sidebar a.active, .sidebar a:hover { background: #495057; border-radius: 4px; }
+        .content { margin-left: 240px; padding: 30px 20px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h4 class="text-center">Manager</h4>
+        <a href="gantt_charts.html">Gantt Charts</a>
+        <a href="resource_allocation.html">Resource Allocation</a>
+        <a href="milestone_tracking.html">Milestone Tracking</a>
+        <a href="task_prioritization.html">Task Prioritization</a>
+        <a href="team_workload_view.html">Team Workload View</a>
+        <a href="deadline_alerts.html">Deadline Alerts</a>
+        <a href="exportable_reports.html" class="active">Exportable Reports</a>
+    </div>
+    <div class="content">
+        <h2>Exportable Reports</h2>
+        <table class="table table-bordered bg-white">
+            <thead class="thead-light">
+                <tr>
+                    <th>Report Name</th>
+                    <th>Description</th>
+                    <th>Export</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Project Summary</td>
+                    <td>Overview of all projects, tasks, and milestones</td>
+                    <td><button class="btn btn-primary btn-sm">Export PDF</button> <button class="btn btn-success btn-sm">Export Excel</button></td>
+                </tr>
+                <tr>
+                    <td>Resource Usage</td>
+                    <td>Team member assignments and workload</td>
+                    <td><button class="btn btn-primary btn-sm">Export PDF</button> <button class="btn btn-success btn-sm">Export Excel</button></td>
+                </tr>
+                <tr>
+                    <td>Time Logs</td>
+                    <td>Logged hours by task and employee</td>
+                    <td><button class="btn btn-primary btn-sm">Export PDF</button> <button class="btn btn-success btn-sm">Export Excel</button></td>
+                </tr>
+                <tr>
+                    <td>Milestone Achievements</td>
+                    <td>Milestone completion and delays</td>
+                    <td><button class="btn btn-primary btn-sm">Export PDF</button> <button class="btn btn-success btn-sm">Export Excel</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="content">
+        <h4>SQL Schema & Sample Data</h4>
+        <pre style="background:#222;color:#eee;padding:15px;border-radius:6px;font-size:13px;">
+-- Reports
+CREATE TABLE reports (
+    report_id INT PRIMARY KEY,
+    name VARCHAR(100),
+    description TEXT,
+    available_formats VARCHAR(50)
+);
+
+-- Sample Data
+INSERT INTO reports VALUES
+(1, 'Project Summary', 'Overview of all projects, tasks, and milestones', 'PDF,Excel'),
+(2, 'Resource Usage', 'Team member assignments and workload', 'PDF,Excel'),
+(3, 'Time Logs', 'Logged hours by task and employee', 'PDF,Excel'),
+(4, 'Milestone Achievements', 'Milestone completion and delays', 'PDF,Excel');
+        </pre>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 
