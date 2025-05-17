@@ -12,7 +12,7 @@ const tls = require('tls');
 
 const app = express();
 const router = express.Router();
-const PORT = process.env.PORT || 8443;
+const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Load SSL cert and key
@@ -37,8 +37,8 @@ app.use(limiter);
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://myshop-5hec.onrender.com'] 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'https://localhost:8443'],
+    ? ['https://shopy.onrender.com'] 
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -61,14 +61,10 @@ app.use((err, req, res, next) => {
 
 // Database configuration
 const dbConfig = {
-  connectionString: process.env.DATABASE_URL || 'postgresql://myshopdb_mbpm_user:YDPfxpjJXdYJcpqI1svSr9XquBfKCPQ4@dpg-d09vmq3ipnbc73b7f340-a.oregon-postgres.render.com/myshopdb_mbpm',
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false,
-    require: true
-  },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-  max: 20
+    rejectUnauthorized: false
+  }
 };
 
 const pool = new Pool(dbConfig);
@@ -91,31 +87,9 @@ async function testConnection(retries = 3, delay = 1000) {
   return false;
 }
 
-// Start server only after database is initialized
-testConnection().then(success => {
-  if (success) {
-    try {
-      server.listen(PORT, () => {
-        console.log(`Server running at https://localhost:${PORT}`);
-        console.log('Note: You may need to accept the self-signed certificate warning in your browser');
-      });
-
-      server.on('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          console.log(`Port ${PORT} is busy. Trying next port...`);
-          server.listen(PORT + 1);
-        } else {
-          console.error(err);
-        }
-      });
-    } catch (error) {
-      console.error('Error starting HTTPS server:', error);
-      process.exit(1);
-    }
-  } else {
-    console.error('Server failed to start due to database initialization failure');
-    process.exit(1);
-  }
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 // API Routes - No Authentication Required

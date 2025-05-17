@@ -51,7 +51,7 @@ Shopy is a comprehensive business management solution that helps businesses mana
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/shopy.git
+git clone https://github.com/DevelopmentProfessional/shopy.git
 ```
 
 2. Navigate to the project directory:
@@ -93,4 +93,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Your Name - your.email@example.com
 
-Project Link: [https://github.com/yourusername/shopy](https://github.com/yourusername/shopy) 
+Project Link: [https://github.com/DevelopmentProfessional/shopy](https://github.com/DevelopmentProfessional/shopy) 
