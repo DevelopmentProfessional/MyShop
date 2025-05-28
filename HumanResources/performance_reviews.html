@@ -3,437 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Performance Reviews</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        body { background: #f8f9fa; }
-        .sidebar { 
-            height: 100vh; 
-            background: #343a40; 
-            color: #fff; 
-            padding-top: 30px; 
-            position: fixed; 
-            width: 220px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-        .sidebar a { 
-            color: #fff; 
-            display: block; 
-            padding: 10px 20px; 
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .sidebar a.active, .sidebar a:hover { 
-            background: #495057; 
-            border-radius: 4px;
-            transform: translateX(5px);
-        }
-        .content { 
-            margin-left: 240px; 
-            padding: 30px 20px;
-        }
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .rating {
-            font-size: 1.2em;
-            color: #ffc107;
-        }
-        .rating i {
-            margin-right: 2px;
-        }
-        .progress {
-            height: 8px;
-            border-radius: 4px;
-        }
-        .review-status {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .status-pending { background: #ffc107; }
-        .status-completed { background: #28a745; }
-        .status-overdue { background: #dc3545; }
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        .review-card {
-            border-left: 4px solid #007bff;
-            margin-bottom: 15px;
-        }
-        .review-card:hover {
-            background: #f8f9fa;
-        }
-        .metric-card {
-            text-align: center;
-            padding: 20px;
-        }
-        .metric-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #007bff;
-        }
-        .metric-label {
-            color: #6c757d;
-            font-size: 0.9em;
-        }
-    </style>
+    <title>Performance Reviews - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <div class="sidebar">
-        <h4 class="text-center mb-4">HR Dashboard</h4>
-        <a href="humanresources.html"><i class="fas fa-home mr-2"></i>Home</a>
-        <a href="payroll.html"><i class="fas fa-money-bill-wave mr-2"></i>Payroll</a>
-        <a href="recruitment.html"><i class="fas fa-user-plus mr-2"></i>Recruitment</a>
-        <a href="org_chart.html"><i class="fas fa-sitemap mr-2"></i>Org Chart</a>
-        <a href="attendance.html"><i class="fas fa-clock mr-2"></i>Attendance</a>
-        <a href="leave_management.html"><i class="fas fa-calendar-alt mr-2"></i>Leave</a>
-        <a href="shift_scheduling.html"><i class="fas fa-calendar-week mr-2"></i>Shifts</a>
-        <a href="performance_reviews.html" class="active"><i class="fas fa-star mr-2"></i>Performance</a>
-    </div>
-    <div class="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-star mr-2"></i>Performance Reviews</h2>
-            <div>
-                <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#newReviewModal">
-                    <i class="fas fa-plus mr-2"></i>New Review
-                </button>
-                <button class="btn btn-info" onclick="exportReviews()">
-                    <i class="fas fa-download mr-2"></i>Export
-                </button>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-value" id="avgRating">0.0</div>
-                    <div class="metric-label">Average Rating</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-value" id="pendingReviews">0</div>
-                    <div class="metric-label">Pending Reviews</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-value" id="completedReviews">0</div>
-                    <div class="metric-label">Completed Reviews</div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card metric-card">
-                    <div class="metric-value" id="overdueReviews">0</div>
-                    <div class="metric-label">Overdue Reviews</div>
-                </div>
-            </div>
-        </div>
-
+<body class="bg-light">
+    <div class="container py-4">
         <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-4">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title">Recent Reviews</h5>
-                        <div id="reviewsList">
-                            <!-- Will be populated by JavaScript -->
-                        </div>
-                        <div class="loading-spinner">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Performance Reviews</h1>
+                                <p class="text-muted mb-0">Track and manage employee performance evaluations</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> New Review
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card">
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Performance Overview -->
+                <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Performance Metrics</h5>
-                        <div id="performanceMetrics">
-                            <!-- Will be populated by JavaScript -->
-                        </div>
+                        <h2 class="h4 mb-3">Performance Overview</h2>
+                        <canvas id="performanceChart" height="300"></canvas>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- New Review Modal -->
-    <div class="modal fade" id="newReviewModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Performance Review</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="reviewForm">
-                        <div class="form-group">
-                            <label>Employee</label>
-                            <select class="form-control" id="employee" required>
-                                <!-- Will be populated by JavaScript -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Review Period</label>
-                            <select class="form-control" id="reviewPeriod" required>
-                                <option value="q1">Q1 2024</option>
-                                <option value="q2">Q2 2024</option>
-                                <option value="q3">Q3 2024</option>
-                                <option value="q4">Q4 2024</option>
-                                <option value="annual">Annual 2024</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Overall Rating</label>
-                            <div class="rating">
-                                <i class="far fa-star" data-rating="1"></i>
-                                <i class="far fa-star" data-rating="2"></i>
-                                <i class="far fa-star" data-rating="3"></i>
-                                <i class="far fa-star" data-rating="4"></i>
-                                <i class="far fa-star" data-rating="5"></i>
-                            </div>
-                            <input type="hidden" id="rating" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Key Achievements</label>
-                            <textarea class="form-control" id="achievements" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Areas for Improvement</label>
-                            <textarea class="form-control" id="improvements" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Goals for Next Period</label>
-                            <textarea class="form-control" id="goals" rows="3" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Comments</label>
-                            <textarea class="form-control" id="comments" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveReview">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script>
-        // Fetch and display reviews
-        async function loadReviews() {
-            try {
-                $('.loading-spinner').show();
-                const response = await fetch('/api/reviews');
-                const data = await response.json();
-                
-                const reviewsList = $('#reviewsList');
-                reviewsList.empty();
-                
-                let pendingCount = 0;
-                let completedCount = 0;
-                let overdueCount = 0;
-                let totalRating = 0;
-                
-                data.forEach(review => {
-                    const card = $(`
-                        <div class="card review-card">
-                            <div class="card-body">
+                <!-- Active Reviews -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Active Reviews</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="card-title mb-0">
-                                        ${review.employee_name}
-                                        <span class="review-status status-${review.status}"></span>
-                                    </h6>
-                                    <div class="rating">
-                                        ${generateStars(review.rating)}
+                                    <div>
+                                        <h3 class="h6 mb-1">John Doe</h3>
+                                        <p class="text-muted mb-0">Senior Developer</p>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-success">On Track</span>
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
                                     </div>
                                 </div>
-                                <p class="card-text text-muted mb-2">${review.period}</p>
-                                <p class="card-text">${review.achievements.substring(0, 100)}...</p>
+                            </div>
+                            <div class="list-group-item">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">Due: ${new Date(review.due_date).toLocaleDateString()}</small>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="viewReview(${review.id})">
-                                        View Details
-                                    </button>
+                                    <div>
+                                        <h3 class="h6 mb-1">Jane Smith</h3>
+                                        <p class="text-muted mb-0">Product Manager</p>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 45%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-warning">Pending</span>
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Mike Johnson</h3>
+                                        <p class="text-muted mb-0">UX Designer</p>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge bg-danger">Overdue</span>
+                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    `);
-                    reviewsList.append(card);
-                    
-                    // Update counts
-                    if (review.status === 'pending') pendingCount++;
-                    if (review.status === 'completed') {
-                        completedCount++;
-                        totalRating += review.rating;
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Review Metrics -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Review Metrics</h2>
+                        <canvas id="metricsChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Upcoming Reviews -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Upcoming Reviews</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Sarah Wilson</h3>
+                                        <p class="text-muted mb-0">Marketing Specialist</p>
+                                        <small class="text-danger">Due in 5 days</small>
+                                    </div>
+                                    <span class="badge bg-primary">Q2 Review</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">David Brown</h3>
+                                        <p class="text-muted mb-0">Sales Representative</p>
+                                        <small class="text-warning">Due in 8 days</small>
+                                    </div>
+                                    <span class="badge bg-warning">Annual</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Lisa Chen</h3>
+                                        <p class="text-muted mb-0">HR Coordinator</p>
+                                        <small class="text-info">Due in 12 days</small>
+                                    </div>
+                                    <span class="badge bg-info">Q2 Review</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">12</h3>
+                                    <p class="text-muted mb-0">Active</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">8</h3>
+                                    <p class="text-muted mb-0">Completed</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">3</h3>
+                                    <p class="text-muted mb-0">Overdue</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">85%</h3>
+                                    <p class="text-muted mb-0">Satisfaction</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Performance Chart
+        const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Average Rating',
+                    data: [4.2, 4.3, 4.4, 4.5, 4.6, 4.7],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Goal Achievement',
+                    data: [75, 78, 80, 82, 85, 88],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }, {
+                    label: 'Team Collaboration',
+                    data: [80, 82, 83, 85, 86, 88],
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
                     }
-                    if (review.status === 'overdue') overdueCount++;
-                });
-                
-                // Update metrics
-                $('#pendingReviews').text(pendingCount);
-                $('#completedReviews').text(completedCount);
-                $('#overdueReviews').text(overdueCount);
-                $('#avgRating').text((totalRating / completedCount || 0).toFixed(1));
-                
-            } catch (error) {
-                console.error('Error loading reviews:', error);
-                console.error('Failed to load reviews');
-            } finally {
-                $('.loading-spinner').hide();
-            }
-        }
-
-        // Load performance metrics
-        async function loadMetrics() {
-            try {
-                const response = await fetch('/api/performance-metrics');
-                const data = await response.json();
-                
-                const metrics = $('#performanceMetrics');
-                metrics.empty();
-                
-                data.forEach(metric => {
-                    const div = $(`
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>${metric.name}</span>
-                                <span>${metric.value}%</span>
-                            </div>
-                            <div class="progress">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${metric.value}%" 
-                                     aria-valuenow="${metric.value}" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                    metrics.append(div);
-                });
-            } catch (error) {
-                console.error('Error loading metrics:', error);
-                console.error('Failed to load performance metrics');
-            }
-        }
-
-        // Load employees for dropdown
-        async function loadEmployees() {
-            try {
-                const response = await fetch('/api/employees');
-                const data = await response.json();
-                
-                const select = $('#employee');
-                select.empty();
-                
-                data.forEach(emp => {
-                    select.append(`
-                        <option value="${emp.id}">
-                            ${emp.first_name} ${emp.last_name}
-                        </option>
-                    `);
-                });
-            } catch (error) {
-                console.error('Error loading employees:', error);
-                console.error('Failed to load employees');
-            }
-        }
-
-        // Generate star rating HTML
-        function generateStars(rating) {
-            let stars = '';
-            for (let i = 1; i <= 5; i++) {
-                stars += `<i class="${i <= rating ? 'fas' : 'far'} fa-star"></i>`;
-            }
-            return stars;
-        }
-
-        // Handle star rating selection
-        $('.rating i').click(function() {
-            const rating = $(this).data('rating');
-            $('#rating').val(rating);
-            $('.rating i').removeClass('fas').addClass('far');
-            $('.rating i').each(function(index) {
-                if (index < rating) {
-                    $(this).removeClass('far').addClass('fas');
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5
+                    }
                 }
-            });
-        });
-
-        // Save review
-        $('#saveReview').click(async () => {
-            const form = $('#reviewForm');
-            if (!form[0].checkValidity()) {
-                form[0].reportValidity();
-                return;
-            }
-            
-            const reviewData = {
-                employee_id: $('#employee').val(),
-                period: $('#reviewPeriod').val(),
-                rating: $('#rating').val(),
-                achievements: $('#achievements').val(),
-                improvements: $('#improvements').val(),
-                goals: $('#goals').val(),
-                comments: $('#comments').val()
-            };
-            
-            try {
-                const response = await fetch('/api/reviews', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(reviewData)
-                });
-                
-                if (response.ok) {
-                    $('#newReviewModal').modal('hide');
-                    form[0].reset();
-                    loadReviews();
-                } else {
-                    throw new Error('Failed to save review');
-                }
-            } catch (error) {
-                console.error('Error saving review:', error);
-                console.error('Failed to save review');
             }
         });
 
-        // View review details
-        function viewReview(id) {
-            // Implementation for viewing review details
-        }
-
-        // Export reviews
-        function exportReviews() {
-            // Implementation for exporting reviews
-        }
-
-        // Initialize
-        $(document).ready(() => {
-            loadReviews();
-            loadMetrics();
-            loadEmployees();
+        // Metrics Chart
+        const metricsCtx = document.getElementById('metricsChart').getContext('2d');
+        new Chart(metricsCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Technical Skills', 'Communication', 'Leadership', 'Innovation', 'Teamwork'],
+                datasets: [{
+                    label: 'Department Average',
+                    data: [4.5, 4.2, 4.0, 4.3, 4.6],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    pointBackgroundColor: 'rgb(75, 192, 192)'
+                }, {
+                    label: 'Company Target',
+                    data: [4.5, 4.5, 4.5, 4.5, 4.5],
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 5
+                    }
+                }
+            }
         });
     </script>
 </body>

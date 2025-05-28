@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Barcode Scanner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #interactive.viewport {
+      width: 100%;
+      max-width: 500px;
+      margin: auto;
+      border: 2px solid #ccc;
+      position: relative;
+    }
+
+    video,
+    canvas {
+      width: 100%;
+      display: block;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+
+    #deviceSelect {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Barcode Scanner</h2>
+  <p id="permissionStatus">Requesting camera access...</p>
+  <select id="deviceSelect"></select>
+  <div id="interactive" class="viewport"></div>
+  <div id="result">Scanning...</div>
+
+  <script src="dist/bundle.js"></script>
+</body>
+</html>

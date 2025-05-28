@@ -3,174 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Management</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <style>
-        body { background: #f8f9fa; }
-        .sidebar { 
-            height: 100vh; 
-            background: #343a40; 
-            color: #fff; 
-            padding-top: 30px; 
-            position: fixed; 
-            width: 220px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-        .sidebar a { 
-            color: #fff; 
-            display: block; 
-            padding: 10px 20px; 
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .sidebar a.active, .sidebar a:hover { 
-            background: #495057; 
-            border-radius: 4px;
-            transform: translateX(5px);
-        }
-        .content { 
-            margin-left: 240px; 
-            padding: 30px 20px;
-        }
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .attendance-status {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .status-present { background: #28a745; }
-        .status-absent { background: #dc3545; }
-        .status-late { background: #ffc107; }
-        .status-half-day { background: #17a2b8; }
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-        .calendar-day {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .calendar-day:hover {
-            background: #e9ecef;
-        }
-        .calendar-day.today {
-            background: #007bff;
-            color: white;
-        }
-        .calendar-day.has-attendance {
-            border: 2px solid #28a745;
-        }
-    </style>
+    <title>Attendance - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <div class="sidebar">
-        <h4 class="text-center mb-4">HR Dashboard</h4>
-        <a href="humanresources.html"><i class="fas fa-home mr-2"></i>Home</a>
-        <a href="payroll.html"><i class="fas fa-money-bill-wave mr-2"></i>Payroll</a>
-        <a href="recruitment.html"><i class="fas fa-user-plus mr-2"></i>Recruitment</a>
-        <a href="org_chart.html"><i class="fas fa-sitemap mr-2"></i>Org Chart</a>
-        <a href="attendance.html" class="active"><i class="fas fa-clock mr-2"></i>Attendance</a>
-        <a href="leave_management.html"><i class="fas fa-calendar-alt mr-2"></i>Leave</a>
-        <a href="shift_scheduling.html"><i class="fas fa-calendar-week mr-2"></i>Shifts</a>
-        <a href="performance_reviews.html"><i class="fas fa-star mr-2"></i>Performance</a>
-    </div>
-    <div class="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-clock mr-2"></i>Attendance Management</h2>
-            <div>
-                <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#markAttendanceModal">
-                    <i class="fas fa-plus mr-2"></i>Mark Attendance
-                </button>
-                <button class="btn btn-info" onclick="exportAttendance()">
-                    <i class="fas fa-download mr-2"></i>Export
-                </button>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Present Today</h5>
-                        <h3 class="card-text" id="presentCount">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-danger text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Absent Today</h5>
-                        <h3 class="card-text" id="absentCount">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Late Today</h5>
-                        <h3 class="card-text" id="lateCount">0</h3>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">On Leave</h5>
-                        <h3 class="card-text" id="leaveCount">0</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+<body class="bg-light">
+    <div class="container py-4">
         <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-4">
+            <!-- Header -->
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
                     <div class="card-body">
-                        <h5 class="card-title">Attendance Records</h5>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                        <th>Check In</th>
-                                        <th>Check Out</th>
-                                        <th>Hours</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendanceTable">
-                                    <!-- Will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="loading-spinner">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">Loading...</span>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h2 mb-1">Attendance</h1>
+                                <p class="text-muted mb-0">Track employee attendance and time records</p>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Record Attendance
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card">
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Attendance Overview -->
+                <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Monthly Calendar</h5>
-                        <div id="calendar" class="text-center">
-                            <!-- Will be populated by JavaScript -->
+                        <h2 class="h4 mb-3">Attendance Overview</h2>
+                        <canvas id="attendanceChart" height="300"></canvas>
+                    </div>
+                </div>
+
+                <!-- Today's Attendance -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Today's Attendance</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">John Smith</h3>
+                                        <p class="text-muted mb-0">Software Engineer</p>
+                                        <small class="text-success">Checked in at 9:00 AM</small>
+                                    </div>
+                                    <span class="badge bg-success">Present</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Sarah Johnson</h3>
+                                        <p class="text-muted mb-0">Product Manager</p>
+                                        <small class="text-warning">Checked in at 9:15 AM</small>
+                                    </div>
+                                    <span class="badge bg-warning">Late</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Michael Brown</h3>
+                                        <p class="text-muted mb-0">UX Designer</p>
+                                        <small class="text-info">Working remotely</small>
+                                    </div>
+                                    <span class="badge bg-info">Remote</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Attendance Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Attendance Stats</h2>
+                        <canvas id="statsChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Quick Stats</h2>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">95%</h3>
+                                    <p class="text-muted mb-0">Present</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">3%</h3>
+                                    <p class="text-muted mb-0">Late</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">2%</h3>
+                                    <p class="text-muted mb-0">Absent</p>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <h3 class="h2 mb-0">15%</h3>
+                                    <p class="text-muted mb-0">Remote</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Time Off -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4 mb-3">Upcoming Time Off</h2>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">Emily Davis</h3>
+                                        <p class="text-muted mb-0">Annual Leave</p>
+                                        <small class="text-info">Next 3 days</small>
+                                    </div>
+                                    <span class="badge bg-info">Approved</span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h3 class="h6 mb-1">David Wilson</h3>
+                                        <p class="text-muted mb-0">Sick Leave</p>
+                                        <small class="text-danger">Today</small>
+                                    </div>
+                                    <span class="badge bg-danger">Pending</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -178,276 +155,70 @@
         </div>
     </div>
 
-    <!-- Mark Attendance Modal -->
-    <div class="modal fade" id="markAttendanceModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Mark Attendance</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="attendanceForm">
-                        <div class="form-group">
-                            <label>Employee</label>
-                            <select class="form-control" id="employee" required>
-                                <!-- Will be populated by JavaScript -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Date</label>
-                            <input type="date" class="form-control" id="date" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select class="form-control" id="status" required>
-                                <option value="present">Present</option>
-                                <option value="absent">Absent</option>
-                                <option value="late">Late</option>
-                                <option value="half-day">Half Day</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Check In Time</label>
-                            <input type="time" class="form-control" id="checkIn">
-                        </div>
-                        <div class="form-group">
-                            <label>Check Out Time</label>
-                            <input type="time" class="form-control" id="checkOut">
-                        </div>
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea class="form-control" id="notes" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveAttendance">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Fetch and display attendance records
-        async function loadAttendance() {
-            try {
-                $('.loading-spinner').show();
-                const response = await fetch('/api/attendance');
-                const data = await response.json();
-                
-                const table = $('#attendanceTable');
-                table.empty();
-                
-                let presentCount = 0;
-                let absentCount = 0;
-                let lateCount = 0;
-                let leaveCount = 0;
-                
-                data.forEach(record => {
-                    const row = $(`
-                        <tr>
-                            <td>${record.employee_name}</td>
-                            <td>${new Date(record.date).toLocaleDateString()}</td>
-                            <td>
-                                <span class="attendance-status status-${record.status}"></span>
-                                ${record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                            </td>
-                            <td>${record.check_in || '-'}</td>
-                            <td>${record.check_out || '-'}</td>
-                            <td>${record.hours || '-'}</td>
-                            <td>
-                                <button class="btn btn-sm btn-info mr-1" onclick="editAttendance(${record.id})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteAttendance(${record.id})">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `);
-                    table.append(row);
-                    
-                    // Update counts
-                    switch(record.status) {
-                        case 'present': presentCount++; break;
-                        case 'absent': absentCount++; break;
-                        case 'late': lateCount++; break;
-                        case 'leave': leaveCount++; break;
+        // Attendance Chart
+        const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+        new Chart(attendanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Present',
+                    data: [45, 42, 44, 43, 41, 15, 10],
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Late',
+                    data: [2, 3, 1, 2, 3, 1, 0],
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }, {
+                    label: 'Absent',
+                    data: [1, 2, 1, 1, 2, 0, 0],
+                    borderColor: 'rgb(255, 99, 132)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
                     }
-                });
-                
-                // Update dashboard cards
-                $('#presentCount').text(presentCount);
-                $('#absentCount').text(absentCount);
-                $('#lateCount').text(lateCount);
-                $('#leaveCount').text(leaveCount);
-                
-            } catch (error) {
-                console.error('Error loading attendance:', error);
-                console.error('Failed to load attendance records');
-            } finally {
-                $('.loading-spinner').hide();
-            }
-        }
-
-        // Load employees for dropdown
-        async function loadEmployees() {
-            try {
-                const response = await fetch('/api/employees');
-                const data = await response.json();
-                
-                const select = $('#employee');
-                select.empty();
-                
-                data.forEach(emp => {
-                    select.append(`
-                        <option value="${emp.id}">
-                            ${emp.first_name} ${emp.last_name}
-                        </option>
-                    `);
-                });
-            } catch (error) {
-                console.error('Error loading employees:', error);
-                console.error('Failed to load employees');
-            }
-        }
-
-        // Generate calendar
-        function generateCalendar() {
-            const calendar = $('#calendar');
-            calendar.empty();
-            
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-            
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            calendar.append(`<h4>${monthNames[month]} ${year}</h4>`);
-            
-            const table = $('<table class="table table-bordered"></table>');
-            const thead = $('<thead></thead>');
-            thead.append(`
-                <tr>
-                    <th>Sun</th>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                </tr>
-            `);
-            table.append(thead);
-            
-            const tbody = $('<tbody></tbody>');
-            let date = 1;
-            
-            for (let i = 0; i < 6; i++) {
-                const row = $('<tr></tr>');
-                
-                for (let j = 0; j < 7; j++) {
-                    if (i === 0 && j < firstDay.getDay()) {
-                        row.append('<td></td>');
-                    } else if (date > lastDay.getDate()) {
-                        break;
-                    } else {
-                        const cell = $(`
-                            <td class="calendar-day" data-date="${year}-${month + 1}-${date}">
-                                ${date}
-                            </td>
-                        `);
-                        
-                        if (date === today.getDate()) {
-                            cell.addClass('today');
-                        }
-                        
-                        row.append(cell);
-                        date++;
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
                     }
                 }
-                
-                tbody.append(row);
-                if (date > lastDay.getDate()) break;
-            }
-            
-            table.append(tbody);
-            calendar.append(table);
-        }
-
-        // Save attendance record
-        $('#saveAttendance').click(async () => {
-            const form = $('#attendanceForm');
-            if (!form[0].checkValidity()) {
-                form[0].reportValidity();
-                return;
-            }
-            
-            const attendanceData = {
-                employee_id: $('#employee').val(),
-                date: $('#date').val(),
-                status: $('#status').val(),
-                check_in: $('#checkIn').val(),
-                check_out: $('#checkOut').val(),
-                notes: $('#notes').val()
-            };
-            
-            try {
-                const response = await fetch('/api/attendance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(attendanceData)
-                });
-                
-                if (response.ok) {
-                    $('#markAttendanceModal').modal('hide');
-                    form[0].reset();
-                    loadAttendance();
-                } else {
-                    throw new Error('Failed to save attendance');
-                }
-            } catch (error) {
-                console.error('Error saving attendance:', error);
-                console.error('Failed to save attendance record');
             }
         });
 
-        // Edit attendance record
-        function editAttendance(id) {
-            // Implementation for editing attendance
-        }
-
-        // Delete attendance record
-        function deleteAttendance(id) {
-            if (confirm('Are you sure you want to delete this attendance record?')) {
-                // Implementation for deleting attendance
+        // Stats Chart
+        const statsCtx = document.getElementById('statsChart').getContext('2d');
+        new Chart(statsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Late', 'Absent', 'Remote'],
+                datasets: [{
+                    data: [75, 5, 3, 17],
+                    backgroundColor: [
+                        'rgb(75, 192, 192)',
+                        'rgb(255, 205, 86)',
+                        'rgb(255, 99, 132)',
+                        'rgb(54, 162, 235)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
             }
-        }
-
-        // Export attendance data
-        function exportAttendance() {
-            // Implementation for exporting attendance data
-        }
-
-        // Initialize
-        $(document).ready(() => {
-            loadAttendance();
-            loadEmployees();
-            generateCalendar();
-            
-            // Set default date to today
-            $('#date').val(new Date().toISOString().split('T')[0]);
         });
     </script>
 </body>

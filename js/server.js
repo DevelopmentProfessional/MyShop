@@ -12,7 +12,7 @@ const tls = require('tls');
 
 const app = express();
 const router = express.Router();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3030;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Load SSL cert and key
@@ -38,7 +38,7 @@ app.use(limiter);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://shopy.onrender.com'] 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500'],
+    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'http://192.168.4.106:3000', 'http://192.168.4.106:5500'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

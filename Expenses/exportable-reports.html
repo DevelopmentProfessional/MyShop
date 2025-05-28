@@ -17,193 +17,247 @@
             </ol>
         </nav>
 
-        <!-- Report Generator -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h1 class="h4 mb-0">Generate Report</h1>
-                    </div>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Exportable Reports</h1>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createReportModal">
+                        <i class="bi bi-plus"></i> Create Report
+                    </button>
+                </div>
+
+                <!-- Report Filters -->
+                <div class="card mb-4">
                     <div class="card-body">
+                        <h5 class="card-title">Filter Reports</h5>
                         <form>
-                            <div class="mb-3">
-                                <label class="form-label">Report Type</label>
-                                <select class="form-select">
-                                    <option>Expense Summary</option>
-                                    <option>Category Analysis</option>
-                                    <option>Vendor Report</option>
-                                    <option>Budget vs Actual</option>
-                                    <option>Tax Report</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Date Range</label>
-                                <div class="row">
-                                    <div class="col">
-                                        <input type="date" class="form-control" placeholder="Start Date">
-                                    </div>
-                                    <div class="col">
-                                        <input type="date" class="form-control" placeholder="End Date">
-                                    </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Date Range</label>
+                                    <select class="form-select">
+                                        <option>Last 7 days</option>
+                                        <option>Last 30 days</option>
+                                        <option>Last 90 days</option>
+                                        <option>Custom Range</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Category</label>
+                                    <select class="form-select">
+                                        <option value="">All Categories</option>
+                                        <option>Travel & Subscriptions</option>
+                                        <option>Office Supplies</option>
+                                        <option>Utilities</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select">
+                                        <option value="">All Status</option>
+                                        <option>Pending</option>
+                                        <option>Approved</option>
+                                        <option>Rejected</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                                    <button type="reset" class="btn btn-outline-secondary">Reset</button>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Format</label>
-                                <select class="form-select">
-                                    <option>PDF</option>
-                                    <option>Excel</option>
-                                    <option>CSV</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Include</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="includeCharts">
-                                    <label class="form-check-label" for="includeCharts">Charts & Graphs</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="includeDetails">
-                                    <label class="form-check-label" for="includeDetails">Detailed Transactions</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="includeNotes">
-                                    <label class="form-check-label" for="includeNotes">Notes & Comments</label>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Generate Report</button>
                         </form>
                     </div>
                 </div>
-            </div>
 
-            <!-- Recent Reports -->
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h2 class="h4 mb-0">Recent Reports</h2>
-                    </div>
+                <!-- Reports List -->
+                <div class="card">
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
                                     <tr>
                                         <th>Report Name</th>
-                                        <th>Generated</th>
-                                        <th>Format</th>
-                                        <th>Size</th>
+                                        <th>Date Range</th>
+                                        <th>Total Amount</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Expense Summary - Mar 2024</td>
-                                        <td>Mar 15, 2024</td>
-                                        <td>PDF</td>
-                                        <td>2.4 MB</td>
+                                        <td>Q1 2024 Expense Report</td>
+                                        <td>Jan 1 - Mar 31, 2024</td>
+                                        <td>$25,450.00</td>
+                                        <td><span class="badge bg-success">Approved</span></td>
+                                        <td>John Doe</td>
                                         <td>
                                             <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Download</button>
-                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
+                                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    Export
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>Category Analysis - Q1 2024</td>
-                                        <td>Mar 10, 2024</td>
-                                        <td>Excel</td>
-                                        <td>1.8 MB</td>
+                                        <td>March 2024 Expenses</td>
+                                        <td>Mar 1 - Mar 31, 2024</td>
+                                        <td>$8,450.00</td>
+                                        <td><span class="badge bg-warning">Pending</span></td>
+                                        <td>Jane Smith</td>
                                         <td>
                                             <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Download</button>
-                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Vendor Report - Feb 2024</td>
-                                        <td>Mar 1, 2024</td>
-                                        <td>CSV</td>
-                                        <td>0.9 MB</td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Download</button>
-                                                <button class="btn btn-sm btn-outline-secondary">Share</button>
+                                                <button class="btn btn-sm btn-outline-primary">View</button>
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    Export
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-excel"></i> Excel</a></li>
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-pdf"></i> PDF</a></li>
+                                                    <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> CSV</a></li>
+                                                </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Sidebar -->
+            <div class="col-md-4">
+                <div class="card mb-4" style="height: 150px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Report Summary</h5>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Total Reports</span>
+                            <strong>24</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>This Month</span>
+                            <strong>8</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Pending Approval</span>
+                            <strong>3</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4" style="height: 200px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Quick Export</h5>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+                            </button>
+                            <button class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+                            </button>
+                            <button class="btn btn-outline-primary">
+                                <i class="bi bi-file-earmark-text"></i> Export to CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="height: 300px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Exports</h5>
+                        <div class="list-group list-group-flush" style="max-height: calc(100% - 30px); overflow-y: auto;">
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                    <div>
+                                        <h6 class="mb-1">Q1 2024 Expense Report</h6>
+                                        <small class="text-muted">Exported 2 hours ago</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                    <div>
+                                        <h6 class="mb-1">March 2024 Expenses</h6>
+                                        <small class="text-muted">Exported 1 day ago</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Scheduled Reports -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                        <h2 class="h4 mb-0">Scheduled Reports</h2>
-                        <button class="btn btn-light btn-sm">Schedule New Report</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Report Name</th>
-                                        <th>Frequency</th>
-                                        <th>Recipients</th>
-                                        <th>Format</th>
-                                        <th>Last Sent</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Monthly Expense Summary</td>
-                                        <td>Monthly</td>
-                                        <td>finance@company.com</td>
-                                        <td>PDF</td>
-                                        <td>Mar 1, 2024</td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Quarterly Budget Analysis</td>
-                                        <td>Quarterly</td>
-                                        <td>management@company.com</td>
-                                        <td>Excel</td>
-                                        <td>Jan 1, 2024</td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Annual Tax Report</td>
-                                        <td>Annually</td>
-                                        <td>tax@company.com</td>
-                                        <td>PDF</td>
-                                        <td>Dec 31, 2023</td>
-                                        <td>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+    <!-- Create Report Modal -->
+    <div class="modal fade" id="createReportModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Report Name</label>
+                            <input type="text" class="form-control" required>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date Range</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="date" class="form-control" required>
+                                </div>
+                                <div class="col">
+                                    <input type="date" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Categories</label>
+                            <select class="form-select" multiple>
+                                <option>Travel & Subscriptions</option>
+                                <option>Office Supplies</option>
+                                <option>Utilities</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Format</label>
+                            <select class="form-select" required>
+                                <option>Excel</option>
+                                <option>PDF</option>
+                                <option>CSV</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Include</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">Expense Details</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">Category Summary</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">Charts & Graphs</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Create Report</button>
                 </div>
             </div>
         </div>
