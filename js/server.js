@@ -10,51 +10,53 @@ const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
 const selfsigned = require('selfsigned');
-// const { scanBarcodeFromImage } = require('../Scanner/serverBarcode');
-// const { scanBarcodeFromImage: scanBarcodeFromImage2 } = require('../Scanner/Scanner2');
+
 const app = express();
 const router = express.Router();
 const PORT = process.env.PORT || 3030;
 const isProduction = process.env.NODE_ENV === 'production';
-
+const HOST = process.env.HOST || '0.0.0.0';
+const DOMAIN = process.env.DOMAIN || (isProduction ? 'shopy.onrender.com' : 'localhost');
 
 // In your main server file
-app.use('/Scanner', express.static(path.join(__dirname, '../Scanner')));
+app.use('../Scanner/', express.static(path.join(__dirname, '../Scanner')));
 
+let server;
 
-// Load SSL cert and key - create simple self-signed cert if files don't exist
-let options;
-try {
-  options = {
-    cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem')),
-    key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'))
-  };
-} catch (err) {
-  // Create a simple self-signed certificate in memory for development
-  const attrs = [{ name: 'commonName', value: '172.23.144.1' }];
-  const pems = selfsigned.generate(attrs, { 
-    keySize: 2048, 
-    days: 365,
-    algorithm: 'sha256',
-    extensions: [{
-      name: 'subjectAltName',
-      altNames: [
-        { type: 2, value: 'localhost' },
-        { type: 2, value: '127.0.0.1' },
-        { type: 7, ip: '172.23.144.1' },
-        { type: 7, ip: '127.0.0.1' }
-      ]
-    }]
-  });
-  options = {
-    key: pems.private,
-    cert: pems.cert
-  };
-  console.log('Using generated self-signed certificate');
+if (isProduction) {
+  // In production (like Render), use regular HTTP server
+  server = require('http').createServer(app);
+} else {
+  // In development, use HTTPS with self-signed certificate
+  try {
+    const options = {
+      cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem')),
+      key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'))
+    };
+    server = https.createServer(options, app);
+  } catch (err) {
+    // Create a simple self-signed certificate in memory for development
+    const attrs = [{ name: 'commonName', value: DOMAIN }];
+    const pems = selfsigned.generate(attrs, { 
+      keySize: 2048, 
+      days: 365,
+      algorithm: 'sha256',
+      extensions: [{
+        name: 'subjectAltName',
+        altNames: [
+          { type: 2, value: 'localhost' },
+          { type: 2, value: '127.0.0.1' },
+          { type: 2, value: DOMAIN }
+        ]
+      }]
+    });
+    server = https.createServer({
+      key: pems.private,
+      cert: pems.cert
+    }, app);
+    console.log('Using generated self-signed certificate for development');
+  }
 }
-
-// Create HTTPS server
-const server = https.createServer(options, app);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -72,20 +74,22 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow any origin from local network
-    if (origin.includes('172.23.144.1') || 
-        origin.includes('localhost') || 
-        origin.includes('127.0.0.1') ||
-        origin.includes('192.168.')) {
+    // Allow localhost and local network
+    if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) {
       return callback(null, true);
     }
     
-    // Allow production origin
-    if (process.env.NODE_ENV === 'production' && origin === 'https://shopy.onrender.com') {
+    // Allow production domain
+    if (isProduction && origin === `https://${DOMAIN}`) {
       return callback(null, true);
     }
     
-    return callback(null, true); // Allow all origins for development
+    // In development, allow all origins
+    if (!isProduction) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -136,9 +140,14 @@ async function testConnection(retries = 3, delay = 1000) {
 }
 
 // Start server
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`HTTPS Server running on port ${PORT}`);
-  console.log(`Access the server at: https://172.23.144.1:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${isProduction ? 'production' : 'development'}`);
+  if (!isProduction) {
+    console.log(`Access the development server at: https://localhost:${PORT}`);
+  } else {
+    console.log(`Production server running at: https://${DOMAIN}`);
+  }
 });
 
 // API Routes - No Authentication Required
@@ -930,8 +939,5 @@ app.post('/api/boards/:id/notes', async (req, res) => {
     res.status(500).json({ error: 'Failed to create note' });
   }
 });
-
-// Remove or comment out this route if you don't want server-side scanning
-// app.post('/api/scan', (req, res) => { ... });
-
+ 
 
