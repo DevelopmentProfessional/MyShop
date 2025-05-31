@@ -29,6 +29,14 @@ build/
 
 # SSL certificates
 js/ssl/
+*.crt
+*.key
+*.pem
+
+# Scanner specific
+Scanner/certificates/
+Scanner/quaggaJS/
+Scanner/.babelrc
 
 # Temporary files
 *.tmp

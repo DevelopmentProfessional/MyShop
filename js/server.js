@@ -9,17 +9,49 @@ const { body, validationResult } = require('express-validator');
 const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
-
+const selfsigned = require('selfsigned');
+// const { scanBarcodeFromImage } = require('../Scanner/serverBarcode');
+// const { scanBarcodeFromImage: scanBarcodeFromImage2 } = require('../Scanner/Scanner2');
 const app = express();
 const router = express.Router();
 const PORT = process.env.PORT || 3030;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Load SSL cert and key
-const options = {
-  cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem')),
-  key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'))
-};
+
+// In your main server file
+app.use('/Scanner', express.static(path.join(__dirname, '../Scanner')));
+
+
+// Load SSL cert and key - create simple self-signed cert if files don't exist
+let options;
+try {
+  options = {
+    cert: fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem')),
+    key: fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'))
+  };
+} catch (err) {
+  // Create a simple self-signed certificate in memory for development
+  const attrs = [{ name: 'commonName', value: '172.23.144.1' }];
+  const pems = selfsigned.generate(attrs, { 
+    keySize: 2048, 
+    days: 365,
+    algorithm: 'sha256',
+    extensions: [{
+      name: 'subjectAltName',
+      altNames: [
+        { type: 2, value: 'localhost' },
+        { type: 2, value: '127.0.0.1' },
+        { type: 7, ip: '172.23.144.1' },
+        { type: 7, ip: '127.0.0.1' }
+      ]
+    }]
+  });
+  options = {
+    key: pems.private,
+    cert: pems.cert
+  };
+  console.log('Using generated self-signed certificate');
+}
 
 // Create HTTPS server
 const server = https.createServer(options, app);
@@ -36,11 +68,27 @@ app.use(limiter);
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://shopy.onrender.com'] 
-    : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5500', 'http://127.0.0.1:5500', 'http://192.168.4.106:3000', 'http://192.168.4.106:5500'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow any origin from local network
+    if (origin.includes('172.23.144.1') || 
+        origin.includes('localhost') || 
+        origin.includes('127.0.0.1') ||
+        origin.includes('192.168.')) {
+      return callback(null, true);
+    }
+    
+    // Allow production origin
+    if (process.env.NODE_ENV === 'production' && origin === 'https://shopy.onrender.com') {
+      return callback(null, true);
+    }
+    
+    return callback(null, true); // Allow all origins for development
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,
   maxAge: 86400
 }));
@@ -88,8 +136,9 @@ async function testConnection(retries = 3, delay = 1000) {
 }
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`HTTPS Server running on port ${PORT}`);
+  console.log(`Access the server at: https://172.23.144.1:${PORT}`);
 });
 
 // API Routes - No Authentication Required
@@ -881,4 +930,8 @@ app.post('/api/boards/:id/notes', async (req, res) => {
     res.status(500).json({ error: 'Failed to create note' });
   }
 });
- 
+
+// Remove or comment out this route if you don't want server-side scanning
+// app.post('/api/scan', (req, res) => { ... });
+
+

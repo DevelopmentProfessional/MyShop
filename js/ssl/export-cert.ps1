@@ -56,3 +56,27 @@ if (Test-Path $opensslPath) {
 }
 
 Write-Host "✅ Export completed successfully!"
+
+# PowerShell script to generate a self-signed certificate and export as PEM files for Node.js
+$cert = New-SelfSignedCertificate -DnsName "localhost" -CertStoreLocation "cert:\LocalMachine\My" -NotAfter (Get-Date).AddYears(1) -FriendlyName "ShopyDevCert" -KeyAlgorithm RSA -KeyLength 2048
+
+# Export the certificate and private key as a PFX file
+you can change the password if you want
+$pfxPath = Join-Path $PSScriptRoot 'shopy-dev-cert.pfx'
+$certPassword = ConvertTo-SecureString -String 'password' -Force -AsPlainText
+Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $certPassword
+
+# Export the certificate to PEM format
+$certPath = Join-Path $PSScriptRoot 'cert.pem'
+Export-Certificate -Cert $cert -FilePath $certPath -Type CERT
+
+# Export the private key to PEM format (requires OpenSSL)
+$keyPath = Join-Path $PSScriptRoot 'key.pem'
+$openssl = Get-Command openssl -ErrorAction SilentlyContinue
+if ($openssl) {
+    $opensslCmd = "openssl pkcs12 -in `"$pfxPath`" -nocerts -nodes -passin pass:password -out `"$keyPath`""
+    Invoke-Expression $opensslCmd
+    Write-Host "PEM files exported: cert.pem and key.pem"
+} else {
+    Write-Warning "OpenSSL is required to export the private key as PEM. Please install OpenSSL and re-run this script."
+}
