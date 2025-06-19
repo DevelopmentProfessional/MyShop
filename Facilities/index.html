@@ -7,111 +7,84 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
-            <h1 class="display-4 text-primary">Facilities Management</h1>
-            <p class="lead text-muted">Manage your facilities, maintenance, and space allocation</p>
-        </header>
-
-        <div class="row g-4">
-            <!-- Maintenance Requests -->
+<body class="bg-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-white rounded shadow-sm p-1 sticky-top">
+        <h1 class="display-4 text-primary">Facilities Management</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="maintenance-requests.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-tools fs-1 text-warning mb-2"></i>
-                        <h3 class="h5 card-title">Maintenance Requests</h3>
-                        <p class="card-text text-muted">Submit and track maintenance requests</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-tools fs-1 text-warning mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Maintenance Requests</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Space Allocation -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="space-allocation.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-building fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Space Allocation</h3>
-                        <p class="card-text text-muted">Manage office space and room assignments</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-building fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Space Allocation</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Equipment Tracking -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="equipment-tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-pc-display-horizontal fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Equipment Tracking</h3>
-                        <p class="card-text text-muted">Track facility equipment and assets</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-pc-display-horizontal fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Equipment Tracking</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Cleaning Schedule -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="cleaning-schedule.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-brush fs-1 text-primary mb-2"></i>
-                        <h3 class="h5 card-title">Cleaning Schedule</h3>
-                        <p class="card-text text-muted">Manage cleaning and janitorial services</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-brush fs-1 text-primary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Cleaning Schedule</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Security Access -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="security-access.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-shield-lock fs-1 text-danger mb-2"></i>
-                        <h3 class="h5 card-title">Security Access</h3>
-                        <p class="card-text text-muted">Manage building access and security</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-lock fs-1 text-danger mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Security Access</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Utilities Management -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="utilities-management.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-lightning-charge fs-1 text-warning mb-2"></i>
-                        <h3 class="h5 card-title">Utilities Management</h3>
-                        <p class="card-text text-muted">Monitor and manage utility usage</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge fs-1 text-warning mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Utilities Management</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Facility Reports -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="facility-reports.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-file-earmark-text fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Facility Reports</h3>
-                        <p class="card-text text-muted">Generate facility management reports</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark-text fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Facility Reports</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Vendor Management -->
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="vendor-management.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-people fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Vendor Management</h3>
-                        <p class="card-text text-muted">Manage facility service vendors</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-people fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Vendor Management</h3>
                     </div>
                 </a>
             </div>
         </div>
-
-        <!-- Back to Main Menu -->
-        <div class="text-center mt-4">
-            <a href="../index.html" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Back to Main Menu
-            </a>
-        </div>
+    </main>
+    <div class="p-2"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="../index.html" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Main Menu
+        </a>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

@@ -7,73 +7,67 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
-            <h1 class="display-4 text-primary">Asset Management</h1>
-            <p class="lead text-muted">Track, maintain, and manage your business assets</p>
-        </header>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <div class="col">
+<body class="bg-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-white rounded shadow-sm p-1 sticky-top">
+        <h1 class="display-4 text-primary">Asset Management</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="index.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-boxes fs-1 text-primary mb-2"></i>
-                        <h3 class="h5 card-title">Asset Overview</h3>
-                        <p class="card-text text-muted">View and manage all assets</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-boxes fs-1 text-primary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Asset Overview</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="check_in_out.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-arrow-left-right fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Check In/Out</h3>
-                        <p class="card-text text-muted">Track asset check-in and check-out</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-arrow-left-right fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Check In/Out</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="location_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-geo-alt fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Location Tracking</h3>
-                        <p class="card-text text-muted">Monitor asset locations</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-geo-alt fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Location Tracking</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="maintenance_logs.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-tools fs-1 text-warning mb-2"></i>
-                        <h3 class="h5 card-title">Maintenance Logs</h3>
-                        <p class="card-text text-muted">Record and view maintenance history</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-tools fs-1 text-warning mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Maintenance Logs</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="depreciation_dates.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-calendar2-minus fs-1 text-danger mb-2"></i>
-                        <h3 class="h5 card-title">Depreciation Dates</h3>
-                        <p class="card-text text-muted">Track asset depreciation</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar2-minus fs-1 text-danger mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Depreciation Dates</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="qr_barcode_scanning.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-upc-scan fs-1 text-secondary mb-2"></i>
-                        <h3 class="h5 card-title">QR/Barcode Scanning</h3>
-                        <p class="card-text text-muted">Scan assets for quick access</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-upc-scan fs-1 text-secondary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">QR/Barcode Scanning</h3>
                     </div>
                 </a>
             </div>
         </div>
-        <div class="text-center mt-4">
-            <a href="../index.html" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Back to Main Menu
-            </a>
-        </div>
+    </main>
+    <div class="p-2"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="../index.html" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Main Menu
+        </a>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

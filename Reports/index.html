@@ -7,100 +7,76 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
-            <h1 class="display-4 text-primary">Business Reports</h1>
-            <p class="lead text-muted">Comprehensive reporting and analytics for your business</p>
-        </header>
-
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <!-- Sales Trends -->
-            <div class="col">
+<body class="bg-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-white rounded shadow-sm p-1 sticky-top">
+        <h1 class="display-4 text-primary">Business Reports</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="sales-trends.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-graph-up-arrow fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Sales Trends</h3>
-                        <p class="card-text text-muted">Analyze sales performance and trends</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-graph-up-arrow fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Sales Trends</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Expense Reports -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="expense-reports.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-cash-stack fs-1 text-danger mb-2"></i>
-                        <h3 class="h5 card-title">Expense Reports</h3>
-                        <p class="card-text text-muted">Track and analyze business expenses</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-cash-stack fs-1 text-danger mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Expense Reports</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Dashboards -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="dashboards.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-speedometer2 fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Dashboards</h3>
-                        <p class="card-text text-muted">Interactive business dashboards</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-speedometer2 fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Dashboards</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Real-time Analytics -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="real-time-analytics.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-activity fs-1 text-warning mb-2"></i>
-                        <h3 class="h5 card-title">Real-time Analytics</h3>
-                        <p class="card-text text-muted">Live business metrics and insights</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-activity fs-1 text-warning mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Real-time Analytics</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Forecasting Tools -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="forecasting-tools.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-bar-chart-line fs-1 text-primary mb-2"></i>
-                        <h3 class="h5 card-title">Forecasting Tools</h3>
-                        <p class="card-text text-muted">Predict future business trends</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-bar-chart-line fs-1 text-primary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Forecasting Tools</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Custom Report Filters -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="custom-report-filters.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-funnel fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Custom Report Filters</h3>
-                        <p class="card-text text-muted">Create personalized report views</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-funnel fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Custom Report Filters</h3>
                     </div>
                 </a>
             </div>
-
-            <!-- Export Reports -->
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="export-to-csv-pdf.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-download fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Export Reports</h3>
-                        <p class="card-text text-muted">Export reports to CSV and PDF</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-download fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Export Reports</h3>
                     </div>
                 </a>
             </div>
         </div>
-
-        <!-- Back to Main Menu -->
-        <div class="text-center mt-4">
-            <a href="../index.html" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Back to Main Menu
-            </a>
-        </div>
+    </main>
+    <div class="p-2"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="../index.html" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Main Menu
+        </a>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

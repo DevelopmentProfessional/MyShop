@@ -7,73 +7,67 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
-            <h1 class="display-4 text-primary">Information Technology</h1>
-            <p class="lead text-muted">Support, knowledge, and IT management tools</p>
-        </header>
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <div class="col">
+<body class="bg-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-white rounded shadow-sm p-1 sticky-top">
+        <h1 class="display-4 text-primary">Information Technology</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="ticket_system.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-ticket-detailed fs-1 text-primary mb-2"></i>
-                        <h3 class="h5 card-title">Ticket System</h3>
-                        <p class="card-text text-muted">Manage IT support tickets</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-ticket-detailed fs-1 text-primary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Ticket System</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="support_chat.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-chat-dots fs-1 text-success mb-2"></i>
-                        <h3 class="h5 card-title">Support Chat</h3>
-                        <p class="card-text text-muted">Live chat for IT support</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-chat-dots fs-1 text-success mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Support Chat</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="canned_responses.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-clipboard-check fs-1 text-info mb-2"></i>
-                        <h3 class="h5 card-title">Canned Responses</h3>
-                        <p class="card-text text-muted">Quick replies for common issues</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-clipboard-check fs-1 text-info mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Canned Responses</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="knowledge_base.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-journal-bookmark fs-1 text-warning mb-2"></i>
-                        <h3 class="h5 card-title">Knowledge Base</h3>
-                        <p class="card-text text-muted">IT documentation and FAQs</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-bookmark fs-1 text-warning mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Knowledge Base</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="slas.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-speedometer2 fs-1 text-danger mb-2"></i>
-                        <h3 class="h5 card-title">SLAs</h3>
-                        <p class="card-text text-muted">Service Level Agreements</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-speedometer2 fs-1 text-danger mb-0"></i>
+                        <h3 class="h5 card-title mb-0">SLAs</h3>
                     </div>
                 </a>
             </div>
-            <div class="col">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                 <a href="satisfaction_surveys.html" class="card h-100 text-decoration-none text-dark hover-shadow">
-                    <div class="card-body text-center">
-                        <i class="bi bi-emoji-smile fs-1 text-secondary mb-2"></i>
-                        <h3 class="h5 card-title">Satisfaction Surveys</h3>
-                        <p class="card-text text-muted">Collect IT support feedback</p>
+                    <div class="card-body p-1 d-flex align-items-center gap-2">
+                        <i class="bi bi-emoji-smile fs-1 text-secondary mb-0"></i>
+                        <h3 class="h5 card-title mb-0">Satisfaction Surveys</h3>
                     </div>
                 </a>
             </div>
         </div>
-        <div class="text-center mt-4">
-            <a href="../index.html" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Back to Main Menu
-            </a>
-        </div>
+    </main>
+    <div class="p-2"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="../index.html" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Main Menu
+        </a>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
