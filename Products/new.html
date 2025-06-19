@@ -42,7 +42,11 @@
                 <label for="barcode" class="form-label">Barcode</label>
                 <input type="text" class="form-control" id="barcode" required>
             </div>
-            <button type="submit" class="btn btn-primary">Create Product</button>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Create Product</button>
+                <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                <a href="products.html" class="btn btn-outline-danger">Cancel</a>
+            </div>
         </form>
     </div>
 
@@ -80,6 +84,11 @@
                 console.error('Error:', error);
                 alert('Error creating product: ' + error.message);
             }
+        });
+
+        // Reset button functionality
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('productForm').reset();
         });
     </script>
 </body>

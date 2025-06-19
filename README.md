@@ -51,12 +51,12 @@ Shopy is a comprehensive business management solution that helps businesses mana
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/DevelopmentProfessional/shopy.git
+git clon https://github.com/DevelopmentProfessional/MyShop
 ```
 
 2. Navigate to the project directory:
 ```bash
-cd shopy
+cd MyShop
 ```
 
 3. Open `index.html` in your web browser to view the application.
