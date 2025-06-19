@@ -413,9 +413,13 @@ const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], 
   }]
 });
 
-https.createServer({key: pems.private,cert: pems.cert}, app).listen(PORT, HOST, () => {
-  const protocol = isProduction ? 'https' : 'https';
-  console.log(`Server running at ${protocol}://${DISPLAY_HOST}:${PORT}/`);
-  console.log(`Local access: ${protocol}://localhost:${PORT}/`);
-  console.log(`Network access: ${protocol}://${DISPLAY_HOST}:${PORT}/`);
-});
+// Start server: HTTP for production (Render), HTTPS for local development
+if (isProduction) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+} else {
+  https.createServer({key: pems.private, cert: pems.cert}, app).listen(PORT, HOST, () => {
+    console.log(`Local HTTPS server running at https://${DISPLAY_HOST}:${PORT}/`);
+  });
+}
