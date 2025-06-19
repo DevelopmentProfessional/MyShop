@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #0d6efd 0%, #6ea8fe 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            padding: 1.2rem 1rem;
+            text-align: center;
+        }
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+        .table-contracts th {
+            background: #e9ecef;
+        }
+        .quick-actions-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .contract-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .contract-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-active { border-left-color: #198754; }
+        .status-pending { border-left-color: #ffc107; }
+        .status-expired { border-left-color: #dc3545; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .contract-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .contract-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-file-earmark-text me-2"></i>Contract Management</h1>
+        <p class="lead mb-0">Create, track, and manage all your legal contracts in one place.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <i class="bi bi-file-earmark-check fs-2 text-primary mb-2"></i>
+                    <div class="fw-bold fs-4">45</div>
+                    <div class="text-muted">Active Contracts</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <i class="bi bi-clock-history fs-2 text-warning mb-2"></i>
+                    <div class="fw-bold fs-4">8</div>
+                    <div class="text-muted">Pending Review</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <i class="bi bi-exclamation-triangle fs-2 text-danger mb-2"></i>
+                    <div class="fw-bold fs-4">3</div>
+                    <div class="text-muted">Expiring Soon</div>
+                </div>
+            </div>
+        </div>
+        <div class="quick-actions-row justify-content-center mb-4">
+            <button class="btn btn-outline-primary"><i class="bi bi-funnel"></i> Filter</button>
+            <button class="btn btn-outline-primary"><i class="bi bi-download"></i> Export</button>
+            <button class="btn btn-outline-secondary"><i class="bi bi-calendar-check"></i> Schedule Review</button>
+        </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold">Contract List</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-contracts mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Department</th>
+                                <th>Expires</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Office Cleaning Services Agreement</td>
+                                <td>Service Agreement</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                                <td>Facilities</td>
+                                <td>Dec 2024</td>
+                                <td><button class="btn btn-sm btn-outline-primary">Details</button></td>
+                            </tr>
+                            <tr>
+                                <td>Software License Agreement</td>
+                                <td>Vendor Contract</td>
+                                <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                <td>IT</td>
+                                <td>Review Required</td>
+                                <td><button class="btn btn-sm btn-outline-primary">Details</button></td>
+                            </tr>
+                            <tr>
+                                <td>Office Lease Agreement</td>
+                                <td>Lease Agreement</td>
+                                <td><span class="badge bg-danger">Expiring</span></td>
+                                <td>Finance</td>
+                                <td>Nov 2024</td>
+                                <td><button class="btn btn-sm btn-outline-primary">Details</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="fab">
+            <button class="btn btn-primary btn-lg rounded-circle shadow" title="New Contract">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

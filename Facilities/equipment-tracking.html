@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment Tracking - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #134e5e 0%, #71b280 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .equipment-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(19,78,94,0.08);
+            padding: 1.2rem 1rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s;
+        }
+        .equipment-card:hover {
+            transform: translateY(-5px);
+        }
+        .qr-code {
+            width: 80px;
+            height: 80px;
+            background: repeating-linear-gradient(45deg, #134e5e, #134e5e 2px, #fff 2px, #fff 4px);
+            border-radius: 0.5rem;
+            margin: 0 auto 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #134e5e;
+            font-size: 0.5rem;
+        }
+        .sidebar-equipment {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .category-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .category-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .status-operational { border-left-color: #198754; }
+        .status-maintenance { border-left-color: #ffc107; }
+        .status-out { border-left-color: #dc3545; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .equipment-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .equipment-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-qr-code me-2"></i>Equipment Tracking</h1>
+        <p class="lead mb-0">Track and manage facility equipment with QR codes.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="mb-4 d-flex justify-content-between align-items-center">
+                    <input type="text" class="form-control w-50" placeholder="Search equipment...">
+                    <button class="btn btn-success ms-3"><i class="bi bi-plus-lg"></i> Add Equipment</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="equipment-card">
+                            <div class="qr-code">QR</div>
+                            <h6 class="fw-bold mb-1">Projector A1</h6>
+                            <div class="text-muted small mb-2">Conference Room A</div>
+                            <span class="badge bg-success mb-2">Available</span>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="equipment-card">
+                            <div class="qr-code">QR</div>
+                            <h6 class="fw-bold mb-1">Laptop L2</h6>
+                            <div class="text-muted small mb-2">IT Department</div>
+                            <span class="badge bg-warning text-dark mb-2">In Use</span>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="equipment-card">
+                            <div class="qr-code">QR</div>
+                            <h6 class="fw-bold mb-1">Printer P3</h6>
+                            <div class="text-muted small mb-2">Floor 2</div>
+                            <span class="badge bg-danger mb-2">Maintenance</span>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-equipment mb-4">
+                    <h6 class="fw-bold mb-3">Equipment Categories</h6>
+                    <ul class="category-list">
+                        <li>
+                            <span>Electronics</span>
+                            <span class="badge bg-primary">15</span>
+                        </li>
+                        <li>
+                            <span>Furniture</span>
+                            <span class="badge bg-success">8</span>
+                        </li>
+                        <li>
+                            <span>Tools</span>
+                            <span class="badge bg-warning text-dark">12</span>
+                        </li>
+                        <li>
+                            <span>Vehicles</span>
+                            <span class="badge bg-info">3</span>
+                        </li>
+                    </ul>
+                    <h6 class="fw-bold mb-3 mt-4">Status Overview</h6>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Available</span>
+                            <span class="fw-bold">25</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>In Use</span>
+                            <span class="fw-bold">10</span>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Maintenance</span>
+                            <span class="fw-bold">3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

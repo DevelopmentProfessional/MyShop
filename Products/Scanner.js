@@ -1,3 +1,23 @@
+(function() {
+    const origLog = console.log;
+    const origError = console.error;
+    function appendToStatus(msg, type = 'log') {
+        const statusElem = document.getElementById('status');
+        if (statusElem) {
+            const color = type === 'error' ? 'red' : 'inherit';
+            statusElem.innerHTML += `<div style="color:${color};font-size:0.9em;word-break:break-all;">${msg}</div>`;
+        }
+    }
+    console.log = function(...args) {
+        origLog.apply(console, args);
+        appendToStatus(args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' '), 'log');
+    };
+    console.error = function(...args) {
+        origError.apply(console, args);
+        appendToStatus(args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' '), 'error');
+    };
+})();
+
 const FORMAT_TO_READER = {
     ean_13: "ean_reader",
     ean_8: "ean_8_reader",
@@ -98,9 +118,44 @@ class BarcodeScanner {
             height: { min: 480 }
         };
 
-        // On mobile, always use environment facing camera
+        // DEBUG: To test if camera works at all, set testMode = true
+        const testMode = false; // Set to true to use minimal constraints for debugging
+        if (testMode) {
+            // Minimal constraints for debugging
+            Quagga.init({
+                inputStream: {
+                    type: 'LiveStream',
+                    constraints: { video: true },
+                    target: document.getElementById('interactive')
+                },
+                decoder: {
+                    readers: [reader],
+                    debug: {
+                        drawBoundingBox: true,
+                        showPattern: true
+                    }
+                },
+                locate: true
+            }, err => {
+                if (err) {
+                    console.error('Quagga initialization error:', err);
+                    this.setStatus('Error initializing camera: ' + (err.message || err.name || err), 'error');
+                    this.isRunning = false;
+                    return;
+                }
+                Quagga.start();
+                this.isRunning = true;
+                this.setStatus('Scanning... Point camera at barcode.', 'success');
+                this.startButton.disabled = true;
+                this.stopButton.disabled = false;
+                // ... existing code ...
+            });
+            return;
+        }
+
+        // On mobile, always use environment facing camera (relaxed constraint)
         if (this.isMobile) {
-            constraints.facingMode = { exact: 'environment' };
+            constraints.facingMode = 'environment';
         } else {
             // On desktop, use selected device
             const selectedDeviceId = this.deviceSelect.value;

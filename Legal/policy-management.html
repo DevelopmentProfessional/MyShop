@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #495057 0%, #6ea8fe 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .tab-content {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            padding: 1.5rem 1rem;
+        }
+        .policy-checklist .form-check {
+            margin-bottom: 1rem;
+        }
+        .sidebar-policy {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .progress-bar-adoption {
+            background: linear-gradient(90deg, #6ea8fe 0%, #495057 100%);
+        }
+        .policy-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .policy-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-active { border-left-color: #198754; }
+        .status-draft { border-left-color: #ffc107; }
+        .status-review { border-left-color: #6c757d; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .policy-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .policy-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-journal-text me-2"></i>Policy Management</h1>
+        <p class="lead mb-0">Manage, update, and track company policies.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <ul class="nav nav-tabs mb-3" id="policyTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="hr-tab" data-bs-toggle="tab" data-bs-target="#hr" type="button" role="tab" aria-controls="hr" aria-selected="true">HR</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="it-tab" data-bs-toggle="tab" data-bs-target="#it" type="button" role="tab" aria-controls="it" aria-selected="false">IT</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="finance-tab" data-bs-toggle="tab" data-bs-target="#finance" type="button" role="tab" aria-controls="finance" aria-selected="false">Finance</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="policyTabContent">
+                    <div class="tab-pane fade show active" id="hr" role="tabpanel" aria-labelledby="hr-tab">
+                        <h5 class="fw-bold mb-3">HR Policies</h5>
+                        <div class="policy-checklist">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy1" checked>
+                                <label class="form-check-label" for="policy1">Equal Opportunity Policy</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy2">
+                                <label class="form-check-label" for="policy2">Workplace Harassment Policy</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy3" checked>
+                                <label class="form-check-label" for="policy3">Leave Policy</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="it" role="tabpanel" aria-labelledby="it-tab">
+                        <h5 class="fw-bold mb-3">IT Policies</h5>
+                        <div class="policy-checklist">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy4" checked>
+                                <label class="form-check-label" for="policy4">Data Security Policy</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy5">
+                                <label class="form-check-label" for="policy5">Acceptable Use Policy</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="finance" role="tabpanel" aria-labelledby="finance-tab">
+                        <h5 class="fw-bold mb-3">Finance Policies</h5>
+                        <div class="policy-checklist">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy6">
+                                <label class="form-check-label" for="policy6">Expense Reimbursement Policy</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="policy7" checked>
+                                <label class="form-check-label" for="policy7">Travel Policy</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-policy mb-4">
+                    <h6 class="fw-bold mb-3">Policy Adoption</h6>
+                    <div class="progress mb-3" style="height: 1.5rem;">
+                        <div class="progress-bar progress-bar-adoption" role="progressbar" style="width: 78%;" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100">78%</div>
+                    </div>
+                    <h6 class="fw-bold mb-2">Overdue Policies</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle text-danger me-2"></i> Workplace Harassment Policy
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle text-danger me-2"></i> Acceptable Use Policy
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

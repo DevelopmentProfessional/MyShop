@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .vendor-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(253,203,110,0.08);
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #fdcb6e;
+        }
+        .vendor-rating {
+            color: #fdcb6e;
+        }
+        .vendor-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #fdcb6e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .sidebar-vendor {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .category-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .category-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .performance-metric {
+            background: #fff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-people-fill me-2"></i>Vendor Management</h1>
+        <p class="lead mb-0">Manage and track facility service vendors.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="mb-4 d-flex justify-content-between align-items-center">
+                    <input type="text" class="form-control w-50" placeholder="Search vendors...">
+                    <button class="btn btn-warning ms-3"><i class="bi bi-plus-lg"></i> Add Vendor</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="vendor-card">
+                            <div class="vendor-avatar">CP</div>
+                            <h6 class="fw-bold mb-1">CleanPro Services</h6>
+                            <div class="text-muted small mb-2">Cleaning & Maintenance</div>
+                            <div class="vendor-rating mb-2">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-success">Active</span>
+                                <small class="text-muted">Last service: 2d ago</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="vendor-card">
+                            <div class="vendor-avatar">TS</div>
+                            <h6 class="fw-bold mb-1">TechSolutions Inc</h6>
+                            <div class="text-muted small mb-2">IT & Security</div>
+                            <div class="vendor-rating mb-2">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-warning text-dark">Pending</span>
+                                <small class="text-muted">Next service: 1w</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="vendor-card">
+                            <div class="vendor-avatar">EP</div>
+                            <h6 class="fw-bold mb-1">EnergyPlus Utilities</h6>
+                            <div class="text-muted small mb-2">Utilities & HVAC</div>
+                            <div class="vendor-rating mb-2">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i><i class="bi bi-star"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-success">Active</span>
+                                <small class="text-muted">Last service: 1w ago</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="vendor-card">
+                            <div class="vendor-avatar">SS</div>
+                            <h6 class="fw-bold mb-1">SecureShield Security</h6>
+                            <div class="text-muted small mb-2">Security Systems</div>
+                            <div class="vendor-rating mb-2">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-success">Active</span>
+                                <small class="text-muted">24/7 monitoring</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-vendor mb-4">
+                    <h6 class="fw-bold mb-3">Vendor Categories</h6>
+                    <ul class="category-list">
+                        <li>
+                            <span>Cleaning</span>
+                            <span class="badge bg-primary">5</span>
+                        </li>
+                        <li>
+                            <span>IT Services</span>
+                            <span class="badge bg-success">3</span>
+                        </li>
+                        <li>
+                            <span>Security</span>
+                            <span class="badge bg-warning text-dark">2</span>
+                        </li>
+                        <li>
+                            <span>Utilities</span>
+                            <span class="badge bg-info">4</span>
+                        </li>
+                    </ul>
+                    <h6 class="fw-bold mb-3 mt-4">Performance Metrics</h6>
+                    <div class="performance-metric">
+                        <div class="h4 fw-bold text-success">4.2</div>
+                        <div class="text-muted small">Average Rating</div>
+                    </div>
+                    <div class="performance-metric">
+                        <div class="h4 fw-bold text-primary">12</div>
+                        <div class="text-muted small">Active Vendors</div>
+                    </div>
+                    <div class="performance-metric">
+                        <div class="h4 fw-bold text-warning">95%</div>
+                        <div class="text-muted small">On-time Delivery</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="fab">
+            <button class="btn btn-warning btn-lg rounded-circle shadow" title="Add Vendor">
+                <i class="bi bi-plus-lg"></i>
+            </button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

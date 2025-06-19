@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Reports - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #0a1931 0%, #185adb 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(24,90,219,0.08);
+            padding: 1.2rem 1rem;
+            text-align: center;
+        }
+        .bar-chart-placeholder {
+            width: 100%;
+            height: 180px;
+            background: repeating-linear-gradient(90deg, #185adb 0 20px, #f8f9fa 20px 40px);
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-reports {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .report-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .report-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-completed { border-left-color: #198754; }
+        .status-generating { border-left-color: #ffc107; }
+        .status-scheduled { border-left-color: #6c757d; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .report-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .report-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-bar-chart-steps me-2"></i>Legal Reports</h1>
+        <p class="lead mb-0">Analyze legal performance and generate detailed reports.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="summary-card">
+                            <i class="bi bi-file-earmark-bar-graph fs-2 text-primary mb-2"></i>
+                            <div class="fw-bold fs-4">12</div>
+                            <div class="text-muted">Reports This Month</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="summary-card">
+                            <i class="bi bi-graph-up-arrow fs-2 text-success mb-2"></i>
+                            <div class="fw-bold fs-4">+18%</div>
+                            <div class="text-muted">YOY Growth</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="summary-card">
+                            <i class="bi bi-archive fs-2 text-warning mb-2"></i>
+                            <div class="fw-bold fs-4">48</div>
+                            <div class="text-muted">Archived Reports</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bar-chart-placeholder mb-4"></div>
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white fw-bold">Recent Reports</div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Q2 Compliance Report</td>
+                                        <td>Compliance</td>
+                                        <td>2024-06-01</td>
+                                        <td><span class="badge bg-success">Complete</span></td>
+                                        <td><button class="btn btn-sm btn-outline-primary">View</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Contract Audit Summary</td>
+                                        <td>Audit</td>
+                                        <td>2024-05-20</td>
+                                        <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                        <td><button class="btn btn-sm btn-outline-primary">View</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Litigation Overview</td>
+                                        <td>Litigation</td>
+                                        <td>2024-05-10</td>
+                                        <td><span class="badge bg-info">In Progress</span></td>
+                                        <td><button class="btn btn-sm btn-outline-primary">View</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-reports mb-4">
+                    <h6 class="fw-bold mb-3">Export & Filter</h6>
+                    <select class="form-select mb-3">
+                        <option>All Types</option>
+                        <option>Compliance</option>
+                        <option>Audit</option>
+                        <option>Litigation</option>
+                    </select>
+                    <button class="btn btn-outline-primary w-100 mb-2"><i class="bi bi-download"></i> Download CSV</button>
+                    <button class="btn btn-outline-secondary w-100"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

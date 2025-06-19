@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Assessment - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #fd7e14 0%, #ff6f61 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .heatmap-table td {
+            text-align: center;
+            font-weight: bold;
+            color: #fff;
+            border-radius: 0.5rem;
+        }
+        .heatmap-low { background: #198754; }
+        .heatmap-med { background: #ffc107; color: #212529 !important; }
+        .heatmap-high { background: #dc3545; }
+        .alert-risk {
+            border-left: 6px solid #dc3545;
+            border-radius: 0.5rem;
+            background: #fff3f3;
+            margin-bottom: 1rem;
+        }
+        .sidebar-risk {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .donut-placeholder {
+            width: 100%;
+            height: 180px;
+            background: repeating-conic-gradient(from 0deg, #fd7e14 0deg 60deg, #ffc107 60deg 180deg, #198754 180deg 360deg);
+            border-radius: 50%;
+            margin: 0 auto 1rem auto;
+            display: block;
+        }
+        .risk-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .risk-card:hover {
+            transform: translateY(-5px);
+        }
+        .risk-high { border-left-color: #dc3545; }
+        .risk-medium { border-left-color: #ffc107; }
+        .risk-low { border-left-color: #198754; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .risk-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .risk-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-exclamation-octagon me-2"></i>Risk Assessment</h1>
+        <p class="lead mb-0">Identify, evaluate, and mitigate legal risks.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="mb-4">
+                    <h2 class="h5 mb-3">Risk Heatmap</h2>
+                    <table class="table heatmap-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Low</th>
+                                <th>Medium</th>
+                                <th>High</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>Likelihood</th>
+                                <td class="heatmap-low">2</td>
+                                <td class="heatmap-med">5</td>
+                                <td class="heatmap-high">1</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mb-4">
+                    <h2 class="h5 mb-3">Top Risks</h2>
+                    <div class="alert alert-risk d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill fs-3 text-danger me-3"></i>
+                        <div>
+                            <div class="fw-bold">Contract Expiry Overlap</div>
+                            <div class="text-muted small">Multiple contracts expiring in Q4 2024</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-risk d-flex align-items-center">
+                        <i class="bi bi-shield-exclamation fs-3 text-warning me-3"></i>
+                        <div>
+                            <div class="fw-bold">Compliance Audit Delays</div>
+                            <div class="text-muted small">SOX audit not scheduled</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-risk d-flex align-items-center">
+                        <i class="bi bi-person-x-fill fs-3 text-danger me-3"></i>
+                        <div>
+                            <div class="fw-bold">Unvetted Vendors</div>
+                            <div class="text-muted small">Vendor background checks incomplete</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-risk mb-4">
+                    <h6 class="fw-bold mb-3">Filter Risks</h6>
+                    <select class="form-select mb-3">
+                        <option>All</option>
+                        <option>Contract</option>
+                        <option>Compliance</option>
+                        <option>Vendor</option>
+                    </select>
+                    <div class="donut-placeholder"></div>
+                    <div class="text-center text-muted small">Risk Distribution (placeholder)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

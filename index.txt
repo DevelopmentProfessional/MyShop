@@ -1,0 +1,568 @@
+ <!--
+        
+             <h2 class="h3 mb-3 text-primary">Expenses</h2>
+            <div class="d-flex flex-wrap gap-3 justify-content-start">
+                <a href="Expenses/expense-categories.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-tags fs-1 text-danger mb-2"></i>
+                        <h3 class="h5 card-title">Expense Categories</h3>
+                        <p class="card-text text-muted">Manage expense categories and budgets</p>
+                    </div>
+                </a>
+                <a href="Expenses/receipt-scanning.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-receipt fs-1 text-success mb-2"></i>
+                        <h3 class="h5 card-title">Receipt Scanning</h3>
+                        <p class="card-text text-muted">Scan and process expense receipts</p>
+                    </div>
+                </a>
+                <a href="Expenses/mileage-tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-speedometer2 fs-1 text-info mb-2"></i>
+                        <h3 class="h5 card-title">Mileage Tracking</h3>
+                        <p class="card-text text-muted">Track business travel mileage</p>
+                    </div>
+                </a>
+                <a href="Expenses/reimbursement-requests.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-cash-coin fs-1 text-success mb-2"></i>
+                        <h3 class="h5 card-title">Reimbursement Requests</h3>
+                        <p class="card-text text-muted">Submit and track expense reimbursements</p>
+                    </div>
+                </a>
+                <a href="Expenses/expense-reports.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-file-earmark-text fs-1 text-warning mb-2"></i>
+                        <h3 class="h5 card-title">Expense Reports</h3>
+                        <p class="card-text text-muted">Generate and view expense reports</p>
+                    </div>
+                </a>
+                <a href="Expenses/monthly-budgeting.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-pie-chart fs-1 text-danger mb-2"></i>
+                        <h3 class="h5 card-title">Monthly Budgeting</h3>
+                        <p class="card-text text-muted">Plan and track monthly budgets</p>
+                    </div>
+                </a>
+                <a href="Expenses/exportable-reports.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-file-earmark-text fs-1 text-info mb-2"></i>
+                        <h3 class="h5 card-title">Exportable Reports</h3>
+                        <p class="card-text text-muted">Generate and export expense reports</p>
+                    </div>
+                </a>
+            </div>
+  
+             <h2 class="h3 mb-3 text-primary">Payments & Invoicing</h2>
+            <div class="d-flex flex-wrap gap-3 justify-content-start">
+                <a href="Payments/invoice-templates.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-file-earmark-plus fs-1 text-success mb-2"></i>
+                        <h3 class="h5 card-title">Invoice Templates</h3>
+                        <p class="card-text text-muted">Create and manage invoice templates</p>
+                    </div>
+                </a>
+                <a href="Payments/payment-link.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-credit-card-2-front fs-1 text-info mb-2"></i>
+                        <h3 class="h5 card-title">Payment Links</h3>
+                        <p class="card-text text-muted">Generate and manage payment links</p>
+                    </div>
+                </a>
+                <a href="Payments/partial-payments.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-clock-history fs-1 text-warning mb-2"></i>
+                        <h3 class="h5 card-title">Partial Payments</h3>
+                        <p class="card-text text-muted">Manage partial payment options</p>
+                    </div>
+                </a>
+                <a href="Payments/refund-management.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-arrow-return-left fs-1 text-danger mb-2"></i>
+                        <h3 class="h5 card-title">Refund Management</h3>
+                        <p class="card-text text-muted">Process and track refunds</p>
+                    </div>
+                </a>
+                <a href="Payments/late-fee-rules.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-exclamation-circle fs-1 text-warning mb-2"></i>
+                        <h3 class="h5 card-title">Late Fee Rules</h3>
+                        <p class="card-text text-muted">Configure late payment fees</p>
+                    </div>
+                </a>
+                <a href="Payments/one-time-recurring.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-arrow-repeat fs-1 text-success mb-2"></i>
+                        <h3 class="h5 card-title">One-time & Recurring</h3>
+                        <p class="card-text text-muted">Manage payment schedules</p>
+                    </div>
+                </a>
+            </div>
+ 
+       
+             <h2 class="h3 mb-3 text-primary">Point of Sale</h2>
+            <div class="d-flex flex-wrap gap-3 justify-content-start">
+                <a href="POS/in-store-sales.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-cart fs-1 text-success mb-2"></i>
+                        <h3 class="h5 card-title">In-Store Sales</h3>
+                        <p class="card-text text-muted">Process in-store transactions</p>
+                    </div>
+                </a>
+                <a href="POS/inventory-sync.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-box-seam fs-1 text-info mb-2"></i>
+                        <h3 class="h5 card-title">Inventory Sync</h3>
+                        <p class="card-text text-muted">Sync inventory across locations</p>
+                    </div>
+                </a>
+                <a href="POS/receipt-emails.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-envelope fs-1 text-warning mb-2"></i>
+                        <h3 class="h5 card-title">Receipt Emails</h3>
+                        <p class="card-text text-muted">Manage digital receipts</p>
+                    </div>
+                </a>
+                <a href="POS/gift-cards.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                    <div class="card-body text-center p-1">
+                        <i class="bi bi-gift fs-1 text-danger mb-2"></i>
+                        <h3 class="h5 card-title">Gift Cards</h3>
+                        <p class="card-text text-muted">Manage gift card system</p>
+                    </div>
+                </a>
+            </div>
+ 
+        <div class="row g-4">
+                  <h2 class="h3 mb-3 text-primary">Public Pages</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="Public/index.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-globe fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Public Site</h3>
+                            <p class="card-text text-muted">Visit our public website</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Main Features</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="booking-calendar.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar3 fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Booking Calendar</h3>
+                            <p class="card-text text-muted">Manage appointments and schedule bookings</p>
+                        </div>
+                    </a>
+                    <a href="clients.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-people fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Clients</h3>
+                            <p class="card-text text-muted">View and manage your client database</p>
+                        </div>
+                    </a>
+                    <a href="admin.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-gear fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Admin Panel</h3>
+                            <p class="card-text text-muted">Access administrative controls</p>
+                        </div>
+                    </a>
+                    <a href="employees.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-person-badge fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Employees</h3>
+                            <p class="card-text text-muted">Manage your team and staff</p>
+                        </div>
+                    </a>
+                    <a href="services.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-tools fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Services</h3>
+                            <p class="card-text text-muted">View and manage services</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Booking Management</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="booking/booking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar3 fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Booking Calendar</h3>
+                            <p class="card-text text-muted">Manage appointments and schedule bookings</p>
+                        </div>
+                    </a>
+                    <a href="booking/booking_management.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar-check fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Booking Management</h3>
+                            <p class="card-text text-muted">Manage and track all bookings</p>
+                        </div>
+                    </a>
+                    <a href="booking/booking_analytics.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-graph-up fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Booking Analytics</h3>
+                            <p class="card-text text-muted">View booking statistics and trends</p>
+                        </div>
+                    </a>
+                    <a href="booking/customer_reminders.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-bell fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Customer Reminders</h3>
+                            <p class="card-text text-muted">Manage appointment reminders and notifications</p>
+                        </div>
+                    </a>
+                    <a href="booking/service_catalogue.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-list-check fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Service Catalogue</h3>
+                            <p class="card-text text-muted">Manage business services and offerings</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Human Resources</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="humanresources/humanresources.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-people-fill fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">HR Dashboard</h3>
+                            <p class="card-text text-muted">HR management overview</p>
+                        </div>
+                    </a>
+                    <a href="humanresources/payroll.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-cash-stack fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Payroll</h3>
+                            <p class="card-text text-muted">Manage employee payments</p>
+                        </div>
+                    </a>
+                    <a href="humanresources/attendance.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-clock-history fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Attendance</h3>
+                            <p class="card-text text-muted">Track employee attendance</p>
+                        </div>
+                    </a>
+                    <a href="humanresources/leave_management.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar2-minus fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Leave Management</h3>
+                            <p class="card-text text-muted">Manage employee leaves</p>
+                        </div>
+                    </a>
+                    <a href="humanresources/performance_reviews.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-clipboard-check fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Performance Reviews</h3>
+                            <p class="card-text text-muted">Employee performance tracking</p>
+                        </div>
+                    </a>
+                    <a href="humanresources/recruitment.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-person-plus fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Recruitment</h3>
+                            <p class="card-text text-muted">Hiring and onboarding</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Project Management</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="Projects/task_assignments.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-check2-square fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Task Assignments</h3>
+                            <p class="card-text text-muted">Assign and track tasks</p>
+                        </div>
+                    </a>
+                    <a href="Projects/project_timelines.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar-range fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Project Timelines</h3>
+                            <p class="card-text text-muted">View project schedules</p>
+                        </div>
+                    </a>
+                    <a href="Projects/progress_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-graph-up-arrow fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Progress Tracking</h3>
+                            <p class="card-text text-muted">Monitor project progress</p>
+                        </div>
+                    </a>
+                    <a href="Projects/task_dependencies.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-diagram-3 fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Task Dependencies</h3>
+                            <p class="card-text text-muted">Manage task relationships</p>
+                        </div>
+                    </a>
+                    <a href="Projects/team_collaboration_boards.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-kanban fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Team Collaboration</h3>
+                            <p class="card-text text-muted">Team communication boards</p>
+                        </div>
+                    </a>
+                    <a href="Projects/time_logging.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-stopwatch fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Time Logging</h3>
+                            <p class="card-text text-muted">Track project time</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Project Management Tools</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="Projects/manager/gantt_charts.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-bar-chart-line fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Gantt Charts</h3>
+                            <p class="card-text text-muted">Visualize project timelines</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/milestone_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-flag fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Milestone Tracking</h3>
+                            <p class="card-text text-muted">Track project milestones</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/resource_allocation.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-diagram-2 fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Resource Allocation</h3>
+                            <p class="card-text text-muted">Manage resource distribution</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/task_prioritization.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-lightning fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Task Prioritization</h3>
+                            <p class="card-text text-muted">Prioritize project tasks</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/deadline_alerts.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-bell fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Deadline Alerts</h3>
+                            <p class="card-text text-muted">Monitor project deadlines</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/exportable_reports.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-file-earmark-text fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Exportable Reports</h3>
+                            <p class="card-text text-muted">Generate project reports</p>
+                        </div>
+                    </a>
+                    <a href="Projects/manager/team_workload_view.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-people fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Team Workload</h3>
+                            <p class="card-text text-muted">Monitor team capacity</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Information Technology</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="IT/ticket_system.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-ticket-detailed fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Ticket System</h3>
+                            <p class="card-text text-muted">Manage IT support tickets</p>
+                        </div>
+                    </a>
+                    <a href="IT/slas.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-clock-history fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">SLAs</h3>
+                            <p class="card-text text-muted">Service level agreements</p>
+                        </div>
+                    </a>
+                    <a href="IT/knowledge_base.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-book fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Knowledge Base</h3>
+                            <p class="card-text text-muted">IT documentation and guides</p>
+                        </div>
+                    </a>
+                    <a href="IT/canned_responses.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-chat-quote fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Canned Responses</h3>
+                            <p class="card-text text-muted">Quick response templates</p>
+                        </div>
+                    </a>
+                    <a href="IT/support_chat.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-chat-dots fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Support Chat</h3>
+                            <p class="card-text text-muted">Live IT support chat</p>
+                        </div>
+                    </a>
+                    <a href="IT/satisfaction_surveys.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-star fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Satisfaction Surveys</h3>
+                            <p class="card-text text-muted">IT service feedback</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Asset Management</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="Assets/check_in_out.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-box-seam fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Check-in/out</h3>
+                            <p class="card-text text-muted">Track asset movements</p>
+                        </div>
+                    </a>
+                    <a href="Assets/maintenance_logs.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-tools fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Maintenance Logs</h3>
+                            <p class="card-text text-muted">Asset maintenance records</p>
+                        </div>
+                    </a>
+                    <a href="Assets/depreciation_dates.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar-date fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Depreciation Dates</h3>
+                            <p class="card-text text-muted">Track asset value</p>
+                        </div>
+                    </a>
+                    <a href="Assets/location_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-geo-alt fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Location Tracking</h3>
+                            <p class="card-text text-muted">Monitor asset locations</p>
+                        </div>
+                    </a>
+                    <a href="Assets/qr_barcode_scanning.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-upc-scan fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">QR/Barcode Scanning</h3>
+                            <p class="card-text text-muted">Scan and track assets</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Employee Profile</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="My/profile.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-person-circle fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">My Profile</h3>
+                            <p class="card-text text-muted">View personal information</p>
+                        </div>
+                    </a>
+                    <a href="My/learning_paths.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-book fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Learning Paths</h3>
+                            <p class="card-text text-muted">Track development journey</p>
+                        </div>
+                    </a>
+                    <a href="My/course_assignments.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-journal-text fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Course Assignments</h3>
+                            <p class="card-text text-muted">Manage training courses</p>
+                        </div>
+                    </a>
+                    <a href="My/certification_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-award fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Certifications</h3>
+                            <p class="card-text text-muted">Track certifications</p>
+                        </div>
+                    </a>
+                    <a href="My/quiz_assessments.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-pencil-square fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Quiz Assessments</h3>
+                            <p class="card-text text-muted">Take training assessments</p>
+                        </div>
+                    </a>
+                    <a href="My/progress_tracking.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-graph-up-arrow fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Progress Tracking</h3>
+                            <p class="card-text text-muted">Monitor development progress</p>
+                        </div>
+                    </a>
+                    <a href="My/onboarding_checklists.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-list-check fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Onboarding Checklists</h3>
+                            <p class="card-text text-muted">Track onboarding progress</p>
+                        </div>
+                    </a>
+                    <a href="My/training_modules.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-mortarboard fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Training Modules</h3>
+                            <p class="card-text text-muted">Access training modules</p>
+                        </div>
+                    </a>
+                </div>
+ 
+                  <h2 class="h3 mb-3 text-primary">Reports</h2>
+                <div class="d-flex flex-wrap gap-3 justify-content-start">
+                    <a href="Reports/sales-trends.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-graph-up-arrow fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Sales Trends</h3>
+                            <p class="card-text text-muted">Analyze sales performance and trends</p>
+                        </div>
+                    </a>
+                    <a href="Reports/expense-reports.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-cash-stack fs-1 text-danger mb-2"></i>
+                            <h3 class="h5 card-title">Expense Reports</h3>
+                            <p class="card-text text-muted">Track and analyze business expenses</p>
+                        </div>
+                    </a>
+                    <a href="Reports/dashboards.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-speedometer2 fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Dashboards</h3>
+                            <p class="card-text text-muted">Interactive business dashboards</p>
+                        </div>
+                    </a>
+                    <a href="Reports/real-time-analytics.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-activity fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Real-time Analytics</h3>
+                            <p class="card-text text-muted">Live business metrics and insights</p>
+                        </div>
+                    </a>
+                    <a href="Reports/forecasting-tools.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-calendar-check fs-1 text-success mb-2"></i>
+                            <h3 class="h5 card-title">Forecasting Tools</h3>
+                            <p class="card-text text-muted">Predict future business trends</p>
+                        </div>
+                    </a>
+                    <a href="Reports/custom-report-filters.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-funnel fs-1 text-info mb-2"></i>
+                            <h3 class="h5 card-title">Custom Report Filters</h3>
+                            <p class="card-text text-muted">Create personalized report views</p>
+                        </div>
+                    </a>
+                    <a href="Reports/export-to-csv-pdf.html" class="card h-100 text-decoration-none text-dark hover-shadow" style="min-width: 260px; max-width: 320px;">
+                        <div class="card-body text-center p-1">
+                            <i class="bi bi-file-earmark-arrow-down fs-1 text-warning mb-2"></i>
+                            <h3 class="h5 card-title">Export to CSV/PDF</h3>
+                            <p class="card-text text-muted">Export reports in various formats</p>
+                        </div>
+                    </a>
+                </div>
+
+            -->

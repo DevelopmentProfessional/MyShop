@@ -3,442 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuaggaJS Barcode Scanner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Products - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body  class="bg-light p-0 d-flex flex-column">
-   
-    <div class="p-0">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Manage Products</h2>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProductModal">
-                <i class="bi bi-plus-circle"></i> Add New Product
-            </button>
-        </div>
+<body class="bg-light">
+    <div class="container py-4">
+        <header class="text-center mb-4 bg-white rounded shadow-sm p-4">
+            <h1 class="display-4 text-primary">Products</h1>
+         </header>
 
-        <div class="card">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="py-0 px-1">Delete</th>
-                                <th class="py-0 px-1">Name</th>
-                                <th class="py-0 px-1">Description</th>
-                                <th class="py-0 px-1">Price</th>
-                                <th class="py-0 px-1">Quantity</th>
-                                <th class="py-0 px-1">Category</th>
-                                <th class="py-0 px-1">Status</th>
-                                <th class="py-0 px-1">Edit</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productsTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div id="toastContainer"></div>
-    </div>
-
-    <!-- New Product Modal -->
-    <div class="modal fade" id="newProductModal" tabindex="-1">
-        <div class="modal-dialog fixed-bottom modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header p-1">
-                    <h5 class="modal-title">Add New Product</h5>
-                </div>
-                <div class="modal-body py-1 px-0">
-                    <form id="newProductForm">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control w-100" id="productName" placeholder="Product Name" required>
-                            <label for="productName">Product Name</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <textarea class="form-control w-100" id="productDescription" placeholder="Description" style="height: 100px"></textarea>
-                            <label for="productDescription">Description</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="number" class="form-control w-100" id="productPrice" placeholder="Price" required min="0" step="0.01">
-                            <label for="productPrice">Price ($)</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="number" class="form-control w-100" id="productQuantity" placeholder="Quantity" required min="0">
-                            <label for="productQuantity">Quantity</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select class="form-select w-100" id="productCategory" required>
-                                <option value="">Select a category</option>
-                                <option value="Styling Tools">Styling Tools</option>
-                                <option value="Hair Care">Hair Care</option>
-                                <option value="Hair Color">Hair Color</option>
-                                <option value="Accessories">Accessories</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Styling Products">Styling Products</option>
-                                <option value="Hair Extensions">Hair Extensions</option>
-                            </select>
-                            <label for="productCategory">Category</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select class="form-select w-100" id="productStatus" required>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                            <label for="productStatus">Status</label>
-                        </div>
-                        <div class="container py-0 ovberflow-auto">
-                             <div id="status" class="alert alert-info text-center">Initializing...</div>
-                            <div class="row justify-content-center mb-3">
-                                <div class="col-md-4 mb-2">
-                                    <select id="formatSelect" class="form-select">
-                                        <option value="ean_13">EAN-13</option>
-                                        <option value="ean_8">EAN-8</option>
-                                        <option value="upc_a">UPC-A</option>
-                                        <option value="upc_e">UPC-E</option>
-                                        <option value="code_128">Code 128</option>
-                                        <option value="code_39">Code 39</option>
-                                        <option value="code_39_vin">Code 39 VIN</option>
-                                        <option value="codabar">Codabar</option>
-                                        <option value="i2of5">Interleaved 2 of 5</option>
-                                        <option value="code_93">Code 93</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4 mb-2">
-                                    <select id="deviceSelect" class="form-select"></select>
-                                </div>
-                            </div>
-                            <div class="row justify-content-center mb-3">
-                                <div class="col-auto">
-                                    <button type="button" id="startButton" class="btn btn-primary me-2">Start Camera</button>
-                                    <button type="button" id="stopButton" class="btn btn-secondary" disabled>Stop Camera</button>
-                                </div>
-                            </div>
-                            <div class="row justify-content-center mb-3">
-                                <div class="">
-                                    <div id="interactive" class="border rounded bg-dark" style="width: 100%;"></div>
-                                </div>
-                            </div>
-
-
-
-                            <div id="result" class="alert alert-light text-center">No barcode detected</div>
-
-                            
-                        </div>
-                       
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveProduct">Save</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Product Modal -->
-    <div class="modal fade" id="editProductModal" tabindex="-1">
-        <div class="modal-dialog fixed-bottom">
-            <div class="modal-content">
-                <div class="modal-header p-1">
-                    <h5 class="modal-title">Edit Product</h5>
-                </div>
-                <div class="modal-body py-1 px-0">
-                    <form id="editProductForm">
-                        <input type="hidden" id="editProductId">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control w-100" id="editProductName" placeholder="Product Name" required>
-                            <label for="editProductName">Product Name</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <textarea class="form-control w-100" id="editProductDescription" placeholder="Description" style="height: 100px"></textarea>
-                            <label for="editProductDescription">Description</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="number" class="form-control w-100" id="editProductPrice" placeholder="Price" required min="0" step="0.01">
-                            <label for="editProductPrice">Price ($)</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="number" class="form-control w-100" id="editProductQuantity" placeholder="Quantity" required min="0">
-                            <label for="editProductQuantity">Quantity</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select class="form-select w-100" id="editProductCategory" required>
-                                <option value="">Select a category</option>
-                                <option value="Styling Tools">Styling Tools</option>
-                                <option value="Hair Care">Hair Care</option>
-                                <option value="Hair Color">Hair Color</option>
-                                <option value="Accessories">Accessories</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Styling Products">Styling Products</option>
-                                <option value="Hair Extensions">Hair Extensions</option>
-                            </select>
-                            <label for="editProductCategory">Category</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select class="form-select w-100" id="editProductStatus" required>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                            <label for="editProductStatus">Status</label>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="updateProduct">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation Bar -->
-    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="d-flex mx-auto">
-            <a class="btn btn-outline-light mx-1" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
-            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
-            <a class="btn btn-warning mx-1 disabled" href="products.html" title="Products"><i class="bi bi-box"></i></a>
-            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
-            <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
-            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
-            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
-            <button class="btn btn-secondary me-2" onclick="loadData()">
-                <i class="bi bi-arrow-clockwise"></i>
-            </button>
-        </div>
-    </nav>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const API_URL = 'https://myshop-5hec.onrender.com';
-
-        async function fetchData(url, options = {}) {
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        }
-
-        let products = [];
-
-        async function loadData() {
-            try {
-                products = await fetchData(`${API_URL}/api/products`);
-                renderProducts();
-            } catch (error) {
-                console.error('Error loading data:', error);
-            }
-        }
-
-        function renderProducts() {
-            const tbody = document.getElementById('productsTableBody');
-            tbody.innerHTML = products.map(product => `
-                <tr>
-                    <td class="py-0 px-1">
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                    <td class="py-0 px-1">${product.name}</td>
-                    <td class="py-0 px-1">${product.description || ''}</td>
-                    <td class="py-0 px-1">$${Number(product.price).toFixed(2)}</td>
-                    <td class="py-0 px-1">${product.quantity}</td>
-                    <td class="py-0 px-1">${product.category || ''}</td>
-                    <td class="py-0 px-1">
-                        <span class="badge bg-${product.status === 'active' ? 'success' : 'secondary'}">${product.status}</span>
-                    </td>
-                    <td class="py-0 px-1">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        async function saveProduct() {
-            // Set default values
-            let name = "";
-            let description = "";
-            let price = 0;
-            let quantity = 0;
-            let category = "";
-            let status = "";
-
-            // Get references to form elements
-            const nameInput = document.getElementById("productName");
-            const descriptionInput = document.getElementById("productDescription");
-            const priceInput = document.getElementById("productPrice");
-            const quantityInput = document.getElementById("productQuantity");
-            const categoryElement = document.getElementById("productCategory");
-            const statusElement = document.getElementById("productStatus");
-
-            // Assign values if elements exist
-            if (nameInput) name = nameInput.value;
-            if (descriptionInput) description = descriptionInput.value;
-            if (priceInput) price = priceInput.value;
-            if (quantityInput) quantity = quantityInput.value;
-            if (categoryElement) category = categoryElement.options[categoryElement.selectedIndex]?.value;
-            if (statusElement) status = statusElement.options[statusElement.selectedIndex]?.value;
-
-            // Prevent API request if required values are missing
-            if (!name || !price || !quantity || !category || !status) {
-                console.error("Error: One or more required fields are empty!");
-                showToast('Please fill in all required fields', 'danger');
-                return;
-            }
-
-            try {
-                const response = await fetchData(`${API_URL}/api/products`, {
-                    method: "POST",
-                    body: JSON.stringify({ name, description, price, quantity, category, status }),
-                });
-
-                products.push(response);
-                renderProducts();
-
-                // Close the modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById("newProductModal"));
-                modal.hide();
-
-                // Show success message
-                showToast('Product created successfully', 'success');
-
-                // Reset the form
-                document.getElementById("newProductForm").reset();
-            } catch (error) {
-                console.error("Error creating product:", error);
-                showToast('Failed to create product', 'danger');
-            }
-        }
-
-        async function editProduct(id) {
-            const product = products.find(p => p.id === id);
-            if (!product) return;
-
-            document.getElementById('editProductId').value = product.id;
-            document.getElementById('editProductName').value = product.name;
-            document.getElementById('editProductDescription').value = product.description || '';
-            document.getElementById('editProductPrice').value = product.price;
-            document.getElementById('editProductQuantity').value = product.quantity;
-            document.getElementById('editProductCategory').value = product.category || '';
-            document.getElementById('editProductStatus').value = product.status;
-
-            const modal = new bootstrap.Modal(document.getElementById('editProductModal'));
-            modal.show();
-        }
-
-        async function updateProduct() {
-            const id = document.getElementById('editProductId').value;
-            const name = document.getElementById('editProductName').value;
-            const description = document.getElementById('editProductDescription').value;
-            const price = document.getElementById('editProductPrice').value;
-            const quantity = document.getElementById('editProductQuantity').value;
-            const category = document.getElementById('editProductCategory').value;
-            const status = document.getElementById('editProductStatus').value;
-
-            try {
-                const response = await fetchData(`${API_URL}/api/products/${id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ name, description, price, quantity, category, status })
-                });
-
-                const index = products.findIndex(p => p.id === id);
-                if (index !== -1) {
-                    products[index] = response;
-                }
-                renderProducts();
-
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editProductModal'));
-                modal.hide();
-
-                showToast('Product updated successfully', 'success');
-            } catch (error) {
-                console.error('Error updating product:', error);
-                showToast('Failed to update product', 'danger');
-            }
-        }
-
-        async function deleteProduct(id) {
-            if (!confirm('Are you sure you want to delete this product?')) return;
-
-            try {
-                await fetchData(`${API_URL}/api/products/${id}`, {
-                    method: 'DELETE'
-                });
-
-                products = products.filter(p => p.id !== id);
-                renderProducts();
-                
-                showToast('Product deleted successfully', 'success');
-            } catch (error) {
-                console.error('Error deleting product:', error);
-                showToast('Failed to delete product', 'danger');
-            }
-        }
-
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type} border-0`;
-            toast.setAttribute('role', 'alert');
-            toast.setAttribute('aria-live', 'assertive');
-            toast.setAttribute('aria-atomic', 'true');
-            
-            toast.innerHTML = `
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <!-- Product Management -->
+            <div class="col">
+                <a href="products.html" class="card h-100 text-decoration-none text-dark hover-shadow">
+                    <div class="card-body text-center">
+                        <i class="bi bi-box-seam fs-1 text-primary mb-2"></i>
+                        <h3 class="h5 card-title">Product Management</h3>
+                        <p class="card-text text-muted">View and manage your product catalog</p>
                     </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
-            
-            toast.addEventListener('hidden.bs.toast', () => {
-                toast.remove();
-            });
-        }
-
-        // Event Listeners
-        document.getElementById('saveProduct').addEventListener('click', saveProduct);
-        document.getElementById('updateProduct').addEventListener('click', updateProduct);
-
-        // Initialize
-        //loadData();
-    </script>
+                </a>
+            </div>
 
 
+ <!-- In-Store Sales -->
+ <div class="col">
+    <a href="in-store-sales.html" class="card h-100 text-decoration-none text-dark hover-shadow">
+        <div class="card-body text-center">
+            <i class="bi bi-cart-check fs-1 text-success mb-2"></i>
+            <h3 class="h5 card-title">In-Store Sales</h3>
+            <p class="card-text text-muted">Process sales and manage transactions</p>
+        </div>
+    </a>
+</div>
+
+<!-- Receipt Emails -->
+<div class="col">
+    <a href="receipt-emails.html" class="card h-100 text-decoration-none text-dark hover-shadow">
+        <div class="card-body text-center">
+            <i class="bi bi-envelope fs-1 text-info mb-2"></i>
+            <h3 class="h5 card-title">Receipt Emails</h3>
+            <p class="card-text text-muted">Send digital receipts to customers</p>
+        </div>
+    </a>
+</div>
+ 
+
+<!-- Gift Cards -->
+<div class="col">
+    <a href="gift-cards.html" class="card h-100 text-decoration-none text-dark hover-shadow">
+        <div class="card-body text-center">
+            <i class="bi bi-gift fs-1 text-danger mb-2"></i>
+            <h3 class="h5 card-title">Gift Cards</h3>
+            <p class="card-text text-muted">Manage gift card sales and redemption</p>
+        </div>
+    </a>
+</div>
+</div>
 
 
 
 
+        <!-- Back to Main Menu -->
+        <div class="text-center mt-4">
+            <a href="../index.html" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Main Menu
+            </a>
+        </div>
+    </div>
 
-
-
-    
-    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
-    <script src="Scanner.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

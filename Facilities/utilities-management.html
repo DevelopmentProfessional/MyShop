@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utilities Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .utility-card {
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,184,148,0.08);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .utility-meter {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#00b894 0deg 180deg, #f8f9fa 180deg 360deg);
+            margin: 0 auto 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .utility-meter::before {
+            content: '';
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+        }
+        .utility-meter .meter-value {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .consumption-chart {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(45deg, #00b894 25%, transparent 25%), linear-gradient(-45deg, #00cec9 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #00b894 75%), linear-gradient(-45deg, transparent 75%, #00cec9 75%);
+            background-size: 20px 20px;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .sidebar-utilities {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            padding: 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .cost-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .cost-list li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .utilities-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .utilities-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-normal { border-left-color: #198754; }
+        .status-warning { border-left-color: #ffc107; }
+        .status-critical { border-left-color: #dc3545; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .utilities-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .utilities-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-lightning-charge me-2"></i>Utilities Management</h1>
+        <p class="lead mb-0">Monitor and optimize facility utility consumption.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="consumption-chart"></div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="utility-card">
+                            <div class="utility-meter">
+                                <div class="meter-value">75%</div>
+                            </div>
+                            <h6 class="fw-bold mb-2">Electricity</h6>
+                            <div class="text-muted small mb-2">Current Usage</div>
+                            <span class="badge bg-success">Normal</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="utility-card">
+                            <div class="utility-meter" style="background: conic-gradient(#e17055 0deg 120deg, #f8f9fa 120deg 360deg);">
+                                <div class="meter-value">40%</div>
+                            </div>
+                            <h6 class="fw-bold mb-2">Water</h6>
+                            <div class="text-muted small mb-2">Current Usage</div>
+                            <span class="badge bg-warning text-dark">High</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="utility-card">
+                            <div class="utility-meter" style="background: conic-gradient(#0984e3 0deg 90deg, #f8f9fa 90deg 360deg);">
+                                <div class="meter-value">25%</div>
+                            </div>
+                            <h6 class="fw-bold mb-2">Gas</h6>
+                            <div class="text-muted small mb-2">Current Usage</div>
+                            <span class="badge bg-info">Low</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="sidebar-utilities mb-4">
+                    <h6 class="fw-bold mb-3">Monthly Costs</h6>
+                    <ul class="cost-list">
+                        <li>
+                            <span>Electricity</span>
+                            <span class="fw-bold">$2,450</span>
+                        </li>
+                        <li>
+                            <span>Water</span>
+                            <span class="fw-bold">$850</span>
+                        </li>
+                        <li>
+                            <span>Gas</span>
+                            <span class="fw-bold">$320</span>
+                        </li>
+                        <li>
+                            <span>Internet</span>
+                            <span class="fw-bold">$180</span>
+                        </li>
+                    </ul>
+                    <h6 class="fw-bold mb-3 mt-4">Total Monthly Cost</h6>
+                    <div class="h4 fw-bold text-primary">$3,800</div>
+                    <div class="text-muted small">+5% from last month</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

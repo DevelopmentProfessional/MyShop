@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Barcode Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        #interactive.viewport {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+        }
+        #interactive.viewport > canvas, #interactive.viewport > video {
+            max-width: 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        canvas.drawing, canvas.drawingBuffer {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Product Barcode Scanner</h2>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="deviceSelect" class="form-label">Camera</label>
+                            <select class="form-select" id="deviceSelect">
+                                <option value="">Loading cameras...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="formatSelect" class="form-label">Barcode Format</label>
+                            <select class="form-select" id="formatSelect">
+                                <option value="ean_13">EAN-13</option>
+                                <option value="ean_8">EAN-8</option>
+                                <option value="upc_a">UPC-A</option>
+                                <option value="upc_e">UPC-E</option>
+                                <option value="code_128">Code 128</option>
+                                <option value="code_39">Code 39</option>
+                                <option value="code_39_vin">Code 39 VIN</option>
+                                <option value="codabar">Codabar</option>
+                                <option value="i2of5">Interleaved 2 of 5</option>
+                                <option value="code_93">Code 93</option>
+                            </select>
+                        </div>
+                        <div id="interactive" class="viewport"></div>
+                        <div class="mt-3">
+                            <button id="startButton" class="btn btn-primary">Start Camera</button>
+                            <button id="stopButton" class="btn btn-secondary" disabled>Stop Camera</button>
+                        </div>
+                        <div id="status" class="alert mt-3" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Scanned Barcode</h5>
+                        <div class="mb-3">
+                            <label for="barcodeInput" class="form-label">Barcode</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="barcodeInput" readonly>
+                                <button class="btn btn-primary" id="updateBarcode">Update</button>
+                            </div>
+                        </div>
+                        <div id="result" class="alert alert-info">No barcode detected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script>
+        const API_URL = window.location.origin;
+        let productId = null;
+        let isRunning = false;
+        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let currentReader = null;
+
+        const FORMAT_TO_READER = {
+            ean_13: "ean_reader",
+            ean_8: "ean_8_reader",
+            upc_a: "upc_reader",
+            upc_e: "upc_e_reader",
+            code_128: "code_128_reader",
+            code_39: "code_39_reader",
+            code_39_vin: "code_39_vin_reader",
+            codabar: "codabar_reader",
+            i2of5: "i2of5_reader",
+            code_93: "code_93_reader"
+        };
+
+        // Initialize the page
+        function initializePage() {
+            // Get product ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            productId = urlParams.get('id');
+
+            if (!productId) {
+                showStatus('No product ID provided', 'danger');
+                return;
+            }
+
+            // Initialize camera devices
+            initializeCameraDevices();
+        }
+
+        // Initialize camera devices
+        async function initializeCameraDevices() {
+            showStatus('Requesting camera access...', 'info');
+            try {
+                // First request general camera permission
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (!isMobile) {
+                    const deviceSelect = document.getElementById('deviceSelect');
+                    deviceSelect.innerHTML = '';
+                    videoDevices.forEach((device, idx) => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${idx + 1}`;
+                        deviceSelect.appendChild(option);
+                    });
+                } else {
+                    document.getElementById('deviceSelect').style.display = 'none';
+                }
+                
+                if (videoDevices.length === 0) {
+                    showStatus('No camera devices found.', 'danger');
+                    document.getElementById('startButton').disabled = true;
+                } else {
+                    showStatus('Ready. Click Start Camera to begin scanning.', 'success');
+                    document.getElementById('startButton').disabled = false;
+                }
+            } catch (err) {
+                console.error('Camera access error:', err);
+                showStatus('Error accessing camera. Please ensure camera permissions are granted.', 'danger');
+                document.getElementById('startButton').disabled = true;
+            }
+        }
+
+        // Start scanning
+        function startScanning() {
+            if (isRunning) return;
+            showStatus('Starting camera...', 'info');
+            
+            const selectedFormat = document.getElementById('formatSelect').value;
+            currentReader = FORMAT_TO_READER[selectedFormat];
+            
+            if (!currentReader) {
+                showStatus('Barcode format not supported.', 'danger');
+                return;
+            }
+
+            const constraints = {
+                width: { min: 640 },
+                height: { min: 480 }
+            };
+
+            if (isMobile) {
+                constraints.facingMode = 'environment';
+            } else {
+                const selectedDeviceId = document.getElementById('deviceSelect').value;
+                if (selectedDeviceId) {
+                    constraints.deviceId = { exact: selectedDeviceId };
+                }
+            }
+
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector("#interactive"),
+                    constraints: constraints
+                },
+                decoder: {
+                    readers: [currentReader],
+                    debug: {
+                        drawBoundingBox: true,
+                        showPattern: true
+                    }
+                },
+                locate: true
+            }, function(err) {
+                if (err) {
+                    console.error('Quagga initialization error:', err);
+                    showStatus('Error initializing camera: ' + err.message, 'danger');
+                    isRunning = false;
+                    return;
+                }
+                Quagga.start();
+                isRunning = true;
+                showStatus('Scanning... Point camera at barcode.', 'success');
+                document.getElementById('startButton').disabled = true;
+                document.getElementById('stopButton').disabled = false;
+            });
+
+            Quagga.onDetected(function(result) {
+                if (result.codeResult.code) {
+                    document.getElementById('barcodeInput').value = result.codeResult.code;
+                    document.getElementById('result').textContent = `Detected: ${result.codeResult.code}`;
+                    document.getElementById('result').className = 'alert alert-success';
+                    showStatus('Barcode detected!', 'success');
+                }
+            });
+
+            Quagga.onProcessed(function(result) {
+                const drawingCtx = Quagga.canvas.ctx.overlay;
+                const drawingCanvas = Quagga.canvas.dom.overlay;
+
+                if (result) {
+                    if (result.boxes) {
+                        result.boxes.filter(function (box) {
+                            return box !== result.box;
+                        }).forEach(function (box) {
+                            Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, drawingCtx, { color: "green", lineWidth: 2 });
+                        });
+                    }
+
+                    if (result.box) {
+                        Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, drawingCtx, { color: "#00F", lineWidth: 2 });
+                    }
+
+                    if (result.codeResult && result.codeResult.code) {
+                        Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, drawingCtx, { color: 'red', lineWidth: 3 });
+                    }
+                }
+            });
+        }
+
+        // Stop scanning
+        function stopScanning() {
+            if (!isRunning) return;
+            Quagga.stop();
+            isRunning = false;
+            showStatus('Camera stopped.', 'info');
+            document.getElementById('startButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
+        }
+
+        // Handle update button click
+        document.getElementById('updateBarcode').addEventListener('click', async function() {
+            const barcode = document.getElementById('barcodeInput').value;
+            if (!barcode) {
+                showStatus('Please scan a barcode first', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/productbarcode/${productId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ barcode })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to update barcode');
+                }
+
+                const result = await response.json();
+                showStatus('Barcode updated successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = `edit.html?id=${productId}`;
+                }, 1500);
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('Failed to update barcode: ' + error.message, 'danger');
+            }
+        });
+
+        // Event listeners
+        document.getElementById('startButton').addEventListener('click', startScanning);
+        document.getElementById('stopButton').addEventListener('click', stopScanning);
+        document.getElementById('deviceSelect').addEventListener('change', function() {
+            if (isRunning) {
+                stopScanning();
+                startScanning();
+            }
+        });
+        document.getElementById('formatSelect').addEventListener('change', function() {
+            if (isRunning) {
+                stopScanning();
+                startScanning();
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `alert alert-${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html> 
