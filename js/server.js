@@ -413,13 +413,45 @@ const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], 
   }]
 });
 
-// Start server: HTTP for production (Render), HTTPS for local development
-if (isProduction) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler caught:', err);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
   });
-} else {
-  https.createServer({key: pems.private, cert: pems.cert}, app).listen(PORT, HOST, () => {
-    console.log(`Local HTTPS server running at https://${DISPLAY_HOST}:${PORT}/`);
+});
+
+// Startup logging
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server environment: ${process.env.NODE_ENV}`);
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Database URL is set: ${!!process.env.DATABASE_URL}`);
+  
+  // Test database connection
+  pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+      console.error('Database connection failed:', err.message);
+    } else {
+      console.log('Database connected successfully');
+    }
   });
-}
+});
+
+// Handle server startup errors
+server.on('error', (error) => {
+  console.error('Server startup error:', error);
+  process.exit(1);
+});
+
+// Handle unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
