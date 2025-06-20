@@ -1,46 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gift Cards - Shopy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body>
-    <div class="container py-5">
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">Gift Cards</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="../index.html">Home</a></li>
-                <li class="breadcrumb-item"><a href="index.html">Point of Sale</a></li>
-                <li class="breadcrumb-item active">Gift Cards</li>
+            <ol class="breadcrumb bg-dark text-light border-secondary">
+                <li class="breadcrumb-item"><a href="../index.html" class="text-light">Home</a></li>
+                <li class="breadcrumb-item"><a href="index.html" class="text-light">Point of Sale</a></li>
+                <li class="breadcrumb-item active text-light">Gift Cards</li>
             </ol>
         </nav>
-
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
+        <div class="card shadow-sm bg-dark text-light border-secondary">
+            <div class="card-header bg-primary text-light border-secondary">
                 <h1 class="h4 mb-0">Gift Cards</h1>
             </div>
             <div class="card-body">
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card bg-dark text-light border-secondary">
                             <div class="card-body">
                                 <h5 class="card-title">Create Gift Card</h5>
                                 <form>
                                     <div class="mb-3">
                                         <label class="form-label">Amount</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">$</span>
-                                            <input type="number" class="form-control" placeholder="0.00" step="0.01">
+                                            <span class="input-group-text bg-dark text-light border-secondary">$</span>
+                                            <input type="number" class="form-control bg-dark text-light border-secondary" placeholder="0.00" step="0.01">
                                         </div>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Recipient Email</label>
-                                        <input type="email" class="form-control" placeholder="recipient@email.com">
+                                        <input type="email" class="form-control bg-dark text-light border-secondary" placeholder="recipient@email.com">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Message (Optional)</label>
-                                        <textarea class="form-control" rows="3"></textarea>
+                                        <textarea class="form-control bg-dark text-light border-secondary" rows="3"></textarea>
                                     </div>
                                     <button type="submit" class="btn btn-primary">Create Gift Card</button>
                                 </form>
@@ -48,24 +51,24 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card bg-dark text-light border-secondary">
                             <div class="card-body">
                                 <h5 class="card-title">Active Gift Cards</h5>
                                 <div class="list-group">
-                                    <div class="list-group-item">
+                                    <div class="list-group-item bg-dark text-light border-secondary">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 class="mb-0">Card #1234</h6>
-                                                <small class="text-muted">Balance: $50.00</small>
+                                                <small class="text-secondary">Balance: $50.00</small>
                                             </div>
                                             <span class="badge bg-success">Active</span>
                                         </div>
                                     </div>
-                                    <div class="list-group-item">
+                                    <div class="list-group-item bg-dark text-light border-secondary">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <h6 class="mb-0">Card #1235</h6>
-                                                <small class="text-muted">Balance: $25.00</small>
+                                                <small class="text-secondary">Balance: $25.00</small>
                                             </div>
                                             <span class="badge bg-success">Active</span>
                                         </div>
@@ -78,8 +81,14 @@
                 </div>
             </div>
         </div>
-    </div>
-
+    </main>
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+            <a href="index.html" class="btn btn-dark border-light ms-2">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </nav>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

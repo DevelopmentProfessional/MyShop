@@ -12,6 +12,8 @@ const https = require('https');
 const tls = require('tls');
 const selfsigned = require('selfsigned');
 const os = require('os');
+const fs = require('fs');
+const http = require('http');
 const app = express();
 const router = express.Router();
 const PORT = process.env.PORT || 3030;
@@ -33,7 +35,7 @@ app.use(express.json({
   verify: (req, res, buf) => {
     if (buf.length > 922 * 1024) {
       throw new Error('Request entity too large');
-    }
+    }y
   }
 }));
 app.use(cors());
@@ -48,6 +50,14 @@ app.use((err, req, res, next) => {
     });
   }
   next(err);
+});
+
+// Middleware to redirect HTTP to HTTPS in production (Render)
+app.use((req, res, next) => {
+  if (isProduction && req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect('https://' + req.headers.host + req.url);
+  }
+  next();
 });
 
 // Serve static files and index for all directories
@@ -423,27 +433,50 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Startup logging
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Server environment: ${process.env.NODE_ENV}`);
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Database URL is set: ${!!process.env.DATABASE_URL}`);
-  
-  // Test database connection
-  pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-      console.error('Database connection failed:', err.message);
-    } else {
-      console.log('Database connected successfully');
-    }
+// --- Server Startup ---
+if (!isProduction) {
+  // Local development: use HTTPS with self-signed cert
+  const server = https.createServer(
+    { key: pems.private, cert: pems.cert },
+    app
+  ).listen(PORT, HOST, () => {
+    console.log(`HTTPS server running at https://${DISPLAY_HOST}:${PORT}`);
+    // Test database connection
+    pool.query('SELECT NOW()', (err, res) => {
+      if (err) {
+        console.error('Database connection failed:', err.message);
+      } else {
+        console.log('Database connected successfully');
+      }
+    });
   });
-});
-
-// Handle server startup errors
-server.on('error', (error) => {
-  console.error('Server startup error:', error);
-  process.exit(1);
-});
+  server.on('error', (error) => {
+    console.error('Server startup error:', error);
+    process.exit(1);
+  });
+} else {
+  // Production (Render): use HTTP only
+  const server = app.listen(PORT, HOST, () => {
+    // Show the Render domain, no port if DOMAIN is set
+    if (process.env.DOMAIN) {
+      console.log(`HTTP server running at https://${process.env.DOMAIN}`);
+    } else {
+      console.log(`HTTP server running at https://${DISPLAY_HOST}:${PORT}`);
+    }
+    // Test database connection
+    pool.query('SELECT NOW()', (err, res) => {
+      if (err) {
+        console.error('Database connection failed:', err.message);
+      } else {
+        console.log('Database connected successfully');
+      }
+    });
+  });
+  server.on('error', (error) => {
+    console.error('Server startup error:', error);
+    process.exit(1);
+  });
+}
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
