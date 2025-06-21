@@ -24,7 +24,7 @@ const DOMAIN = process.env.DOMAIN || (isProduction ? 'shopy.onrender.com' : 'loc
 const dbUrl = process.env.DATABASE_URL;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {rejectUnauthorized: false},
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
   statement_timeout: 30000, // 30 seconds
   query_timeout: 30000
 });
