@@ -15,7 +15,7 @@ const os = require('os');
 const fs = require('fs');
 const http = require('http');
 const app = express();
-const router = require('./router');
+
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 const HOST = '0.0.0.0'; // Listen on all interfaces
