@@ -407,6 +407,23 @@ catch (error) { console.error('Error creating note:', error); }
 
 // Mount router
 
+// SSL certificate generation
+const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], {
+  keySize: 2048,
+  days: 365,
+  algorithm: 'sha256',
+  extensions: [{
+    name: 'subjectAltName',
+    altNames: [
+      { type: 2, value: 'localhost' },
+      { type: 2, value: '127.0.0.1' },
+      { type: 2, value: DISPLAY_HOST },
+      { type: 7, ip: '192.168.4.106' }
+    ]
+  }]
+});
+
+
 
 // Global error handler
 app.use((err, req, res, next) => {
