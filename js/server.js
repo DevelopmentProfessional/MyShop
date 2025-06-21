@@ -15,8 +15,8 @@ const os = require('os');
 const fs = require('fs');
 const http = require('http');
 const app = express();
-const router = express.Router();
-const PORT = process.env.PORT || 3030;
+const router = require('./router');
+const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 const HOST = '0.0.0.0'; // Listen on all interfaces
 const DISPLAY_HOST = '192.168.4.106'; // Your IP address for display
