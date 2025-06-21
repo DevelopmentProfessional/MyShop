@@ -19,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 const HOST = '0.0.0.0'; // Listen on all interfaces
-const DISPLAY_HOST = '192.168.4.106'; // Your IP address for display
+const DISPLAY_HOST = isProduction ? (process.env.DOMAIN || 'myshop-5hec.onrender.com') : '192.168.4.106';
 const DOMAIN = process.env.DOMAIN || (isProduction ? 'shopy.onrender.com' : 'localhost');
 const dbUrl = process.env.DATABASE_URL;
 const pool = new Pool({
@@ -460,7 +460,7 @@ if (!isProduction) {
   // Production (Render): use HTTP only
   const server = app.listen(PORT, HOST, () => {
     // Show the Render domain, no port if DOMAIN is set
-    console.log(`HTTP server running at https://${process.env.DOMAIN || DISPLAY_HOST}:${PORT}`);
+    console.log(`HTTP server running at https://${DISPLAY_HOST}`);
     // Test database connection
     pool.query('SELECT NOW()', (err, res) => {
       if (err) {
