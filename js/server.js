@@ -35,7 +35,7 @@ app.use(express.json({
   verify: (req, res, buf) => {
     if (buf.length > 922 * 1024) {
       throw new Error('Request entity too large');
-    }y
+    }
   }
 }));
 app.use(cors());
@@ -458,11 +458,7 @@ if (!isProduction) {
   // Production (Render): use HTTP only
   const server = app.listen(PORT, HOST, () => {
     // Show the Render domain, no port if DOMAIN is set
-    if (process.env.DOMAIN) {
-      console.log(`HTTP server running at https://${process.env.DOMAIN}`);
-    } else {
-      console.log(`HTTP server running at https://${DISPLAY_HOST}:${PORT}`);
-    }
+    console.log(`HTTP server running at https://${process.env.DOMAIN || DISPLAY_HOST}:${PORT}`);
     // Test database connection
     pool.query('SELECT NOW()', (err, res) => {
       if (err) {

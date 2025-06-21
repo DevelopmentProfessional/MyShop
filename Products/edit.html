@@ -50,9 +50,9 @@
                                 <input type="text" class="form-control bg-dark text-light border-secondary" id="editProductBarcode" placeholder="Barcode">
                                 <label for="editProductBarcode">Barcode</label>
                             </div>
-                            <a href="barcode.html?id=${productId}" class="btn btn-outline-primary align-self-stretch d-flex align-items-center">
+                            <button type="button" id="scanBarcodeBtn" class="btn btn-outline-primary align-self-stretch d-flex align-items-center">
                                 <i class="bi bi-upc-scan"></i> <span class="ms-1">Scan</span>
-                            </a>
+                            </button>
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-3">
@@ -363,6 +363,11 @@
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload';
             }
+        });
+
+        // Handle scan button click
+        document.getElementById('scanBarcodeBtn').addEventListener('click', function() {
+            window.location.href = `barcode.html?id=${productId}`;
         });
 
         // Call loadProductData when the page loads

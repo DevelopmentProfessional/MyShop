@@ -12,49 +12,53 @@
     <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
         <h1 class="display-4 text-light">Products</h1>
     </header>
+
     <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
         <div class="row g-1 p-1 w-100 justify-content-center">
-            <div class="col-12">
-                <div class="row g-1 p-1 w-100 justify-content-center">
-                    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
-                        <nav class="navbar navbar-expand-lg bg-dark border-bottom border-secondary mb-2 rounded shadow-sm">
-                            <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
-                                <!-- Status Filter -->
-                                <div class="dropdown dropup">
-                                    <button id="statusFilterBtn" class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
-                                        Status
-                                    </button>
-                                    <ul id="statusFilterMenu" class="dropdown-menu dropdown-menu-dark p-2"></ul>
-                                </div>
-                                <!-- Category Filter -->
-                                <div class="dropdown dropup">
-                                    <button id="categoryFilterBtn" class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
-                                        Category
-                                    </button>
-                                    <ul id="categoryFilterMenu" class="dropdown-menu dropdown-menu-dark"></ul>
-                                </div>
-                                <!-- Price Sort -->
-                                <button id="priceSortBtn" type="button" class="btn btn-outline-light" title="Sort by price" disabled>
-                                    <i class="bi bi-currency-dollar me-1"></i><i class="bi bi-arrow-down-up"></i>
-                                </button>
-                                <!-- Quantity Sort -->
-                                <button id="qtySortBtn" type="button" class="btn btn-outline-light" title="Sort by quantity" disabled>
-                                    # <i class="bi bi-arrow-down-up ms-1"></i>
-                                </button>
-                                <!-- Search Bar -->
-                                <input id="searchInput" type="text" class="form-control bg-dark text-light border-secondary ms-2 flex-grow-1 w-100" placeholder="🔍 Search" aria-label="Search"  disabled>
-                            </div>
-                        </nav>
-                    </div>
-                </div>
+            <div class="col-12"> 
                 <div class="container-fluid py-3">
                     <div id="productsGrid" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4"></div>
                 </div>
             </div>
         </div>
     </main>
+    <div class="p-5">
+
+    </div>
+
     <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
-        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+        
+      <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+          <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+                   <div class="container-fluid p-0 d-flex flex-wrap align-items-center ">
+                      <!-- Status Filter -->
+                      <div class="dropdown dropup me-1">
+                          <button id="statusFilterBtn" class="btn btn-outline-light dropdown-toggle p-0 px-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                              Status
+                          </button>
+                          <ul id="statusFilterMenu" class="dropdown-menu dropdown-menu-dark p-2"></ul>
+                      </div>
+                      
+                      <div class="dropdown dropup me-1">
+                          <button id="categoryFilterBtn" class="btn btn-outline-light dropdown-toggle p-0 px-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                              Category
+                          </button>
+                          <ul id="categoryFilterMenu" class="dropdown-menu dropdown-menu-dark"></ul>
+                      </div>
+                      <!-- Price Sort -->
+                      <button id="priceSortBtn" type="button" class="btn btn-outline-light p-0 px-1 me-1" title="Sort by price" disabled>
+                          <i class="bi bi-currency-dollar me-1"></i><i class="bi bi-arrow-down-up"></i>
+                      </button>
+                      <!-- Quantity Sort -->
+                      <button id="qtySortBtn" type="button" class="btn btn-outline-light p-0 px-1 me-1" title="Sort by quantity" disabled>
+                          # <i class="bi bi-arrow-down-up ms-1"></i>
+                      </button>
+                      <!-- Search Bar -->
+                      <input id="searchInput" type="text" class="form-control bg-dark text-light border-secondary flex-grow-1 w-100 p-0 px-1 mt-1" placeholder="🔍 Search" aria-label="Search"  disabled>
+                  </div>
+           </div>
+      </div>
             <a href="index.html" class="btn btn-dark border-light ms-2">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
@@ -126,6 +130,9 @@
 
         function updateCategoryFilter() {
           const menu = document.getElementById('categoryFilterMenu');
+          const dropdown = menu.closest('.dropdown');
+          const button = document.getElementById('categoryFilterBtn');
+          
           allCategories = [...new Set(products.map(p => p.category).filter(Boolean))];
           menu.innerHTML =
             allCategories.map(cat => `
@@ -136,23 +143,42 @@
             `).join('') +
             `<li class="py-1"><button id="selectAllCategoriesBtn" class="btn btn-sm btn-outline-light w-100 mt-1">Select All</button></li>`;
           selectedCategories = [...allCategories];
+          
           // Set up change events
           menu.querySelectorAll('input[type=checkbox]').forEach(cb => {
-            cb.onchange = () => {
+            cb.onchange = (e) => {
+              e.stopPropagation(); // Prevent dropdown from closing
               selectedCategories = Array.from(menu.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value);
               filterProducts();
               document.getElementById('categoryFilterBtn').textContent = 'Category';
             };
           });
+          
           // Select All button logic
           document.getElementById('selectAllCategoriesBtn').onclick = function(e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent dropdown from closing
             const allChecked = selectedCategories.length === allCategories.length;
             menu.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = !allChecked; });
             selectedCategories = !allChecked ? [...allCategories] : [];
             filterProducts();
             document.getElementById('categoryFilterBtn').textContent = 'Category';
           };
+          
+          // Prevent dropdown from closing when clicking inside the menu
+          menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+          });
+          
+          // Close dropdown when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target)) {
+              const bsDropdown = bootstrap.Dropdown.getInstance(button);
+              if (bsDropdown) {
+                bsDropdown.hide();
+              }
+            }
+          });
         }
 
         function updateStatusFilter() {
@@ -216,7 +242,7 @@
           const grid = document.getElementById('productsGrid');
           grid.innerHTML = filteredProducts.map(product => `
             <div class="col p-1">
-              <div class="card h-100 shadow-sm border-0 bg-dark text-light">
+              <div class="card h-100 shadow-sm border-1 bg-dark text-light">
                 <div class="card-header p-1 d-flex justify-content-between align-items-center">
                   <span><strong>${product.name}</strong></span>
                   <span class="badge bg-secondary">${product.category || ''}</span>
