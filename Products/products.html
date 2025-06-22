@@ -59,13 +59,14 @@
                   </div>
            </div>
       </div>
-            <a href="index.html" class="btn btn-dark border-light ms-2">
+
+            <a href="index.html" class="btn btn-dark border-light ms-2 rounded-5">
                 <i class="bi bi-arrow-left"></i> Back
             </a>
-            <a href="new.html" class="btn btn-primary ">
+            <a href="new.html" class="btn btn-primary rounded-5 ">
                 <i class="bi bi-plus-circle"></i> Add New Product
             </a>
-            <button class="btn btn-warning ms-auto" onclick="loadData()">
+            <button class="btn btn-warning ms-auto rounded-circle" onclick="loadData()">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
@@ -118,6 +119,8 @@
           enableFilters(false);
           try {
             products = await fetchData(`${API_URL}/api/products`);
+            console.log('Frontend received products:', products);
+            console.log('First product sample:', products[0]);
             filteredProducts = [...products];
             updateCategoryFilter();
             updateStatusFilter();
@@ -238,13 +241,30 @@
           renderProducts();
         }
 
+        function getProductCategoryIcon(category) {
+          switch ((category || '').toLowerCase()) {
+            case 'electronics': return 'bi-phone';
+            case 'clothing': return 'bi-tshirt';
+            case 'food': return 'bi-egg-fried';
+            case 'furniture': return 'bi-cupboard';
+            case 'books': return 'bi-book';
+            case 'toys': return 'bi-joystick';
+            case 'beauty': return 'bi-brush';
+            case 'sports': return 'bi-basketball';
+            case 'tools': return 'bi-tools';
+            case 'health': return 'bi-heart-pulse';
+            case 'office': return 'bi-briefcase';
+            default: return 'bi-box';
+          }
+        }
+
         function renderProducts() {
           const grid = document.getElementById('productsGrid');
           grid.innerHTML = filteredProducts.map(product => `
             <div class="col p-1">
               <div class="card h-100 shadow-sm border-1 bg-dark text-light">
                 <div class="card-header p-1 d-flex justify-content-between align-items-center">
-                  <span><strong>${product.name}</strong></span>
+                  <span><strong><i class="bi ${getProductCategoryIcon(product.category)} me-1"></i>${product.name}</strong></span>
                   <span class="badge bg-secondary">${product.category || ''}</span>
                 </div>
                 <div class="card-body p-1">
@@ -307,5 +327,4 @@
     }
     </style>
  </body>
-</html> 
 </html> 

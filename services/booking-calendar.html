@@ -56,21 +56,19 @@
 <div class="card-body position-relative overflow-scroll p-0">
     <div id="appointments" class="list-group"></div>
 </div> 
+
+ 
   
     <!-- Navigation Bar -->
-    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="d-flex mx-auto">
-            <a class="btn btn-warning mx-1 disabled" href="booking-calendar.html" title="Calendar"><i class="bi bi-calendar"></i></a>
-            <a class="btn btn-outline-light mx-1" href="services.html" title="Services"><i class="bi bi-list-check"></i></a>
-            <a class="btn btn-outline-light mx-1" href="products.html" title="Products"><i class="bi bi-box"></i></a>
-            <a class="btn btn-outline-light mx-1" href="clients.html" title="Clients"><i class="bi bi-people"></i></a>
-            <a class="btn btn-outline-light mx-1" href="employees.html" title="Employees"><i class="bi bi-person-badge"></i></a>
-            <a class="btn btn-outline-light mx-1" href="admin.html" title="Admin"><i class="bi bi-shield-lock"></i></a>
-            <a class="btn btn-outline-light mx-1" href="profile.html" title="Profile"><i class="bi bi-person"></i></a>
-            <button class="btn btn-secondary me-2" onclick="debouncedLoadData()">
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg navbar-dark bg-primary px-2">
+
+
+           <a href="index.html" class="btn btn-dark border-light rounded-5">
+                <i class="bi bi-arrow-left"></i> Back
+            </a> 
+            <button class="btn btn-warning ms-auto rounded-circle" onclick="debouncedLoadData()">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
-        </div>
     </nav>
  
     <!-- Booking Details Modal -->

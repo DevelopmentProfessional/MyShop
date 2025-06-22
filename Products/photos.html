@@ -204,7 +204,7 @@
 
     async function loadPhotosFromDB() {
       try {
-        const response = await fetchData(`${API_URL}/api/photos`);
+        const response = await fetchData(`${API_URL}/api/photos_products`);
         
         // Clear the photo list
         photoList.innerHTML = '';

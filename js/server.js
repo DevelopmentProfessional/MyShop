@@ -17,14 +17,35 @@ const http = require('http');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+// Better environment detection
+const isOnRender = process.env.RENDER || process.env.RENDER_EXTERNAL_URL || process.env.RENDER_INTERNAL_URL;
 const isProduction = process.env.NODE_ENV === 'production';
+const isLocalDevelopment = !isOnRender;
+
+// Get local IP address for development
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const interface of interfaces[name]) {
+      if (interface.family === 'IPv4' && !interface.internal) {
+        return interface.address;
+      }
+    }
+  }
+  return '192.168.4.106'; // fallback
+};
+
 const HOST = '0.0.0.0'; // Listen on all interfaces
-const DISPLAY_HOST = isProduction ? (process.env.DOMAIN || 'myshop-5hec.onrender.com') : '192.168.4.106';
-const DOMAIN = process.env.DOMAIN || (isProduction ? 'shopy.onrender.com' : 'localhost');
+const DISPLAY_HOST = isOnRender ? (process.env.DOMAIN || 'myshop-5hec.onrender.com') : getLocalIP();
+const DOMAIN = process.env.DOMAIN || (isOnRender ? 'shopy.onrender.com' : 'localhost');
 const dbUrl = process.env.DATABASE_URL;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: isProduction ? { rejectUnauthorized: false } : false,
+  ssl: {
+    rejectUnauthorized: false,
+    require: true
+  },
   statement_timeout: 30000, // 30 seconds
   query_timeout: 30000
 });
@@ -54,7 +75,7 @@ app.use((err, req, res, next) => {
 
 // Middleware to redirect HTTP to HTTPS in production (Render)
 app.use((req, res, next) => {
-  if (isProduction && req.headers['x-forwarded-proto'] !== 'https') {
+  if (isOnRender && req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect('https://' + req.headers.host + req.url);
   }
   next();
@@ -105,19 +126,19 @@ app.get('/api/services', async (req, res) => {try{
   const result = await pool.query('SELECT * FROM services ORDER BY name'); res.json(result.rows); } 
 catch (error) { handleError(res, error, 'Check console'); }
 });
-app.get('/api/photos', async (req, res) => {
+app.get('/api/photos_products', async (req, res) => {
     try { 
-        const result = await pool.query('SELECT * FROM photos'); 
+        const result = await pool.query('SELECT * FROM photos_products'); 
         res.json(result.rows); 
     } 
     catch (error) { 
         handleError(res, error, 'Failed to fetch photos', true); 
     }
 });
-app.get('/api/photos/:productId', async (req, res) => {
+app.get('/api/photos_products/:productId', async (req, res) => {
     try {
         const { productId } = req.params;
-        const result = await pool.query('SELECT * FROM photos WHERE product_id = $1', [productId]);
+        const result = await pool.query('SELECT * FROM photos_products WHERE product_id = $1', [productId]);
         res.json(result.rows);
     }
     catch (error) {
@@ -244,9 +265,44 @@ app.delete('/api/appointments/:id', async (req, res) => {try{
 catch (error) { handleError(res, error, 'Check console'); }
 });
 
-app.get('/api/products', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM products ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/products', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, description, price, quantity, category, status, barcode FROM products ORDER BY name');
+    console.log('Products API response:', JSON.stringify(result.rows, null, 2));
+    res.json(result.rows);
+  } catch (error) {
+    console.error(error); // Make sure to log the full error
+    handleError(res, error, 'Check console', true);
+  }
+});
+
+// Debug endpoint to check table structure
+app.get('/api/debug/products-table', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'products' 
+      ORDER BY ordinal_position
+    `);
+    console.log('Products table structure:', JSON.stringify(result.rows, null, 2));
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error getting table structure:', error);
+    handleError(res, error, 'Check console', true);
+  }
+});
+
+// Debug endpoint to see actual product data
+app.get('/api/debug/products-data', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM products LIMIT 5');
+    console.log('Raw products data:', JSON.stringify(result.rows, null, 2));
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error getting products data:', error);
+    handleError(res, error, 'Check console', true);
+  }
 });
 
 app.get('/api/products/:id', async (req, res) => {try{ 
@@ -405,6 +461,26 @@ app.post('/api/boards/:id/notes', async (req, res) => {try{
 catch (error) { console.error('Error creating note:', error); }
 });
 
+app.get('/api/photos_services', async (req, res) => {
+    try { 
+        const result = await pool.query('SELECT * FROM photos_services'); 
+        res.json(result.rows); 
+    } 
+    catch (error) { 
+        handleError(res, error, 'Failed to fetch service photos', true); 
+    }
+});
+app.get('/api/photos_services/:serviceId', async (req, res) => {
+    try {
+        const { serviceId } = req.params;
+        const result = await pool.query('SELECT * FROM photos_services WHERE service_id = $1', [serviceId]);
+        res.json(result.rows);
+    }
+    catch (error) {
+        handleError(res, error, 'Failed to fetch service photos', true);
+    }
+});
+
 // Mount router
 
 // SSL certificate generation
@@ -423,7 +499,31 @@ const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], 
   }]
 });
 
-
+// Test database connection with retry logic
+const testDatabaseConnection = async (retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const client = await pool.connect();
+      const result = await client.query('SELECT NOW()');
+      client.release();
+      console.log('Database connected successfully');
+      console.log(`Database URL: ${dbUrl ? dbUrl.substring(0, 20) + '...' : 'Not set'}`);
+      console.log(`SSL enabled: Yes (Required for Render database)`);
+      console.log(`Environment: ${isOnRender ? 'Render' : 'Local'} (NODE_ENV: ${process.env.NODE_ENV})`);
+      return true;
+    } catch (error) {
+      console.error(`Database connection attempt ${i + 1} failed:`, error.message);
+      if (i === retries - 1) {
+        console.error('All database connection attempts failed');
+        console.error('Please check your DATABASE_URL environment variable');
+        console.error('Make sure your DATABASE_URL is correct and includes SSL parameters');
+        return false;
+      }
+      // Wait 2 seconds before retrying
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+};
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -436,21 +536,16 @@ app.use((err, req, res, next) => {
 });
 
 // --- Server Startup ---
-if (!isProduction) {
+if (!isOnRender) {
   // Local development: use HTTPS with self-signed cert
   const server = https.createServer(
     { key: pems.private, cert: pems.cert },
     app
   ).listen(PORT, HOST, () => {
     console.log(`HTTPS server running at https://${DISPLAY_HOST}:${PORT}`);
+    console.log(`Environment: Local Development (NODE_ENV: ${process.env.NODE_ENV})`);
     // Test database connection
-    pool.query('SELECT NOW()', (err, res) => {
-      if (err) {
-        console.error('Database connection failed:', err.message);
-      } else {
-        console.log('Database connected successfully');
-      }
-    });
+    testDatabaseConnection();
   });
   server.on('error', (error) => {
     console.error('Server startup error:', error);
@@ -461,14 +556,9 @@ if (!isProduction) {
   const server = app.listen(PORT, HOST, () => {
     // Show the Render domain, no port if DOMAIN is set
     console.log(`HTTP server running at https://${DISPLAY_HOST}`);
+    console.log(`Environment: Render Production (NODE_ENV: ${process.env.NODE_ENV})`);
     // Test database connection
-    pool.query('SELECT NOW()', (err, res) => {
-      if (err) {
-        console.error('Database connection failed:', err.message);
-      } else {
-        console.log('Database connected successfully');
-      }
-    });
+    testDatabaseConnection();
   });
   server.on('error', (error) => {
     console.error('Server startup error:', error);
