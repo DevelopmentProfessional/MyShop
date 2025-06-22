@@ -19,6 +19,7 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.2.0",
     "multer": "^2.0.1",
+    "nodemailer": "^7.0.3",
     "pg": "^8.11.0",
     "selfsigned": "^2.1.1"
   },
@@ -32,7 +33,12 @@
     "type": "git",
     "url": "https://github.com/DevelopmentProfessional/MyShop.git"
   },
-  "keywords": ["business", "management", "inventory", "billing"],
+  "keywords": [
+    "business",
+    "management",
+    "inventory",
+    "billing"
+  ],
   "author": "Development Professional",
   "license": "MIT"
 }

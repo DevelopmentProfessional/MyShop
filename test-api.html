@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>API Test Page</h1>
+    
+    <button onclick="testAppointmentsTable()">Check Appointments Table Structure</button>
+    <button onclick="insertTestData()">Insert Test Data</button>
+    <button onclick="testAppointmentsAPI()">Test Appointments API</button>
+    <button onclick="testServicesAPI()">Test Services API</button>
+    <button onclick="testClientsAPI()">Test Clients API</button>
+    <button onclick="testEmployeesAPI()">Test Employees API</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_URL = 'https://localhost:3000';
+        
+        async function makeRequest(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                return { success: true, data };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function displayResult(title, result) {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'result';
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(result, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testAppointmentsTable() {
+            const result = await makeRequest(`${API_URL}/api/debug/appointments-table`);
+            displayResult('Appointments Table Structure', result);
+        }
+        
+        async function insertTestData() {
+            const result = await makeRequest(`${API_URL}/api/debug/insert-test-data`, 'POST');
+            displayResult('Insert Test Data', result);
+        }
+        
+        async function testAppointmentsAPI() {
+            const result = await makeRequest(`${API_URL}/api/appointments`);
+            displayResult('Appointments API', result);
+        }
+        
+        async function testServicesAPI() {
+            const result = await makeRequest(`${API_URL}/api/services`);
+            displayResult('Services API', result);
+        }
+        
+        async function testClientsAPI() {
+            const result = await makeRequest(`${API_URL}/api/clients`);
+            displayResult('Clients API', result);
+        }
+        
+        async function testEmployeesAPI() {
+            const result = await makeRequest(`${API_URL}/api/employees`);
+            displayResult('Employees API', result);
+        }
+    </script>
+</body>
+</html> 

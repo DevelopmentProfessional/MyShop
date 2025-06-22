@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">New Service</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-end pb-5 mb-5">
+        <div class="row justify-content-center mt-5">
+            <div class="col-12 col-md-8 col-lg-6">
+                <form id="serviceForm" class="bg-dark text-light border border-secondary rounded shadow-sm p-4">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control bg-dark text-light border-secondary" id="name" placeholder="Service Name" required>
+                        <label for="name">Service Name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control bg-dark text-light border-secondary" id="description" placeholder="Description" style="height: 100px" required></textarea>
+                        <label for="description">Description</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control bg-dark text-light border-secondary" id="category" placeholder="Category" required>
+                        <label for="category">Category</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="number" class="form-control bg-dark text-light border-secondary" id="price" placeholder="Price" step="0.01" required>
+                        <label for="price">Price</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="duration" required>
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="75">1 hour 15 minutes</option>
+                            <option value="90">1 hour 30 minutes</option>
+                            <option value="105">1 hour 45 minutes</option>
+                            <option value="120">2 hours</option>
+                            <option value="135">2 hours 15 minutes</option>
+                            <option value="150">2 hours 30 minutes</option>
+                            <option value="165">2 hours 45 minutes</option>
+                            <option value="180">3 hours</option>
+                        </select>
+                        <label for="duration">Duration</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <select class="form-select bg-dark text-light border-secondary" id="status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                        <label for="status">Status</label>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary">Create Service</button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                        <a href="services_management.html" class="btn btn-outline-danger">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+            <a href="services_management.html" class="btn btn-dark border-light ms-2">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </nav>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const serviceData = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                price: parseFloat(document.getElementById('price').value),
+                duration: parseInt(document.getElementById('duration').value),
+                status: document.getElementById('status').value
+            };
+            try {
+                const response = await fetch('/api/services', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(serviceData)
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
+                alert('Service created successfully!');
+                window.location.href = 'services_management.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error creating service: ' + error.message);
+            }
+        });
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('serviceForm').reset();
+        });
+    </script>
+</body>
+</html> 

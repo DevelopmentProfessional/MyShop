@@ -141,6 +141,12 @@
                             </select>
                         </div>
                         <div class="mb-3">
+                            <label for="editEmployeeSelect" class="form-label">Employee</label>
+                            <select class="form-select" id="editEmployeeSelect" required>
+                                <option value="">Select an employee</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
                             <label for="editDateInput" class="form-label">Date</label>
                             <input type="date" class="form-control" id="editDateInput" required>
                         </div>
@@ -170,6 +176,32 @@
         </div>
     </div>
 
+    <!-- Send Email Modal -->
+    <div class="modal fade" id="sendEmailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Send Reminder Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Select an email template to send to the client.</p>
+                    <input type="hidden" id="sendEmailAppointmentId">
+                    <div class="form-floating mb-3">
+                        <select class="form-select" id="emailTemplateSelect" required>
+                            <option value="">Loading templates...</option>
+                        </select>
+                        <label for="emailTemplateSelect">Email Template</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="sendEmailBtn">Send Email</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -186,8 +218,14 @@
         let selectedEmployee = null;
         let selectedDate = "";
         let selectedTime = "";
-                // Add styles for calendar days
-                const style = document.createElement('style');
+
+        const sendEmailModal = new bootstrap.Modal(document.getElementById('sendEmailModal'));
+        const emailTemplateSelect = document.getElementById('emailTemplateSelect');
+        const sendEmailAppointmentIdInput = document.getElementById('sendEmailAppointmentId');
+        const sendEmailBtn = document.getElementById('sendEmailBtn');
+
+        // Add styles for calendar days
+        const style = document.createElement('style');
         style.textContent = `
             .calendar-day {
                 cursor: pointer;
@@ -333,59 +371,40 @@
         }
 
         function renderAppointmentsForDate(date) {
-            const appointmentsList = document.getElementById('appointments');
-            if (!appointmentsList) return;
+            const appointmentsOnDate = appointments.filter(a => a.date.startsWith(date));
+            const appointmentsContainer = getElement('appointments');
+            appointmentsContainer.innerHTML = '';
 
-            const dayAppointments = appointments.filter(a => {
-                const appointmentDate = new Date(a.date);
-                return appointmentDate.getDate() === date.getDate() && 
-                       appointmentDate.getMonth() === date.getMonth() && 
-                       appointmentDate.getFullYear() === date.getFullYear();
-            });
+            if (appointmentsOnDate.length === 0) {
+                appointmentsContainer.innerHTML = '<div class="list-group-item text-muted">No appointments for this date.</div>';
+                return;
+            }
 
-            appointmentsList.innerHTML = dayAppointments.map(appointment => {
+            appointmentsOnDate.forEach(appointment => {
+                const card = document.createElement('div');
+                card.className = 'list-group-item';
                 const service = services.find(s => s.id === appointment.service_id) || {};
                 const client = clients.find(c => c.id === appointment.client_id) || {};
                 const employee = employees.find(e => e.id === appointment.employee_id) || {};
-                
-                const appointmentDate = safeDate(appointment.date);
+                const formattedDate = new Date(appointment.date).toLocaleDateString();
 
-                const formattedDate = appointmentDate.toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                
-                return `
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <span class="badge bg-${getStatusColor(appointment.status)} mb-1">${safeString(appointment.status)}</span> 
-                                <h6 class="mb-1">${safeString(service.name || appointment.service_name, 'Unknown Service')}</h6>
-                                <small class="text-muted">
-                                    <div>Employee: ${safeString(employee.name || appointment.employee_name, 'Unassigned')}</div>  
-                                    <div>Client: ${safeString(client.name || appointment.client_name, 'Unknown Client')}</div>
-                                </small>
-                                <button class="btn btn-sm btn-outline-danger p-0" onclick="deleteAppointment(${safeNumber(appointment.id)})">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                            <div class="d-flex flex-column align-items-end">
-                                <button class="btn btn-sm btn-outline-primary" onclick="sendEmail(${safeNumber(appointment.id)})">
-                                    <i class="bi bi-envelope"></i> Send Email
-                                </button>
-                                <div>${formattedDate} at ${safeString(appointment.time)}</div> 
-                                <small class="text-muted">
-                                    <div>${safeNumber(appointment.duration)} min $${safeNumber(appointment.price).toFixed(2)}</div> 
-                                </small>
-                                <button class="btn btn-sm btn-outline-secondary mt-1" onclick="openEditAppointmentModal(${safeNumber(appointment.id)})">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                            </div>
+                card.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${service.name || appointment.service_name}</h5>
+                        <small class="text-muted">${appointment.status}</small>
+                    </div>
+                    <p class="mb-1">With ${employee.name || appointment.employee_name} for ${client.name || appointment.client_name}</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <small class="text-muted">${formattedDate} at ${appointment.time}</small>
+                        <div class="ms-auto">
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="openEditAppointmentModal(${appointment.id})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-info me-2" onclick="openSendEmailModal(${appointment.id})"><i class="bi bi-envelope"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAppointment(${appointment.id})"><i class="bi bi-trash"></i></button>
                         </div>
                     </div>
                 `;
-            }).join('');
+                appointmentsContainer.appendChild(card);
+            });
         }
 
         function renderCalendar() {
@@ -471,52 +490,46 @@
         function addCalendarDayListeners() {
             document.querySelectorAll('.calendar-day').forEach(day => {
                 day.addEventListener('click', () => {
-                    // Remove active class from all days
-                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active'));
-                    // Add active class to clicked day
-                    day.classList.add('active');
+                    // Remove active class from all other days
+                    document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active', 'bg-primary', 'text-light'));
                     
-                    const date = day.dataset.date;
-                    const [year, month, dayNum] = date.split('-').map(Number);
-                    const selectedDate = new Date(year, month - 1, dayNum);
+                    // Add active class to the clicked day
+                    day.classList.add('active', 'bg-primary', 'text-light');
                     
-                    // Filter appointments for the selected date
-                    const dayAppointments = appointments.filter(a => {
-                        const appointmentDate = new Date(a.date);
-                        return appointmentDate.getDate() === dayNum && 
-                               appointmentDate.getMonth() === month - 1 && 
-                               appointmentDate.getFullYear() === year;
-                    });
-                    
-                    // Update the appointments list
-                    renderAppointmentsForDate(selectedDate);
+                    // If the day was today, we need to re-add the today-specific classes
+                    if(day.classList.contains('today')) {
+                        day.classList.add('bg-primary', 'text-light');
+                    }
+
+                    // Update the appointments list for the selected date string
+                    renderAppointmentsForDate(day.dataset.date);
                 });
             });
         }
 
         function sendEmail(appointmentId) {
-    // Find the appointment details
-    const appointment = appointments.find(a => a.id === appointmentId);
-    if (!appointment) {
-        alert("Appointment not found!");
-        return;
-    }
+            // Find the appointment details
+            const appointment = appointments.find(a => a.id === appointmentId);
+            if (!appointment) {
+                alert("Appointment not found!");
+                return;
+            }
 
-    // Prepare the email content
-    const subject = `Appointment Confirmation - ${appointment.service.name}`;
-    const body = `Hello ${appointment.client.name},%0D%0A%0D%0A` +
-                 `Your appointment details:%0D%0A` +
-                 `Service: ${appointment.service.name}%0D%0A` +
-                 `Time: ${appointment.time}%0D%0A` +
-                 `Duration: ${appointment.duration} min%0D%0A` +
-                 `Price: $${appointment.price.toFixed(2)}%0D%0A` +
-                 `Employee: ${appointment.employee.username}%0D%0A` +
-                 `Status: ${appointment.status}%0D%0A%0D%0A` +
-                 `Thank you for booking with us!`;
+            // Prepare the email content
+            const subject = `Appointment Confirmation - ${appointment.service.name}`;
+            const body = `Hello ${appointment.client.name},%0D%0A%0D%0A` +
+                         `Your appointment details:%0D%0A` +
+                         `Service: ${appointment.service.name}%0D%0A` +
+                         `Time: ${appointment.time}%0D%0A` +
+                         `Duration: ${appointment.duration} min%0D%0A` +
+                         `Price: $${appointment.price.toFixed(2)}%0D%0A` +
+                         `Employee: ${appointment.employee.username}%0D%0A` +
+                         `Status: ${appointment.status}%0D%0A%0D%0A` +
+                         `Thank you for booking with us!`;
 
-    // Open default mail client using "mailto" link
-    window.location.href = `mailto:${appointment.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
+            // Open default mail client using "mailto" link
+            window.location.href = `mailto:${appointment.client.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
 
         function openEditAppointmentModal(appointmentId) {
             const appointment = appointments.find(a => a.id === appointmentId);
@@ -527,8 +540,11 @@
 
             const modal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
             
-            // Set the appointment ID
+            // Set the appointment ID first
             document.getElementById('editAppointmentId').value = appointment.id;
+            
+            // Set date first
+            document.getElementById('editDateInput').value = appointment.date;
             
             // Populate service options
             const editServiceSelect = document.getElementById('editServiceSelect');
@@ -552,29 +568,35 @@
                 `).join('')}
             `;
 
-            // Set date and time
-            document.getElementById('editDateInput').value = appointment.date;
-            
-            // Generate time slots first
-            generateEditTimeSlots();
-            
-            // Then set the time after slots are generated
-            setTimeout(() => {
-                document.getElementById('editTimeSlots').value = appointment.time;
-            }, 0);
+            // Populate employee options
+            const editEmployeeSelect = document.getElementById('editEmployeeSelect');
+            editEmployeeSelect.innerHTML = `
+                <option value="">Select an employee</option>
+                ${employees.filter(emp => emp.status === 'active').map(e => `
+                    <option value="${e.id}" ${e.id === appointment.employee_id ? 'selected' : ''}>
+                        ${e.name} (${e.role})
+                    </option>
+                `).join('')}
+            `;
             
             // Set status
             document.getElementById('editStatus').value = appointment.status;
 
+            // Generate time slots and select the appointment's current time
+            // We need to do this after the service is selected
+            setTimeout(() => {
+                generateEditTimeSlots(appointment.time);
+            }, 100);
+
             modal.show();
         }
 
-        function generateEditTimeSlots() {
+        function generateEditTimeSlots(selectedTime = null) {
             const timeSlots = document.getElementById('editTimeSlots');
             const serviceSelect = document.getElementById('editServiceSelect');
             const selectedService = services.find(s => s.id === parseInt(serviceSelect.value));
-            const currentTime = document.getElementById('editTimeSlots').value;
             const selectedDate = document.getElementById('editDateInput').value;
+            const appointmentIdToEdit = parseInt(document.getElementById('editAppointmentId').value, 10);
             
             if (!selectedService) {
                 timeSlots.innerHTML = '<option value="">Select a service first</option>';
@@ -592,10 +614,10 @@
             const interval = 15; // 15 minutes
             const serviceDuration = selectedService.duration || 60;
 
-            // Get existing appointments for the selected date
+            // Get existing appointments for the selected date, excluding the one being edited
             const existingAppointments = appointments.filter(a => {
                 const appointmentDate = new Date(a.date);
-                return appointmentDate.toDateString() === new Date(selectedDate).toDateString();
+                return appointmentDate.toDateString() === new Date(selectedDate).toDateString() && a.id !== appointmentIdToEdit;
             });
 
             for (let hour = startTime; hour < endTime; hour++) {
@@ -615,8 +637,10 @@
                                 time < appointmentEndTime.toTimeString().slice(0, 5));
                     });
 
-                    if (isAvailable) {
-                        slots.push(`<option value="${time}" ${time === currentTime ? 'selected' : ''}>${time}</option>`);
+                    // Always include the currently selected time for the appointment being edited
+                    const isSelected = time === selectedTime;
+                    if (isAvailable || isSelected) {
+                        slots.push(`<option value="${time}" ${isSelected ? 'selected' : ''}>${time}</option>`);
                     }
                 }
             }
@@ -957,11 +981,12 @@
             const appointmentId = document.getElementById('editAppointmentId').value;
             const serviceId = document.getElementById('editServiceSelect').value;
             const clientId = document.getElementById('editClientSelect').value;
+            const employeeId = document.getElementById('editEmployeeSelect').value;
             const date = document.getElementById('editDateInput').value;
             const time = document.getElementById('editTimeSlots').value;
             const status = document.getElementById('editStatus').value;
 
-            if (!serviceId || !clientId || !date || !time) {
+            if (!serviceId || !clientId || !employeeId || !date || !time) {
                 alert('Please fill in all required fields');
                 return;
             }
@@ -980,6 +1005,7 @@
                     body: JSON.stringify({
                         service_id: parseInt(serviceId),
                         client_id: parseInt(clientId),
+                        employee_id: parseInt(employeeId),
                         date: date,
                         time: time,
                         duration: parseInt(service.duration),
@@ -997,7 +1023,8 @@
                 // Update the appointment in the local array
                 const index = appointments.findIndex(a => a.id === parseInt(appointmentId));
                 if (index !== -1) {
-                    appointments[index] = data;
+                    // We need to re-fetch the full appointment details to get the new client name
+                    loadData();
                 }
 
                 // Update UI
@@ -1085,6 +1112,72 @@
         }
 
         document.getElementById('bookingDetailsModal').addEventListener('show.bs.modal', populateTimeDropdown);
+
+        async function openSendEmailModal(appointmentId) {
+            sendEmailAppointmentIdInput.value = appointmentId;
+            emailTemplateSelect.innerHTML = '<option value="">Loading templates...</option>';
+            sendEmailBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/api/customer-reminders`);
+                if (!response.ok) throw new Error('Failed to load email templates.');
+                const templates = await response.json();
+                
+                emailTemplateSelect.innerHTML = '<option value="">Select a template</option>';
+                if (templates.length === 0) {
+                    emailTemplateSelect.innerHTML = '<option value="">No templates found</option>';
+                } else {
+                    templates.forEach(template => {
+                        const option = document.createElement('option');
+                        option.value = template.id;
+                        option.textContent = template.name;
+                        emailTemplateSelect.appendChild(option);
+                    });
+                    sendEmailBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error(error);
+                emailTemplateSelect.innerHTML = `<option value="">Error loading templates</option>`;
+            }
+            sendEmailModal.show();
+        }
+
+        sendEmailBtn.addEventListener('click', async () => {
+            const templateId = emailTemplateSelect.value;
+            const appointmentId = sendEmailAppointmentIdInput.value;
+
+            if (!templateId) {
+                alert('Please select an email template.');
+                return;
+            }
+
+            sendEmailBtn.disabled = true;
+            sendEmailBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/send-reminder-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ templateId: parseInt(templateId), appointmentId: parseInt(appointmentId) })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to send email.');
+                }
+                
+                const result = await response.json();
+                alert(`Email sent successfully! Preview URL: ${result.previewUrl || 'N/A'}`);
+                sendEmailModal.hide();
+
+            } catch (error) {
+                console.error(error);
+                alert(`Error sending email: ${error.message}`);
+            } finally {
+                sendEmailBtn.disabled = false;
+                sendEmailBtn.innerHTML = 'Send Email';
+            }
+        });
     </script>
 </body>
 </html> 

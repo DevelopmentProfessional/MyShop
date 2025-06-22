@@ -1,5 +1,4 @@
-//Variables 
-const dotenv = require('dotenv');dotenv.config(); 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -14,6 +13,7 @@ const selfsigned = require('selfsigned');
 const os = require('os');
 const fs = require('fs');
 const http = require('http');
+const { sendEmail } = require('./email'); // Import the sendEmail function
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -40,7 +40,17 @@ const HOST = '0.0.0.0'; // Listen on all interfaces
 const DISPLAY_HOST = isOnRender ? (process.env.DOMAIN || 'myshop-5hec.onrender.com') : getLocalIP();
 const DOMAIN = process.env.DOMAIN || (isOnRender ? 'shopy.onrender.com' : 'localhost');
 const dbUrl = process.env.DATABASE_URL;
-const pool = new Pool({
+let pool;
+
+console.log('=== Environment Debug Info ===');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('isOnRender:', isOnRender);
+console.log('isProduction:', isProduction);
+console.log('isLocalDevelopment:', isLocalDevelopment);
+console.log('DATABASE_URL set:', !!dbUrl);
+console.log('==============================');
+
+pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
@@ -122,9 +132,13 @@ app.get('/api/test', async (req, res) =>  {try{
   await pool.query('SELECT NOW()'); res.json({ message: 'Database connection successful' }); } 
 catch (error) {handleError(res, error, 'Database connection failed', true);}
 });
-app.get('/api/services', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM services ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/services', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM services ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 app.get('/api/photos_products', async (req, res) => {
     try { 
@@ -145,123 +159,225 @@ app.get('/api/photos_products/:productId', async (req, res) => {
         handleError(res, error, 'Failed to fetch product photos', true);
     }
 });
-app.post('/api/uploadproductphotos', async (req, res) => {try{ 
-  const { photos } = req.body;
-  console.log('[UPLOAD PHOTOS] Incoming payload:', JSON.stringify(photos, null, 2));
-  // Validate total payload size
-  const totalSize = JSON.stringify(photos).length;
-  if (totalSize > 922 * 1024) {
-    return res.status(413).json({ 
-      success: false, 
-      error: 'Total payload size exceeds limit of 922KB',
-      details: `Current size: ${Math.round(totalSize / 1024)}KB`
-    });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    const results = [];
-    for (const photo of photos) {
-      console.log('[UPLOAD PHOTOS] Inserting photo:', photo);
-      const result = await client.query(
-        'INSERT INTO photos_products (product_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
-        [photo.product_id, photo.url, photo.filename]
-      );
-      results.push(result.rows[0]);
+app.post('/api/uploadproductphotos', async (req, res) => {
+  try{ 
+    const { photos } = req.body;
+    console.log('[UPLOAD PHOTOS] Incoming payload:', JSON.stringify(photos, null, 2));
+    // Validate total payload size
+    const totalSize = JSON.stringify(photos).length;
+    if (totalSize > 922 * 1024) {
+      return res.status(413).json({ 
+        success: false, 
+        error: 'Total payload size exceeds limit of 922KB',
+        details: `Current size: ${Math.round(totalSize / 1024)}KB`
+      });
     }
-    await client.query('COMMIT');
-    res.status(201).json({ success: true, photos: results });
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const results = [];
+      for (const photo of photos) {
+        console.log('[UPLOAD PHOTOS] Inserting photo:', photo);
+        const result = await client.query(
+          'INSERT INTO photos_products (product_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
+          [photo.product_id, photo.url, photo.filename]
+        );
+        results.push(result.rows[0]);
+      }
+      await client.query('COMMIT');
+      res.status(201).json({ success: true, photos: results });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[UPLOAD PHOTOS] Error uploading photos:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to upload photos',
+        details: error.message
+      });
+    } finally {
+      client.release();
+    }
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('[UPLOAD PHOTOS] Error uploading photos:', error);
+    console.error('[UPLOAD PHOTOS] Error in upload endpoint:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Failed to upload photos',
+      error: 'Server error',
       details: error.message
     });
-  } finally {
-    client.release();
   }
-} catch (error) {
-  console.error('[UPLOAD PHOTOS] Error in upload endpoint:', error);
-  res.status(500).json({ 
-    success: false, 
-    error: 'Server error',
-    details: error.message
-  });
-}});
-app.post('/api/services', async (req, res) => {try{ 
-  const result = await pool.query('INSERT INTO services (name, description, category, price, duration, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status]); res.status(201).json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console', true); }
 });
-app.put('/api/services/:id', async (req, res) => {try{ 
-  const result = await pool.query('UPDATE services SET name = $1, description = $2, category = $3, price = $4, duration = $5, status = $6 WHERE id = $7 RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status, req.params.id]); res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.post('/api/services', async (req, res) => {
+    try {
+        const result = await pool.query('INSERT INTO services (name, description, category, price, duration, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console', true);
+    }
 });
-app.delete('/api/services/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM services WHERE id = $1', [req.params.id]); res.json({ message: 'Service deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.put('/api/services/:id', async (req, res) => {
+    try {
+        const result = await pool.query('UPDATE services SET name = $1, description = $2, category = $3, price = $4, duration = $5, status = $6 WHERE id = $7 RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status, req.params.id]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
-
-app.get('/api/clients', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM clients ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
-});
-
-app.post('/api/clients', async (req, res) => {try{ 
-  const result = await pool.query('INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *', [req.body.name, req.body.email, req.body.phone]); res.status(201).json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.delete('/api/services/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM services WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Service deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.put('/api/clients/:id', async (req, res) => {try{ 
-  const result = await pool.query('UPDATE clients SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING *', [req.body.name, req.body.email, req.body.phone, req.params.id]); res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/clients', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM clients ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.delete('/api/clients/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM clients WHERE id = $1', [req.params.id]); res.json({ message: 'Client deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.post('/api/clients', async (req, res) => {
+    try {
+        const result = await pool.query('INSERT INTO clients (name, email, phone) VALUES ($1, $2, $3) RETURNING *', [req.body.name, req.body.email, req.body.phone]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/employees', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM employees ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.put('/api/clients/:id', async (req, res) => {
+    try {
+        const result = await pool.query('UPDATE clients SET name = $1, email = $2, phone = $3 WHERE id = $4 RETURNING *', [req.body.name, req.body.email, req.body.phone, req.params.id]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.post('/api/employees', validateEmployee, async (req, res) => {try{ 
-  const errors = validationResult(req); if (!errors.isEmpty()) { return res.status(400).json(errors.array()); } const { name, email, phone, role, status } = req.body; const result = await pool.query('INSERT INTO employees (name, email, phone, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *', [name, email, phone, role, status || 'active']); res.status(201).json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.delete('/api/clients/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM clients WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Client deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.put('/api/employees/:id', validateEmployee, async (req, res) => {try{ 
-  const errors = validationResult(req); if (!errors.isEmpty()) { return res.status(400).json(errors.array()); } const { name, email, phone, role, status } = req.body; const result = await pool.query('UPDATE employees SET name = $1, email = $2, phone = $3, role = $4, status = $5 WHERE id = $6 RETURNING *', [name, email, phone, role, status, req.params.id]); res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/employees', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM employees ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.delete('/api/employees/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM employees WHERE id = $1', [req.params.id]); res.json({ message: 'Employee deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.post('/api/employees', validateEmployee, async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json(errors.array());
+        }
+        const { name, email, phone, role, status } = req.body;
+        const result = await pool.query('INSERT INTO employees (name, email, phone, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *', [name, email, phone, role, status || 'active']);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/appointments', async (req, res) => {try{ 
-  const result = await pool.query(`SELECT a.*, s.name as service_name, c.name as client_name, e.name as employee_name FROM appointments a LEFT JOIN services s ON a.service_id = s.id LEFT JOIN clients c ON a.client_id = c.id LEFT JOIN employees e ON a.employee_id = e.id ORDER BY date, time`); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.put('/api/employees/:id', validateEmployee, async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json(errors.array());
+        }
+        const { name, email, phone, role, status } = req.body;
+        const result = await pool.query('UPDATE employees SET name = $1, email = $2, phone = $3, role = $4, status = $5 WHERE id = $6 RETURNING *', [name, email, phone, role, status, req.params.id]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.post('/api/appointments', async (req, res) => {try{ 
-  const { date, time, service_id, duration, price, client_id, employee_id } = req.body; if (!date || !time || !service_id || !duration || !price || !client_id || !employee_id) { return res.status(400).json({ error: 'All fields are required' }); } const result = await pool.query('INSERT INTO appointments (date, time, service_id, duration, price, client_id, employee_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *', [date, time, service_id, duration, price, client_id, employee_id, 'scheduled']); res.status(201).json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.delete('/api/employees/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM employees WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Employee deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.put('/api/appointments/:id', async (req, res) => {try{ 
-  const { date, time, service_id, duration, price, client_id, employee_id, status } = req.body; const result = await pool.query('UPDATE appointments SET date = $1, time = $2, service_id = $3, duration = $4, price = $5, client_id = $6, employee_id = $7, status = $8 WHERE id = $9 RETURNING *', [date, time, service_id, duration, price, client_id, employee_id, status, req.params.id]); res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/appointments', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                s.name as service_name,
+                c.name as client_name,
+                c.email as client_email,
+                e.name as employee_name
+            FROM appointments a
+            LEFT JOIN services s ON a.service_id = s.id
+            LEFT JOIN clients c ON a.client_id = c.id
+            LEFT JOIN employees e ON a.employee_id = e.id
+            ORDER BY a.date, a.time
+        `);
+        
+        // Transform the result to match the expected format
+        const appointments = result.rows.map(row => ({
+            ...row,
+            service: { name: row.service_name || 'Unknown Service' },
+            client: { name: row.client_name || 'Unknown Client', email: row.client_email || '' },
+            employee: { name: row.employee_name || 'Unknown Employee', username: row.employee_name || 'unknown' }
+        }));
+        
+        res.json(appointments);
+    } catch (error) {
+        console.error('Appointments endpoint error:', error);
+        handleError(res, error, 'Failed to fetch appointments', true);
+    }
 });
 
-app.delete('/api/appointments/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM appointments WHERE id = $1', [req.params.id]); res.json({ message: 'Appointment deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.post('/api/appointments', async (req, res) => {
+    try {
+        const { service_id, client_id, employee_id, date, time, duration, price, status } = req.body;
+        const result = await pool.query(
+            'INSERT INTO appointments (service_id, client_id, employee_id, date, time, duration, price, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [service_id, client_id, employee_id, date, time, duration, price, status]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
+});
+
+app.put('/api/appointments/:id', async (req, res) => {
+    try {
+        const { service_id, client_id, employee_id, date, time, duration, price, status } = req.body;
+        const result = await pool.query(
+            'UPDATE appointments SET service_id = $1, client_id = $2, employee_id = $3, date = $4, time = $5, duration = $6, price = $7, status = $8 WHERE id = $9 RETURNING *',
+            [service_id, client_id, employee_id, date, time, duration, price, status, req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
+});
+
+app.delete('/api/appointments/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM appointments WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Appointment deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
 app.get('/api/products', async (req, res) => {
@@ -304,24 +420,38 @@ app.get('/api/debug/products-data', async (req, res) => {
   }
 });
 
-app.get('/api/products/:id', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]); if (result.rows.length === 0) { return res.status(404).json({ error: 'Product not found' }); } res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/products/:id', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.post('/api/products', async (req, res) => {try{ 
-  const { name, description, price, quantity, category, status } = req.body; 
-  const result = await pool.query(
-    'INSERT INTO products (name, description, price, quantity, category, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', 
-    [name, description, price, quantity, category, status]
-  ); 
-  res.status(201).json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.post('/api/products', async (req, res) => {
+    try {
+        const { name, description, price, quantity, category, status } = req.body;
+        const result = await pool.query(
+            'INSERT INTO products (name, description, price, quantity, category, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [name, description, price, quantity, category, status]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.put('/api/products/:id', async (req, res) => {try{ 
-  const result = await pool.query('UPDATE products SET name = $1, description = $2, price = $3, quantity = $4, category = $5, status = $6, barcode = $7 WHERE id = $8 RETURNING *', [req.body.name, req.body.description, req.body.price, req.body.quantity, req.body.category, req.body.status, req.body.barcode, req.params.id]); res.json(result.rows[0]); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.put('/api/products/:id', async (req, res) => {
+    try {
+        const result = await pool.query('UPDATE products SET name = $1, description = $2, price = $3, quantity = $4, category = $5, status = $6, barcode = $7 WHERE id = $8 RETURNING *', [req.body.name, req.body.description, req.body.price, req.body.quantity, req.body.category, req.body.status, req.body.barcode, req.params.id]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
 app.put('/api/productbarcode/:id', async (req, res) => {
@@ -346,118 +476,288 @@ app.put('/api/productbarcode/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/products/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]); res.json({ message: 'Product deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.delete('/api/products/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM products WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/roles', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM roles ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/roles', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM roles ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.post('/api/roles', async (req, res) => {try{ 
-  const { name, description, permissions } = req.body; const client = await pool.connect(); await client.query('BEGIN'); const roleResult = await client.query('INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *', [name, description]); const role = roleResult.rows[0]; if (permissions && permissions.length > 0) { const values = permissions.map(permissionId => `(${role.id}, ${permissionId})`).join(','); await client.query(`INSERT INTO role_permissions (role_id, permission_id) VALUES ${values}`); } await client.query('COMMIT'); res.json(role); } 
-catch (error) { await client.query('ROLLBACK'); console.error('Error creating role:', error); res.status(500).json({ error: 'Failed to create role' }); } 
-finally { client.release(); }
+app.post('/api/roles', async (req, res) => {
+    try {
+        const { name, description, permissions } = req.body;
+        const client = await pool.connect();
+        await client.query('BEGIN');
+        const roleResult = await client.query('INSERT INTO roles (name, description) VALUES ($1, $2) RETURNING *', [name, description]);
+        const role = roleResult.rows[0];
+        if (permissions && permissions.length > 0) {
+            const values = permissions.map(permissionId => `(${role.id}, ${permissionId})`).join(',');
+            await client.query(`INSERT INTO role_permissions (role_id, permission_id) VALUES ${values}`);
+        }
+        await client.query('COMMIT');
+        res.json(role);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating role:', error);
+        res.status(500).json({ error: 'Failed to create role' });
+    } finally {
+        client.release();
+    }
 });
 
-app.delete('/api/roles/:id', async (req, res) => {try{ 
-  await pool.query('DELETE FROM roles WHERE id = $1', [req.params.id]); res.json({ message: 'Role deleted successfully' }); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.delete('/api/roles/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM roles WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Role deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/permissions', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM permissions ORDER BY name'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM permissions ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/role-permissions', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM role_permissions'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/role-permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM role_permissions');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.get('/api/users', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM users ORDER BY username'); res.json(result.rows); } 
-catch (error) { handleError(res, error, 'Check console'); }
+app.get('/api/users', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM users ORDER BY username');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Check console');
+    }
 });
 
-app.post('/api/users', async (req, res) => {try{ 
-  const { username, email, password, role_id } = req.body; const client = await pool.connect(); await client.query('BEGIN'); const existingUser = await client.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]); if (existingUser.rows.length > 0) { return res.status(400).json({ error: 'User already exists', details: 'Username or email is already in use' }); } const hashedPassword = await bcrypt.hash(password, 10); const result = await client.query('INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *', [username, email, hashedPassword, role_id]); await client.query('COMMIT'); console.log('User created:', result.rows[0].username); res.status(201).json(result.rows[0]); } 
-catch (error) { await client.query('ROLLBACK'); console.error('Error creating user:', error); res.status(500).json({ error: 'Failed to create user', details: process.env.NODE_ENV === 'development' ? error.message : undefined }); } 
-finally { client.release(); }
+app.post('/api/users', async (req, res) => {
+    try {
+        const { username, email, password, role_id } = req.body;
+        const client = await pool.connect();
+        await client.query('BEGIN');
+        const existingUser = await client.query('SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]);
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({ error: 'User already exists', details: 'Username or email is already in use' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const result = await client.query('INSERT INTO users (username, email, password, role_id) VALUES ($1, $2, $3, $4) RETURNING *', [username, email, hashedPassword, role_id]);
+        await client.query('COMMIT');
+        console.log('User created:', result.rows[0].username);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error creating user:', error);
+        res.status(500).json({ error: 'Failed to create user', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    } finally {
+        client.release();
+    }
 });
 
-app.put('/api/users/:id', async (req, res) => {try{ 
-  const { username, email, password, role_id } = req.body; const client = await pool.connect(); await client.query('BEGIN'); const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]); if (userCheck.rows.length === 0) { return res.status(404).json({ error: 'User not found' }); } const existingUser = await client.query('SELECT * FROM users WHERE (username = $1 OR email = $2) AND id != $3', [username, email, req.params.id]); if (existingUser.rows.length > 0) { return res.status(400).json({ error: 'User already exists', details: 'Username or email is already in use by another user' }); } let query = 'UPDATE users SET username = $1, email = $2'; const values = [username, email]; let paramCount = 2; if (password) { const hashedPassword = await bcrypt.hash(password, 10); query += `, password = $${++paramCount}`; values.push(hashedPassword); } if (role_id) { query += `, role_id = $${++paramCount}`; values.push(role_id); } query += ` WHERE id = $${++paramCount} RETURNING *`; values.push(req.params.id); const result = await client.query(query, values); await client.query('COMMIT'); console.log('User updated:', result.rows[0].username); res.json(result.rows[0]); } 
-catch (error) { await client.query('ROLLBACK'); console.error('Error updating user:', error); res.status(500).json({ error: 'Failed to update user', details: process.env.NODE_ENV === 'development' ? error.message : undefined }); } 
-finally { client.release(); }
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { username, email, password, role_id } = req.body;
+        const client = await pool.connect();
+        await client.query('BEGIN');
+        const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const existingUser = await client.query('SELECT * FROM users WHERE (username = $1 OR email = $2) AND id != $3', [username, email, req.params.id]);
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({ error: 'User already exists', details: 'Username or email is already in use by another user' });
+        }
+        let query = 'UPDATE users SET username = $1, email = $2';
+        const values = [username, email];
+        let paramCount = 2;
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query += `, password = $${++paramCount}`;
+            values.push(hashedPassword);
+        }
+        if (role_id) {
+            query += `, role_id = $${++paramCount}`;
+            values.push(role_id);
+        }
+        query += ` WHERE id = $${++paramCount} RETURNING *`;
+        values.push(req.params.id);
+        const result = await client.query(query, values);
+        await client.query('COMMIT');
+        console.log('User updated:', result.rows[0].username);
+        res.json(result.rows[0]);
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Failed to update user', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    } finally {
+        client.release();
+    }
 });
 
-app.delete('/api/users/:id', async (req, res) => {try{ 
-  const client = await pool.connect(); await client.query('BEGIN'); const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]); if (userCheck.rows.length === 0) { return res.status(404).json({ error: 'User not found' }); } const adminCount = await client.query('SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = $1', ['admin']); if (adminCount.rows[0].count === '1' && userCheck.rows[0].role_id === (await client.query('SELECT id FROM roles WHERE name = $1', ['admin'])).rows[0].id) { return res.status(400).json({ error: 'Cannot delete user', details: 'Cannot delete the last admin user' }); } await client.query('DELETE FROM users WHERE id = $1', [req.params.id]); await client.query('COMMIT'); console.log('User deleted:', req.params.id); res.json({ message: 'User deleted successfully' }); } 
-catch (error) { await client.query('ROLLBACK'); console.error('Error deleting user:', error); res.status(500).json({ error: 'Failed to delete user', details: process.env.NODE_ENV === 'development' ? error.message : undefined }); } 
-finally { client.release(); }
+app.delete('/api/users/:id', async (req, res) => {
+    try {
+        const client = await pool.connect();
+        await client.query('BEGIN');
+        const userCheck = await client.query('SELECT * FROM users WHERE id = $1', [req.params.id]);
+        if (userCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const adminCount = await client.query('SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = $1', ['admin']);
+        if (adminCount.rows[0].count === '1' && userCheck.rows[0].role_id === (await client.query('SELECT id FROM roles WHERE name = $1', ['admin'])).rows[0].id) {
+            return res.status(400).json({ error: 'Cannot delete user', details: 'Cannot delete the last admin user' });
+        }
+        await client.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+        await client.query('COMMIT');
+        console.log('User deleted:', req.params.id);
+        res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting user:', error);
+        res.status(500).json({ error: 'Failed to delete user', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    } finally {
+        client.release();
+    }
 });
 
-app.get('/api/users/:id/permissions', async (req, res) => {try{ 
-  const result = await pool.query(`SELECT p.* FROM permissions p LEFT JOIN user_permissions up ON p.id = up.permission_id LEFT JOIN role_permissions rp ON p.id = rp.permission_id LEFT JOIN users u ON u.id = up.user_id OR u.role_id = rp.role_id WHERE u.id = $1 GROUP BY p.id`, [req.params.id]); res.json(result.rows); } 
-catch (error) { console.error('Error fetching user permissions:', error); }
+app.get('/api/users/:id/permissions', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT p.* FROM permissions p LEFT JOIN user_permissions up ON p.id = up.permission_id LEFT JOIN role_permissions rp ON p.id = rp.permission_id LEFT JOIN users u ON u.id = up.user_id OR u.role_id = rp.role_id WHERE u.id = $1 GROUP BY p.id`, [req.params.id]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user permissions:', error);
+    }
 });
 
-app.get('/api/user_permissions', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM user_permissions'); res.json(result.rows); } 
-catch (error) { console.error('Error fetching user permissions:', error); res.status(500).json({ error: 'Failed to fetch user permissions', details: process.env.NODE_ENV === 'development' ? error.message : undefined }); }
+app.get('/api/user_permissions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM user_permissions');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching user permissions:', error);
+        res.status(500).json({ error: 'Failed to fetch user permissions', details: process.env.NODE_ENV === 'development' ? error.message : undefined });
+    }
 });
 
-app.get('/api/employees', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM employees ORDER BY last_name'); res.json(result.rows); } 
-catch (error) { console.error('Error fetching employees:', error); res.status(500).json({ error: 'Failed to fetch employees' }); }
+app.get('/api/employees', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM employees ORDER BY last_name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching employees:', error);
+        res.status(500).json({ error: 'Failed to fetch employees' });
+    }
 });
 
-app.get('/api/payroll', async (req, res) => {try{ 
-  const result = await pool.query(`SELECT p.*, e.first_name, e.last_name, e.email, e.hire_date, e.salary FROM payroll p JOIN employees e ON p.employee_id = e.employee_id ORDER BY p.pay_date DESC`); res.json(result.rows); } 
-catch (error) { console.error('Error fetching payroll:', error); }
+app.get('/api/payroll', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT p.*, e.first_name, e.last_name, e.email, e.hire_date, e.salary FROM payroll p JOIN employees e ON p.employee_id = e.employee_id ORDER BY p.pay_date DESC`);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching payroll:', error);
+    }
 });
 
-app.post('/api/payroll', async (req, res) => {try{ 
-  const { employee_id, pay_date, gross_salary, deductions, net_salary } = req.body; const result = await pool.query('INSERT INTO payroll (employee_id, pay_date, gross_salary, deductions, net_salary) VALUES ($1, $2, $3, $4, $5) RETURNING *', [employee_id, pay_date, gross_salary, deductions, net_salary]); res.status(201).json(result.rows[0]); } 
-catch (error) { console.error('Error creating payroll record:', error); }
+app.post('/api/payroll', async (req, res) => {
+    try {
+        const { employee_id, pay_date, gross_salary, deductions, net_salary } = req.body;
+        const result = await pool.query('INSERT INTO payroll (employee_id, pay_date, gross_salary, deductions, net_salary) VALUES ($1, $2, $3, $4, $5) RETURNING *', [employee_id, pay_date, gross_salary, deductions, net_salary]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating payroll record:', error);
+    }
 });
 
-app.get('/api/projects', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM projects ORDER BY start_date DESC'); res.json(result.rows); } 
-catch (error) { console.error('Error fetching projects:', error); }
+app.get('/api/projects', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM projects ORDER BY start_date DESC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+    }
 });
 
-app.get('/api/tasks', async (req, res) => {try{ 
-  const result = await pool.query(`SELECT t.*, p.name as project_name, e.first_name, e.last_name FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id LEFT JOIN employees e ON t.assigned_to = e.employee_id ORDER BY t.due_date`); res.json(result.rows); } 
-catch (error) { console.error('Error fetching tasks:', error); }
+app.get('/api/tasks', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT t.*, p.name as project_name, e.first_name, e.last_name FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id LEFT JOIN employees e ON t.assigned_to = e.employee_id ORDER BY t.due_date`);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+    }
 });
 
-app.post('/api/tasks', async (req, res) => {try{ 
-  const { project_id, title, description, assigned_to, due_date, priority, status } = req.body; const result = await pool.query('INSERT INTO tasks (project_id, title, description, assigned_to, due_date, priority, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [project_id, title, description, assigned_to, due_date, priority, status]); res.status(201).json(result.rows[0]); } 
-catch (error) { console.error('Error creating task:', error); }
+app.post('/api/tasks', async (req, res) => {
+    try {
+        const { project_id, title, description, assigned_to, due_date, priority, status } = req.body;
+        const result = await pool.query('INSERT INTO tasks (project_id, title, description, assigned_to, due_date, priority, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [project_id, title, description, assigned_to, due_date, priority, status]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating task:', error);
+    }
 });
 
-app.put('/api/tasks/:id', async (req, res) => {try{ 
-  const { id } = req.params; const { status, progress } = req.body; const result = await pool.query('UPDATE tasks SET status = $1, progress = $2, updated_at = NOW() WHERE task_id = $3 RETURNING *', [status, progress, id]); if (result.rows.length === 0) { return res.status(404).json({ error: 'Task not found' }); } res.json(result.rows[0]); } 
-catch (error) { console.error('Error updating task:', error); }
+app.put('/api/tasks/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, progress } = req.body;
+        const result = await pool.query('UPDATE tasks SET status = $1, progress = $2, updated_at = NOW() WHERE task_id = $3 RETURNING *', [status, progress, id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating task:', error);
+    }
 });
 
-app.get('/api/boards', async (req, res) => {try{ 
-  const result = await pool.query('SELECT * FROM boards ORDER BY created_at DESC'); res.json(result.rows); } 
-catch (error) { console.error('Error fetching boards:', error); }
+app.get('/api/boards', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM boards ORDER BY created_at DESC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching boards:', error);
+    }
 });
 
-app.get('/api/boards/:id/notes', async (req, res) => {try{ 
-  const { id } = req.params; const result = await pool.query(`SELECT n.*, e.first_name, e.last_name FROM notes n LEFT JOIN employees e ON n.created_by = e.employee_id WHERE n.board_id = $1 ORDER BY n.created_at DESC`, [id]); res.json(result.rows); } 
-catch (error) { console.error('Error fetching notes:', error); }
+app.get('/api/boards/:id/notes', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`SELECT n.*, e.first_name, e.last_name FROM notes n LEFT JOIN employees e ON n.created_by = e.employee_id WHERE n.board_id = $1 ORDER BY n.created_at DESC`, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching notes:', error);
+    }
 });
 
-app.post('/api/boards/:id/notes', async (req, res) => {try{ 
-  const { id } = req.params; const { content, created_by, color } = req.body; const result = await pool.query('INSERT INTO notes (board_id, content, created_by, color) VALUES ($1, $2, $3, $4) RETURNING *', [id, content, created_by, color]); res.status(201).json(result.rows[0]); } 
-catch (error) { console.error('Error creating note:', error); }
+app.post('/api/boards/:id/notes', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { content, created_by, color } = req.body;
+        const result = await pool.query('INSERT INTO notes (board_id, content, created_by, color) VALUES ($1, $2, $3, $4) RETURNING *', [id, content, created_by, color]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating note:', error);
+    }
 });
 
 app.get('/api/photos_services', async (req, res) => {
@@ -524,7 +824,177 @@ app.post('/api/uploadservicephotos', async (req, res) => {
   }
 });
 
-// Mount router
+// Customer Reminder Templates API
+app.get('/api/customer-reminders', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM CustomerReminders ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch email templates', true);
+    }
+});
+
+app.post('/api/customer-reminders', async (req, res) => {
+    try {
+        const { name, subject, body } = req.body;
+        if (!name || !subject || !body) {
+            return res.status(400).json({ error: 'Name, subject, and body are required' });
+        }
+        const result = await pool.query(
+            'INSERT INTO CustomerReminders (name, subject, body) VALUES ($1, $2, $3) RETURNING *',
+            [name, subject, body]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create reminder template', true);
+    }
+});
+
+app.put('/api/customer-reminders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, subject, body } = req.body;
+        if (!name || !subject || !body) {
+            return res.status(400).json({ error: 'Name, subject, and body are required' });
+        }
+        const result = await pool.query(
+            'UPDATE CustomerReminders SET name = $1, subject = $2, body = $3, updatedAt = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+            [name, subject, body, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Template not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update reminder template', true);
+    }
+});
+
+app.delete('/api/customer-reminders/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM CustomerReminders WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Template not found' });
+        }
+        res.json({ message: 'Reminder template deleted successfully' });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete reminder template', true);
+    }
+});
+
+app.post('/api/send-reminder-email', async (req, res) => {
+    const { templateId, appointmentId } = req.body;
+
+    // -- Diagnostic Logging --
+    console.log(`[send-reminder-email] Received request. Template ID: ${templateId}, Appointment ID: ${appointmentId}`);
+    console.log(`[send-reminder-email] Type of Appointment ID: ${typeof appointmentId}`);
+
+    if (!templateId || !appointmentId) {
+        return res.status(400).json({ error: 'templateId and appointmentId are required' });
+    }
+
+    try {
+        let template, appointmentData;
+
+        if (!dbUrl) {
+            // Use mock data for testing
+            const mockTemplates = [
+                {
+                    id: 1,
+                    name: 'Appointment Reminder',
+                    subject: 'Reminder: Your appointment with {{company.name}}',
+                    body: '<p>Hello {{client.name}},</p><p>This is a reminder for your appointment on {{appointment.date}} at {{appointment.time}}.</p><p>Service: {{service.name}}</p><p>Employee: {{employee.name}}</p>'
+                },
+                {
+                    id: 2,
+                    name: 'Welcome Email',
+                    subject: 'Welcome to {{company.name}}!',
+                    body: '<p>Hello {{client.name}},</p><p>Welcome to {{company.name}}! We\'re excited to have you as a client.</p>'
+                }
+            ];
+            
+            template = mockTemplates.find(t => t.id === parseInt(templateId));
+            if (!template) {
+                return res.status(404).json({ error: 'Template not found' });
+            }
+
+            // Mock appointment data
+            appointmentData = {
+                client_name: 'Test Client',
+                client_email: 'test@example.com',
+                date: '2024-01-15',
+                time: '14:00',
+                service_name: 'Test Service',
+                employee_name: 'Test Employee'
+            };
+        } else {
+            // 1. Fetch the template
+            const templateRes = await pool.query('SELECT * FROM CustomerReminders WHERE id = $1', [templateId]);
+            if (templateRes.rows.length === 0) {
+                return res.status(404).json({ error: 'Template not found' });
+            }
+            template = templateRes.rows[0];
+
+            // 2. Fetch appointment and related data
+            const appointmentRes = await pool.query(
+                `SELECT
+                    a.date, a.time,
+                    c.name as client_name, c.email as client_email,
+                    s.name as service_name,
+                    e.name as employee_name
+                 FROM appointments a
+                 JOIN clients c ON a.client_id = c.id
+                 JOIN services s ON a.service_id = s.id
+                 JOIN employees e ON a.employee_id = e.id
+                 WHERE a.id = $1`,
+                [appointmentId]
+            );
+
+            if (appointmentRes.rows.length === 0) {
+                return res.status(404).json({ error: 'Appointment not found' });
+            }
+            appointmentData = appointmentRes.rows[0];
+        }
+
+        // 3. Replace placeholders
+        const replacements = {
+            '{{client.name}}': appointmentData.client_name,
+            '{{client.email}}': appointmentData.client_email,
+            '{{appointment.date}}': new Date(appointmentData.date).toLocaleDateString(),
+            '{{appointment.time}}': appointmentData.time,
+            '{{appointment.name}}': appointmentData.service_name,
+            '{{service.name}}': appointmentData.service_name,
+            '{{employee.name}}': appointmentData.employee_name,
+            '{{company.name}}': 'Shopy' // Example of a static variable
+        };
+
+        let processedBody = template.body;
+        let processedSubject = template.subject;
+        for (const placeholder in replacements) {
+            const value = replacements[placeholder];
+            // Use a regex with 'g' flag to replace all occurrences
+            processedBody = processedBody.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), value);
+            processedSubject = processedSubject.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), value);
+        }
+
+        // 4. Send email
+        const emailResult = await sendEmail({
+            to: appointmentData.client_email,
+            subject: processedSubject,
+            html: processedBody
+        });
+
+        if (emailResult.success) {
+            res.json({ message: 'Email sent successfully!', ...emailResult });
+        } else {
+            throw new Error(emailResult.error);
+        }
+
+    } catch (error) {
+        handleError(res, error, 'Failed to send reminder email', true);
+    }
+});
 
 // SSL certificate generation
 const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], {
@@ -544,6 +1014,12 @@ const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], 
 
 // Test database connection with retry logic
 const testDatabaseConnection = async (retries = 3) => {
+  // Skip database test if we're in test mode
+  if (!dbUrl) {
+    console.log('Skipping database connection test - running in test mode');
+    return true;
+  }
+
   for (let i = 0; i < retries; i++) {
     try {
       const client = await pool.connect();
@@ -551,7 +1027,7 @@ const testDatabaseConnection = async (retries = 3) => {
       client.release();
       console.log('Database connected successfully');
       console.log(`Database URL: ${dbUrl ? dbUrl.substring(0, 20) + '...' : 'Not set'}`);
-      console.log(`SSL enabled: Yes (Required for Render database)`);
+      console.log(`SSL enabled: ${isOnRender ? 'Yes (Required for Render database)' : 'No (Local development)'}`);
       console.log(`Environment: ${isOnRender ? 'Render' : 'Local'} (NODE_ENV: ${process.env.NODE_ENV})`);
       return true;
     } catch (error) {
@@ -587,8 +1063,11 @@ if (!isOnRender) {
   ).listen(PORT, HOST, () => {
     console.log(`HTTPS server running at https://${DISPLAY_HOST}:${PORT}`);
     console.log(`Environment: Local Development (NODE_ENV: ${process.env.NODE_ENV})`);
-    // Test database connection
-    testDatabaseConnection();
+    // Only test database connection if we have a database URL
+    if (dbUrl) {
+      testDatabaseConnection();
+      createTables(); // Ensure tables are created/updated
+    }
   });
   server.on('error', (error) => {
     console.error('Server startup error:', error);
@@ -600,8 +1079,11 @@ if (!isOnRender) {
     // Show the Render domain, no port if DOMAIN is set
     console.log(`HTTP server running at https://${DISPLAY_HOST}`);
     console.log(`Environment: Render Production (NODE_ENV: ${process.env.NODE_ENV})`);
-    // Test database connection
-    testDatabaseConnection();
+    // Only test database connection if we have a database URL
+    if (dbUrl) {
+      testDatabaseConnection();
+      createTables(); // Ensure tables are created/updated
+    }
   });
   server.on('error', (error) => {
     console.error('Server startup error:', error);
@@ -635,3 +1117,178 @@ app.get('/api/debug/photos-products-table', async (req, res) => {
     res.status(500).json({ error: 'Failed to get table structure', details: error.message });
   }
 });
+
+app.get('/api/debug/appointments-table', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT column_name, data_type, is_nullable, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'appointments' 
+      ORDER BY ordinal_position
+    `);
+    console.log('[DEBUG] appointments table structure:', JSON.stringify(result.rows, null, 2));
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[DEBUG] Error getting appointments table structure:', error);
+    res.status(500).json({ error: 'Failed to get table structure', details: error.message });
+  }
+});
+
+app.post('/api/debug/insert-test-data', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    
+    // Insert test service
+    const serviceResult = await client.query(`
+      INSERT INTO services (name, description, category, price, duration, status) 
+      VALUES ('Test Service', 'A test service', 'Test Category', 50.00, 60, 'active')
+      ON CONFLICT (name) DO NOTHING
+      RETURNING id
+    `);
+    
+    // Insert test client
+    const clientResult = await client.query(`
+      INSERT INTO clients (name, email, phone) 
+      VALUES ('Test Client', 'test@example.com', '555-1234')
+      ON CONFLICT (email) DO NOTHING
+      RETURNING id
+    `);
+    
+    // Insert test employee
+    const employeeResult = await client.query(`
+      INSERT INTO employees (name, email, phone, role, status) 
+      VALUES ('Test Employee', 'employee@example.com', '555-5678', 'Test Role', 'active')
+      ON CONFLICT (email) DO NOTHING
+      RETURNING id
+    `);
+    
+    // Insert test appointment
+    const appointmentResult = await client.query(`
+      INSERT INTO appointments (service_id, client_id, employee_id, date, time, duration, price, status) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *
+    `, [
+      serviceResult.rows[0]?.id || 1,
+      clientResult.rows[0]?.id || 1,
+      employeeResult.rows[0]?.id || 1,
+      new Date().toISOString().split('T')[0], // Today's date
+      '10:00:00',
+      60,
+      50.00,
+      'scheduled'
+    ]);
+    
+    client.release();
+    
+    res.json({
+      message: 'Test data inserted successfully',
+      service: serviceResult.rows[0],
+      client: clientResult.rows[0],
+      employee: employeeResult.rows[0],
+      appointment: appointmentResult.rows[0]
+    });
+  } catch (error) {
+    console.error('[DEBUG] Error inserting test data:', error);
+    res.status(500).json({ error: 'Failed to insert test data', details: error.message });
+  }
+});
+
+const createTables = async () => {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS services (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                description TEXT,
+                category VARCHAR(100),
+                price NUMERIC(10, 2) NOT NULL,
+                duration INT NOT NULL,
+                status VARCHAR(20) DEFAULT 'active'
+            );
+            CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE,
+                phone VARCHAR(50)
+            );
+            CREATE TABLE IF NOT EXISTS employees (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) UNIQUE,
+                phone VARCHAR(50),
+                role VARCHAR(100),
+                profile_picture TEXT,
+                status VARCHAR(20) DEFAULT 'active'
+            );
+            CREATE TABLE IF NOT EXISTS appointments (
+                id SERIAL PRIMARY KEY,
+                service_id INT REFERENCES services(id),
+                client_id INT REFERENCES clients(id),
+                employee_id INT REFERENCES employees(id),
+                date DATE NOT NULL,
+                time TIME NOT NULL,
+                duration INT,
+                price NUMERIC(10, 2),
+                notes TEXT,
+                status VARCHAR(20) DEFAULT 'scheduled'
+            );
+            CREATE TABLE IF NOT EXISTS photos (
+                id SERIAL PRIMARY KEY,
+                product_id INTEGER,
+                url TEXT,
+                filename TEXT
+            );
+            CREATE TABLE IF NOT EXISTS photos_products (
+                id SERIAL PRIMARY KEY,
+                product_id INTEGER,
+                url TEXT,
+                filename TEXT
+            );
+            CREATE TABLE IF NOT EXISTS photos_services (
+                id SERIAL PRIMARY KEY,
+                service_id INTEGER,
+                url TEXT,
+                filename TEXT
+            );
+        `);
+        // Add the new table separately to avoid issues
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS CustomerReminders (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                subject VARCHAR(255) NOT NULL,
+                body TEXT NOT NULL,
+                createdAt TIMESTAMPTZ DEFAULT NOW(),
+                updatedAt TIMESTAMPTZ DEFAULT NOW()
+            );
+        `);
+        console.log('Tables checked/created successfully.');
+        
+        // Check if appointments table needs to be updated with new columns
+        try {
+            const columnsResult = await client.query(`
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'appointments'
+            `);
+            const existingColumns = columnsResult.rows.map(row => row.column_name);
+            
+            if (!existingColumns.includes('duration')) {
+                await client.query('ALTER TABLE appointments ADD COLUMN duration INT');
+                console.log('Added duration column to appointments table');
+            }
+            
+            if (!existingColumns.includes('price')) {
+                await client.query('ALTER TABLE appointments ADD COLUMN price NUMERIC(10, 2)');
+                console.log('Added price column to appointments table');
+            }
+        } catch (error) {
+            console.error('Error updating appointments table:', error);
+        }
+    } catch (error) {
+        console.error('Error creating tables:', error);
+    } finally {
+        client.release();
+    }
+};
