@@ -56,9 +56,9 @@
             <a href="index.html" class="btn btn-dark border-light ms-2 rounded-5 text-center">
                 <i class="bi bi-arrow-left"></i> back
             </a>
-            <button class="btn btn-primary rounded-5 " data-bs-toggle="modal" data-bs-target="#newServiceModal">
+            <a href="new.html" class="btn btn-primary rounded-5 ">
                 <i class="bi bi-plus-circle"></i> New Service
-            </button>
+            </a>
             <button class="btn btn-warning ms-auto rounded-circle" onclick="loadData()">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
@@ -232,7 +232,7 @@
             const menu = document.getElementById('categoryFilterMenu');
             const dropdown = menu.closest('.dropdown');
             const button = document.getElementById('categoryFilterBtn');
-            allCategories = [...new Set(services.map(s => s.category).filter(Boolean))];
+            allCategories = [...new Set(services.map(s => s.category && s.category.trim() ? s.category : '(No Category)'))];
             menu.innerHTML =
                 allCategories.map(cat => `
                     <li><label class="dropdown-item d-flex align-items-center gap-2" style="min-width: 220px;">
@@ -302,7 +302,8 @@
 
         function filterServices() {
             filteredServices = services.filter(s => {
-                if (selectedCategories.length && !selectedCategories.includes(s.category)) return false;
+                const cat = s.category && s.category.trim() ? s.category : '(No Category)';
+                if (selectedCategories.length && !selectedCategories.includes(cat)) return false;
                 if (selectedStatuses.length && !selectedStatuses.includes(s.status)) return false;
                 if (searchTerm) {
                     const term = searchTerm.toLowerCase();
@@ -338,38 +339,33 @@
 
         function renderServices() {
             const grid = document.getElementById('servicesGrid');
-            grid.innerHTML = filteredServices.map(service => `
-                <div class="col p-1">
-                    <div class="card h-100 shadow-sm border-1 bg-dark text-light">
-                        <div class="card-header p-1 d-flex justify-content-between align-items-center">
-                            <span><strong><i class="bi ${getServiceCategoryIcon(service.category)} me-1"></i>${service.name}</strong></span>
-                            <span class="badge bg-secondary">${service.category || ''}</span>
+            grid.innerHTML = '';
+            filteredServices.forEach(service => {
+                const col = document.createElement('div');
+                col.className = 'col mb-3';
+                const card = document.createElement('div');
+                card.className = 'card h-100 bg-dark text-light border-secondary shadow';
+                // Status color: green for active, gray for inactive, yellow for others
+                let statusColor = 'bg-secondary';
+                if (service.status === 'active') statusColor = 'bg-success';
+                else if (service.status === 'inactive') statusColor = 'bg-secondary';
+                else if (service.status) statusColor = 'bg-warning';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="me-2"><span class="rounded-circle d-inline-block ${statusColor}" style="width: 14px; height: 14px;"></span></span>
+                            <h5 class="card-title mb-0 flex-grow-1">${service.name}</h5>
                         </div>
-                        <div class="card-body p-1">
-                            <p class="card-text small mb-1">${service.description || ''}</p>
-                            <div class="row g-1 text-center">
-                                <div class="col-4">
-                                    <span class="badge bg-secondary w-100 fs-6">$${Number(service.price).toFixed(2)}</span>
-                                </div>
-                                <div class="col-4">
-                                    <span class="badge bg-secondary w-100 fs-6">${service.duration} min</span>
-                                </div>
-                                <div class="col-4">
-                                    <span class="badge bg-${service.status === 'active' ? 'success' : 'secondary'} w-100 fs-6">${service.status}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer d-flex justify-content-between align-items-center bg-transparent border-0">
-                            <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteService(${service.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary ms-auto" title="Edit" onclick="editService(${service.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                        </div>
+                        <p class="card-text mb-1"><strong>Category:</strong> ${service.category || '<span class=\'text-muted\'>(No Category)</span>'}</p>
+                        <p class="card-text mb-1">${service.description || ''}</p>
+                        <p class="card-text mb-1"><strong>Price:</strong> $${service.price}</p>
+                        <p class="card-text mb-1"><strong>Duration:</strong> ${service.duration} min</p>
+                        <button class="btn btn-outline-primary w-100 mt-2" onclick="window.location.href='edit.html?id=${service.id}'">Edit</button>
                     </div>
-                </div>
-            `).join('');
+                `;
+                col.appendChild(card);
+                grid.appendChild(col);
+            });
         }
 
         async function saveService() {

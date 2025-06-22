@@ -187,11 +187,19 @@
         function updateStatusFilter() {
           const menu = document.getElementById('statusFilterMenu');
           allStatuses = [...new Set(products.map(p => p.status).filter(Boolean))];
-          menu.innerHTML = allStatuses.map(status => `
-            <li><label class="dropdown-item form-check">
-              <input type="checkbox" class="form-check-input" value="${status}" checked> ${status.charAt(0).toUpperCase() + status.slice(1)}
-            </label></li>
-          `).join('');
+          menu.innerHTML = allStatuses.map(status => {
+            let statusColor = 'bg-secondary';
+            if (status === 'active') statusColor = 'bg-success';
+            else if (status === 'inactive') statusColor = 'bg-secondary';
+            else if (status) statusColor = 'bg-warning';
+            return `
+              <li><label class="dropdown-item form-check d-flex align-items-center gap-2">
+                <span class="rounded-circle d-inline-block ${statusColor}" style="width: 14px; height: 14px;"></span>
+                <input type="checkbox" class="form-check-input ms-1" value="${status}" checked>
+                <span class="ms-2">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+              </label></li>
+            `;
+          }).join('');
           selectedStatuses = [...allStatuses];
           // Set up change events
           menu.querySelectorAll('input[type=checkbox]').forEach(cb => {
@@ -260,38 +268,46 @@
 
         function renderProducts() {
           const grid = document.getElementById('productsGrid');
-          grid.innerHTML = filteredProducts.map(product => `
-            <div class="col p-1">
-              <div class="card h-100 shadow-sm border-1 bg-dark text-light">
-                <div class="card-header p-1 d-flex justify-content-between align-items-center">
-                  <span><strong><i class="bi ${getProductCategoryIcon(product.category)} me-1"></i>${product.name}</strong></span>
-                  <span class="badge bg-secondary">${product.category || ''}</span>
-                </div>
-                <div class="card-body p-1">
-                  <p class="card-text small mb-1">${product.description || ''}</p>
-                  <div class="row g-1 text-center">
-                    <div class="col-4">
-                      <span class="badge bg-secondary w-100 fs-6">$${Number(product.price).toFixed(2)}</span>
-                    </div>
-                    <div class="col-4">
-                      <span class="badge bg-secondary w-100 fs-6">Qty: ${product.quantity}</span>
-                    </div>
-                    <div class="col-4">
-                      <span class="badge bg-${product.status === 'active' ? 'success' : 'secondary'} w-100 fs-6">${product.status}</span>
+          grid.innerHTML = filteredProducts.map(product => {
+            // Status color: green for active, gray for inactive, yellow for others
+            let statusColor = 'bg-secondary';
+            if (product.status === 'active') statusColor = 'bg-success';
+            else if (product.status === 'inactive') statusColor = 'bg-secondary';
+            else if (product.status) statusColor = 'bg-warning';
+            return `
+              <div class="col p-1">
+                <div class="card h-100 shadow-sm border-1 bg-dark text-light">
+                  <div class="card-header p-1 d-flex justify-content-between align-items-center">
+                    <span><strong><i class="bi ${getProductCategoryIcon(product.category)} me-1"></i>${product.name}</strong></span>
+                    <span class="ms-2"><span class="rounded-circle d-inline-block ${statusColor}" style="width: 14px; height: 14px;"></span></span>
+                  </div>
+                  <div class="card-body p-1">
+                    <p class="card-text small mb-1">${product.description || ''}</p>
+                    <div class="row g-1 text-center">
+                      <div class="col-4">
+                        <span class="badge bg-secondary w-100 ">$${Number(product.price).toFixed(2)}</span>
+                      </div>
+                      <div class="col-4">
+                        <span class="badge bg-secondary w-100 ">Qty: ${product.quantity}</span>
+                      </div>
+                      <div class="col-4">
+                                            <span class="badge bg-secondary w-100">${product.category || ''}</span>
+
+                       </div>
                     </div>
                   </div>
-                </div>
-                <div class="card-footer d-flex justify-content-between align-items-center bg-transparent border-0">
-                  <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteProduct(${product.id})">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-primary ms-auto" title="Edit" onclick="editProduct(${product.id})">
-                    <i class="bi bi-pencil"></i>
-                  </button>
+                  <div class="card-footer d-flex justify-content-between align-items-center bg-transparent border-0">
+                    <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteProduct(${product.id})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary ms-auto" title="Edit" onclick="editProduct(${product.id})">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          `).join('');
+            `;
+          }).join('');
         }
  
         async function editProduct(id) {

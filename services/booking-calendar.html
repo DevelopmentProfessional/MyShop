@@ -86,7 +86,7 @@
                             <label for="appointmentDate">Date</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="time" class="form-control" id="appointmentTime" required>
+                            <select class="form-select" id="appointmentTime" required></select>
                             <label for="appointmentTime">Time</label>
                         </div>
                         <div class="form-floating mb-3">
@@ -112,38 +112,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-primary" id="confirmBooking">Confirm Booking</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- New Client Modal -->
-    <div class="modal fade" id="newClientModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Client</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="newClientForm">
-                        <div class="mb-3">
-                            <label for="newClientName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="newClientName" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="newClientEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="newClientEmail" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="newClientPhone" class="form-label">Phone</label>
-                            <input type="tel" class="form-control" id="newClientPhone" required>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="saveNewClient">Save Client</button>
                 </div>
             </div>
         </div>
@@ -234,11 +202,10 @@
                 background-color: rgba(0, 123, 255, 0.1);
             }
             .calendar-day.active {
-                background-color: rgba(0, 123, 255, 0.2);
                 font-weight: bold;
             }
             .calendar-day.today {
-                background-color: rgba(255, 193, 7, 0.2);
+                /* No custom background, will use Bootstrap classes */
             }
             .calendar-day.has-appointments {
                 font-weight: bold;
@@ -462,8 +429,8 @@
                         const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         const isToday = today.toDateString() === date.toDateString();
                         const isSelected = selectedDate === dateString;
-                        const dayClass = isToday ? 'today' : '';
-                        const activeClass = isSelected ? 'active' : '';
+                        const dayClass = isToday ? 'today bg-primary text-light' : '';
+                        const activeClass = isSelected ? 'active bg-primary text-light' : '';
                         
                         calendarHTML += `
                             <td class="calendar-day ${dayClass} ${activeClass} ${dayAppointments.length ? 'has-appointments' : ''}" 
@@ -489,6 +456,10 @@
                 if (!selectedDate) {
                     const todayCell = document.querySelector('.calendar-day.today');
                     if (todayCell) {
+                        // Remove active from all days
+                        document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('active', 'bg-primary', 'text-light'));
+                        // Add active, bg-primary, and text-light to today
+                        todayCell.classList.add('active', 'bg-primary', 'text-light');
                         todayCell.click();
                     }
                 }
@@ -1096,6 +1067,24 @@
             }
         });
       
+        function populateTimeDropdown() {
+            const timeSelect = document.getElementById('appointmentTime');
+            if (!timeSelect) return;
+            timeSelect.innerHTML = '';
+            const startHour = 8;
+            const endHour = 20;
+            for (let h = startHour; h <= endHour; h++) {
+                for (let m = 0; m < 60; m += 15) {
+                    const hour = h.toString().padStart(2, '0');
+                    const min = m.toString().padStart(2, '0');
+                    const value = `${hour}:${min}`;
+                    const label = `${hour}:${min}`;
+                    timeSelect.innerHTML += `<option value="${value}">${label}</option>`;
+                }
+            }
+        }
+
+        document.getElementById('bookingDetailsModal').addEventListener('show.bs.modal', populateTimeDropdown);
     </script>
 </body>
 </html> 

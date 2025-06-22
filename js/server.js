@@ -147,7 +147,7 @@ app.get('/api/photos_products/:productId', async (req, res) => {
 });
 app.post('/api/uploadproductphotos', async (req, res) => {try{ 
   const { photos } = req.body;
-  
+  console.log('[UPLOAD PHOTOS] Incoming payload:', JSON.stringify(photos, null, 2));
   // Validate total payload size
   const totalSize = JSON.stringify(photos).length;
   if (totalSize > 922 * 1024) {
@@ -161,21 +161,20 @@ app.post('/api/uploadproductphotos', async (req, res) => {try{
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    
     const results = [];
     for (const photo of photos) {
-    const result = await client.query(
-        'INSERT INTO photos (product_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
+      console.log('[UPLOAD PHOTOS] Inserting photo:', photo);
+      const result = await client.query(
+        'INSERT INTO photos_products (product_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
         [photo.product_id, photo.url, photo.filename]
-    );
+      );
       results.push(result.rows[0]);
     }
-    
     await client.query('COMMIT');
     res.status(201).json({ success: true, photos: results });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error uploading photos:', error);
+    console.error('[UPLOAD PHOTOS] Error uploading photos:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to upload photos',
@@ -185,7 +184,7 @@ app.post('/api/uploadproductphotos', async (req, res) => {try{
     client.release();
   }
 } catch (error) {
-  console.error('Error in upload endpoint:', error);
+  console.error('[UPLOAD PHOTOS] Error in upload endpoint:', error);
   res.status(500).json({ 
     success: false, 
     error: 'Server error',
@@ -193,11 +192,11 @@ app.post('/api/uploadproductphotos', async (req, res) => {try{
   });
 }});
 app.post('/api/services', async (req, res) => {try{ 
-  const result = await pool.query('INSERT INTO services (name, description, price, duration) VALUES ($1, $2, $3, $4) RETURNING *', [req.body.name, req.body.description, req.body.price, req.body.duration]); res.status(201).json(result.rows[0]); } 
+  const result = await pool.query('INSERT INTO services (name, description, category, price, duration, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status]); res.status(201).json(result.rows[0]); } 
 catch (error) { handleError(res, error, 'Check console', true); }
 });
 app.put('/api/services/:id', async (req, res) => {try{ 
-  const result = await pool.query('UPDATE services SET name = $1, description = $2, price = $3, duration = $4 WHERE id = $5 RETURNING *', [req.body.name, req.body.description, req.body.price, req.body.duration, req.params.id]); res.json(result.rows[0]); } 
+  const result = await pool.query('UPDATE services SET name = $1, description = $2, category = $3, price = $4, duration = $5, status = $6 WHERE id = $7 RETURNING *', [req.body.name, req.body.description, req.body.category, req.body.price, req.body.duration, req.body.status, req.params.id]); res.json(result.rows[0]); } 
 catch (error) { handleError(res, error, 'Check console'); }
 });
 app.delete('/api/services/:id', async (req, res) => {try{ 
@@ -311,10 +310,10 @@ catch (error) { handleError(res, error, 'Check console'); }
 });
 
 app.post('/api/products', async (req, res) => {try{ 
-  const { name, description, price, quantity, category, status, barcode } = req.body; 
+  const { name, description, price, quantity, category, status } = req.body; 
   const result = await pool.query(
-    'INSERT INTO products (name, description, price, quantity, category, status, barcode) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', 
-    [name, description, price, quantity, category, status, barcode]
+    'INSERT INTO products (name, description, price, quantity, category, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', 
+    [name, description, price, quantity, category, status]
   ); 
   res.status(201).json(result.rows[0]); } 
 catch (error) { handleError(res, error, 'Check console'); }
@@ -481,6 +480,50 @@ app.get('/api/photos_services/:serviceId', async (req, res) => {
     }
 });
 
+app.post('/api/uploadservicephotos', async (req, res) => {
+  try{ 
+    const { photos } = req.body;
+    // Validate total payload size
+    const totalSize = JSON.stringify(photos).length;
+    if (totalSize > 922 * 1024) {
+      return res.status(413).json({ 
+        success: false, 
+        error: 'Total payload size exceeds limit of 922KB',
+        details: `Current size: ${Math.round(totalSize / 1024)}KB`
+      });
+    }
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const results = [];
+      for (const photo of photos) {
+        const result = await client.query(
+          'INSERT INTO photos_services (service_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
+          [photo.service_id, photo.url, photo.filename]
+        );
+        results.push(result.rows[0]);
+      }
+      await client.query('COMMIT');
+      res.status(201).json({ success: true, photos: results });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to upload service photos',
+        details: error.message
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server error',
+      details: error.message
+    });
+  }
+});
+
 // Mount router
 
 // SSL certificate generation
@@ -575,4 +618,20 @@ process.on('unhandledRejection', (reason, promise) => {
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
   process.exit(1);
+});
+
+app.get('/api/debug/photos-products-table', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT column_name, data_type, is_nullable, column_default 
+      FROM information_schema.columns 
+      WHERE table_name = 'photos_products' 
+      ORDER BY ordinal_position
+    `);
+    console.log('[DEBUG] photos_products table structure:', JSON.stringify(result.rows, null, 2));
+    res.json(result.rows);
+  } catch (error) {
+    console.error('[DEBUG] Error getting photos_products table structure:', error);
+    res.status(500).json({ error: 'Failed to get table structure', details: error.message });
+  }
 });

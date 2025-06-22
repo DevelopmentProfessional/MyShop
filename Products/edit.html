@@ -224,7 +224,7 @@
         async function loadPhotosFromDB() {
             try {
                 console.log('Loading photos for product:', productId);
-                const response = await fetch(`${API_URL}/api/photos/${productId}`);
+                const response = await fetch(`${API_URL}/api/photos_products/${productId}`);
                 console.log('Response status:', response.status);
                 
                 if (!response.ok) {
@@ -304,14 +304,12 @@
                         reader.onerror = reject;
                         reader.readAsDataURL(file);
                     });
-                    
                     photos.push({
                         product_id: parseInt(productId),
                         url: photoData,
                         filename: file.name
                     });
                 }
-
                 const response = await fetch(`${API_URL}/api/uploadproductphotos`, {
                     method: 'POST',
                     headers: {
@@ -319,30 +317,32 @@
                     },
                     body: JSON.stringify({ photos })
                 });
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    let errorMsg = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.details) {
+                            errorMsg += `\nDetails: ${errorData.details}`;
+                        } else if (errorData && errorData.error) {
+                            errorMsg += `\nError: ${errorData.error}`;
+                        }
+                    } catch (e) {}
+                    throw new Error(errorMsg);
                 }
-
                 const result = await response.json();
                 console.log('Upload result:', result);
-                
-                // Reload photos after successful upload
                 await loadPhotosFromDB();
-                
-                // Clear the file input
                 input.value = '';
                 preview.innerHTML = '';
-                
                 return result;
             } catch (error) {
                 console.error('Error uploading photos:', error);
+                alert('Error uploading photos: ' + error.message);
                 throw error;
             }
         }
 
-        // Update the upload button click handler
-        uploadBtn.addEventListener('click', async () => {
+         uploadBtn.addEventListener('click', async () => {
             const files = input.files;
             if (!files.length) {
                 alert('Please select at least one photo');
