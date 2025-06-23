@@ -277,28 +277,26 @@ app.get('/api/employees', async (req, res) => {
     }
 });
 
-app.post('/api/employees', validateEmployee, async (req, res) => {
+app.post('/api/employees', async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors.array());
-        }
-        const { name, email, phone, role, status } = req.body;
-        const result = await pool.query('INSERT INTO employees (name, email, phone, role, status) VALUES ($1, $2, $3, $4, $5) RETURNING *', [name, email, phone, role, status || 'active']);
+        const { name, email, phone, role, status, supervisor_id, department } = req.body;
+        const result = await pool.query(
+            'INSERT INTO employees (name, email, phone, role, status, supervisor_id, department) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+            [name, email, phone, role, status || 'active', supervisor_id || null, department || null]
+        );
         res.status(201).json(result.rows[0]);
     } catch (error) {
         handleError(res, error, 'Check console');
     }
 });
 
-app.put('/api/employees/:id', validateEmployee, async (req, res) => {
+app.put('/api/employees/:id', async (req, res) => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json(errors.array());
-        }
-        const { name, email, phone, role, status } = req.body;
-        const result = await pool.query('UPDATE employees SET name = $1, email = $2, phone = $3, role = $4, status = $5 WHERE id = $6 RETURNING *', [name, email, phone, role, status, req.params.id]);
+        const { name, email, phone, role, status, supervisor_id, department } = req.body;
+        const result = await pool.query(
+            'UPDATE employees SET name = $1, email = $2, phone = $3, role = $4, status = $5, supervisor_id = $6, department = $7 WHERE id = $8 RETURNING *',
+            [name, email, phone, role, status, supervisor_id || null, department || null, req.params.id]
+        );
         res.json(result.rows[0]);
     } catch (error) {
         handleError(res, error, 'Check console');
@@ -1476,3 +1474,13 @@ const createTables = async () => {
         client.release();
     }
 };
+
+// Org chart endpoint: returns all employees with supervisor and department info
+app.get('/api/org-chart', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM employees');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch org chart');
+    }
+});

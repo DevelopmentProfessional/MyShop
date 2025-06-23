@@ -5,7 +5,9 @@ CREATE TABLE employees (
     employee_id INT PRIMARY KEY,
     first_name VARCHAR(50),
     last_name VARCHAR(50),
-    email VARCHAR(100)
+    email VARCHAR(100),
+    supervisor_id INT REFERENCES employees(employee_id),
+    department VARCHAR(100)
 );
 
 CREATE TABLE attendance (
@@ -28,4 +30,8 @@ INSERT INTO employees (employee_id, first_name, last_name, email) VALUES
 INSERT INTO attendance (attendance_id, employee_id, date, check_in, check_out, status) VALUES
 (1, 1, '2023-01-01', '09:00:00', '17:00:00', 'Present'),
 (2, 2, '2023-01-01', '09:15:00', '17:15:00', 'Present'),
-(3, 3, '2023-01-01', '09:30:00', '17:30:00', 'Present'); 
+(3, 3, '2023-01-01', '09:30:00', '17:30:00', 'Present');
+
+-- Add supervisor_id and department to employees table for org chart hierarchy and department display
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS supervisor_id INT REFERENCES employees(employee_id);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS department VARCHAR(100); 
