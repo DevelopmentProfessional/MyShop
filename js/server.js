@@ -1056,12 +1056,13 @@ app.use((err, req, res, next) => {
 
 // --- Server Startup ---
 if (!isOnRender) {
-  // Local development: use HTTPS with self-signed cert
-  const server = https.createServer(
+  // Local development: use both HTTPS and HTTP
+  const httpsServer = https.createServer(
     { key: pems.private, cert: pems.cert },
     app
   ).listen(PORT, HOST, () => {
     console.log(`HTTPS server running at https://${DISPLAY_HOST}:${PORT}`);
+    console.log(`HTTP server running at http://${DISPLAY_HOST}:${PORT}`);
     console.log(`Environment: Local Development (NODE_ENV: ${process.env.NODE_ENV})`);
     // Only test database connection if we have a database URL
     if (dbUrl) {
@@ -1069,9 +1070,20 @@ if (!isOnRender) {
       createTables(); // Ensure tables are created/updated
     }
   });
-  server.on('error', (error) => {
-    console.error('Server startup error:', error);
+  
+  // Also start HTTP server for easier development
+  const httpServer = app.listen(PORT + 1, HOST, () => {
+    console.log(`HTTP server running at http://${DISPLAY_HOST}:${PORT + 1}`);
+  });
+  
+  httpsServer.on('error', (error) => {
+    console.error('HTTPS server startup error:', error);
     process.exit(1);
+  });
+  
+  httpServer.on('error', (error) => {
+    console.error('HTTP server startup error:', error);
+    // Don't exit if HTTP fails, HTTPS might still work
   });
 } else {
   // Production (Render): use HTTP only
@@ -1191,6 +1203,178 @@ app.post('/api/debug/insert-test-data', async (req, res) => {
     console.error('[DEBUG] Error inserting test data:', error);
     res.status(500).json({ error: 'Failed to insert test data', details: error.message });
   }
+});
+
+// Analytics API endpoints
+app.get('/api/analytics/metrics', async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+        const result = await pool.query(`
+            SELECT 
+                COUNT(*) as total_appointments,
+                COUNT(CASE WHEN a.status = 'completed' THEN 1 END) as completed_appointments,
+                SUM(COALESCE(a.price, 0)) as total_revenue,
+                AVG(COALESCE(a.price, 0)) as avg_revenue
+            FROM appointments a
+            WHERE a.date >= $1
+        `, [cutoffDate.toISOString().split('T')[0]]);
+        const servicesResult = await pool.query(`
+            SELECT COUNT(*) as active_services 
+            FROM services 
+            WHERE status = 'active'
+        `);
+        const metrics = result.rows[0];
+        const completionRate = metrics.total_appointments > 0 
+            ? Math.round((metrics.completed_appointments / metrics.total_appointments) * 100) 
+            : 0;
+        res.json({
+            totalAppointments: parseInt(metrics.total_appointments) || 0,
+            completedAppointments: parseInt(metrics.completed_appointments) || 0,
+            completionRate: completionRate,
+            totalRevenue: parseFloat(metrics.total_revenue) || 0,
+            avgRevenue: parseFloat(metrics.avg_revenue) || 0,
+            activeServices: parseInt(servicesResult.rows[0].active_services) || 0
+        });
+    } catch (error) {
+        console.error('Analytics metrics error:', error);
+        handleError(res, error, 'Failed to fetch analytics metrics', true);
+    }
+});
+
+app.get('/api/analytics/trends', async (req, res) => {
+    try {
+        const { days = 7 } = req.query;
+        const trends = [];
+        const labels = [];
+        for (let i = parseInt(days) - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            const result = await pool.query(`
+                SELECT COUNT(*) as count
+                FROM appointments a
+                WHERE a.date = $1
+            `, [dateStr]);
+            trends.push(parseInt(result.rows[0].count) || 0);
+            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        res.json({ labels, data: trends });
+    } catch (error) {
+        console.error('Analytics trends error:', error);
+        handleError(res, error, 'Failed to fetch trends data', true);
+    }
+});
+
+app.get('/api/analytics/service-distribution', async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+        const result = await pool.query(`
+            SELECT 
+                s.name,
+                COUNT(a.id) as appointment_count
+            FROM services s
+            LEFT JOIN appointments a ON s.id = a.service_id 
+                AND a.date >= $1
+            WHERE s.status = 'active'
+            GROUP BY s.id, s.name
+            ORDER BY appointment_count DESC
+        `, [cutoffDate.toISOString().split('T')[0]]);
+        const labels = result.rows.map(row => row.name);
+        const data = result.rows.map(row => parseInt(row.appointment_count) || 0);
+        res.json({ labels, data });
+    } catch (error) {
+        console.error('Service distribution error:', error);
+        handleError(res, error, 'Failed to fetch service distribution', true);
+    }
+});
+
+app.get('/api/analytics/staff-performance', async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+        const result = await pool.query(`
+            SELECT 
+                e.name,
+                COUNT(a.id) as appointment_count,
+                COUNT(CASE WHEN a.status = 'completed' THEN 1 END) as completed_count
+            FROM employees e
+            LEFT JOIN appointments a ON e.id = a.employee_id 
+                AND a.date >= $1
+            WHERE e.status = 'active'
+            GROUP BY e.id, e.name
+            ORDER BY appointment_count DESC
+        `, [cutoffDate.toISOString().split('T')[0]]);
+        const labels = result.rows.map(row => row.name);
+        const data = result.rows.map(row => parseInt(row.appointment_count) || 0);
+        res.json({ labels, data });
+    } catch (error) {
+        console.error('Staff performance error:', error);
+        handleError(res, error, 'Failed to fetch staff performance', true);
+    }
+});
+
+app.get('/api/analytics/peak-hours', async (req, res) => {
+    try {
+        const { days = 30 } = req.query;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+        const result = await pool.query(`
+            SELECT 
+                EXTRACT(HOUR FROM a.time::time) as hour,
+                COUNT(*) as appointment_count
+            FROM appointments a
+            WHERE a.date >= $1 AND a.time IS NOT NULL
+            GROUP BY EXTRACT(HOUR FROM a.time::time)
+            ORDER BY hour
+        `, [cutoffDate.toISOString().split('T')[0]]);
+        // Create array for all 24 hours
+        const hourData = Array(24).fill(0);
+        result.rows.forEach(row => {
+            const hour = parseInt(row.hour);
+            hourData[hour] = parseInt(row.appointment_count) || 0;
+        });
+        const labels = hourData.map((_, i) => `${i.toString().padStart(2, '0')}:00`);
+        const data = hourData;
+        res.json({ labels, data });
+    } catch (error) {
+        console.error('Peak hours error:', error);
+        handleError(res, error, 'Failed to fetch peak hours data', true);
+    }
+});
+
+app.get('/api/analytics/recent-appointments', async (req, res) => {
+    try {
+        const { limit = 10 } = req.query;
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                s.name as service_name,
+                c.name as client_name,
+                c.email as client_email,
+                e.name as employee_name
+            FROM appointments a
+            LEFT JOIN services s ON a.service_id = s.id
+            LEFT JOIN clients c ON a.client_id = c.id
+            LEFT JOIN employees e ON a.employee_id = e.id
+            ORDER BY a.date DESC, a.time DESC
+            LIMIT $1
+        `, [parseInt(limit)]);
+        const appointments = result.rows.map(row => ({
+            ...row,
+            service: { name: row.service_name || 'Unknown Service' },
+            client: { name: row.client_name || 'Unknown Client', email: row.client_email || '' },
+            employee: { name: row.employee_name || 'Unknown Employee' }
+        }));
+        res.json(appointments);
+    } catch (error) {
+        console.error('Recent appointments error:', error);
+        handleError(res, error, 'Failed to fetch recent appointments', true);
+    }
 });
 
 const createTables = async () => {
