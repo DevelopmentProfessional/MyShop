@@ -242,11 +242,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
+        const API_URL = window.location.origin;
+        
         // Fetch and display schedule
         async function loadSchedule() {
             try {
                 $('.loading-spinner').show();
-                const response = await fetch('/api/shifts');
+                const response = await fetch(`${API_URL}/api/shifts`);
                 const data = await response.json();
                 
                 const grid = $('#scheduleGrid');
@@ -315,7 +317,7 @@
         // Load employees for dropdown
         async function loadEmployees() {
             try {
-                const response = await fetch('/api/employees');
+                const response = await fetch(`${API_URL}/api/employees`);
                 const data = await response.json();
                 
                 const select = $('#employee');
@@ -337,7 +339,7 @@
         // Load shift templates
         async function loadShiftTemplates() {
             try {
-                const response = await fetch('/api/shift-templates');
+                const response = await fetch(`${API_URL}/api/shift-templates`);
                 const data = await response.json();
                 
                 const templates = $('#shiftTemplates');
@@ -386,7 +388,7 @@
             };
             
             try {
-                const response = await fetch('/api/shifts', {
+                const response = await fetch(`${API_URL}/api/shifts`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(shiftData)
