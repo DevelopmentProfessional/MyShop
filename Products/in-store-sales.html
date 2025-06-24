@@ -140,6 +140,30 @@
         </div>
       </div>
     </div>
+    <!-- Email Invoice Modal -->
+    <div class="modal fade" id="emailInvoiceModal" tabindex="-1" aria-labelledby="emailInvoiceModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+          <div class="modal-header">
+            <h5 class="modal-title" id="emailInvoiceModalLabel">Email Invoice?</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Would you like to email this client an invoice?</p>
+            <form id="emailInvoiceForm">
+              <div class="mb-3">
+                <label class="form-label">Client Email</label>
+                <input type="email" class="form-control bg-dark text-light border-secondary" id="invoiceClientEmail" placeholder="client@email.com" required>
+              </div>
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="submit" class="btn btn-primary">Yes, Email Invoice</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
     <script>
@@ -420,6 +444,14 @@ paymentForm.onsubmit = async function(e) {
         order = [];
         renderOrderList();
         receiptModal.show();
+        onCheckoutComplete({
+            clientName: document.getElementById('clientName').value,
+            clientEmail: document.getElementById('clientEmail').value,
+            orderId: res.headers.get('X-Order-ID'),
+            date: new Date().toISOString(),
+            itemsHtml: document.getElementById('orderList').innerHTML,
+            total: document.getElementById('orderTotal').textContent
+        });
     } else {
         alert('Failed to complete sale!');
     }
@@ -457,6 +489,55 @@ document.getElementById('emailReceiptForm').onsubmit = async function(e) {
         alert('Failed to send email!');
     }
 };
+
+// --- Email Invoice Logic ---
+function onCheckoutComplete(orderData) {
+    const emailModal = new bootstrap.Modal(document.getElementById('emailInvoiceModal'));
+    document.getElementById('invoiceClientEmail').value = orderData.clientEmail || '';
+    emailModal.show();
+    document.getElementById('emailInvoiceForm').onsubmit = async function(e) {
+        e.preventDefault();
+        const clientEmail = document.getElementById('invoiceClientEmail').value;
+        // Fetch the selected invoice template (implement as needed)
+        const templateHtml = await fetch('/api/invoice-template').then(r => r.text());
+        // Prepare data for placeholders
+        const data = {
+            'client.name': orderData.clientName,
+            'client.email': clientEmail,
+            'order.id': orderData.orderId,
+            'order.date': orderData.date,
+            'order.items': orderData.itemsHtml, // Rendered HTML table
+            'order.total': orderData.total,
+            'company.logo': '<img src="/logo.png" style="height:40px;">',
+            'company.name': 'Shopy Inc.',
+            'company.address': '123 Main St, City, Country'
+        };
+        // Generate PDF
+        const pdfRes = await fetch('/api/generate-invoice-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html: templateHtml, data })
+        });
+        const pdfBuffer = await pdfRes.arrayBuffer();
+        // Email PDF
+        const emailRes = await fetch('/api/email-invoice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: clientEmail,
+                pdfBuffer: btoa(String.fromCharCode(...new Uint8Array(pdfBuffer))),
+                subject: 'Your Invoice',
+                body: 'Thank you for your purchase! Please find your invoice attached.'
+            })
+        });
+        if (emailRes.ok) {
+            alert('Invoice emailed successfully!');
+        } else {
+            alert('Failed to email invoice.');
+        }
+        emailModal.hide();
+    };
+}
 
 // --- Init ---
 window.onload = async function() {

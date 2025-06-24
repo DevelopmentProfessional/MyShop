@@ -5,259 +5,99 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recruitment - Shopy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <div class="row">
-            <!-- Header -->
-            <div class="col-12 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h1 class="h2 mb-1">Recruitment</h1>
-                                <p class="text-muted mb-0">Manage job openings and candidate applications</p>
-                            </div>
-                            <div>
-                                <button class="btn btn-primary">
-                                    <i class="bi bi-plus-lg"></i> New Job Opening
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<body>
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+            <a href="index.html" class="btn btn-dark border-light ms-2">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </nav>
+<div class="container py-4">
+    <h2 class="mb-4">Recruitment</h2>
+    <form id="addRecruitForm" class="mb-4 card card-body bg-dark border-secondary">
+        <div class="row g-2">
+            <div class="col-md-5">
+                <input type="text" class="form-control" id="recruitName" placeholder="Candidate Name" required>
             </div>
-
-            <!-- Main Content -->
-            <div class="col-lg-8">
-                <!-- Active Job Openings -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h2 class="h4 mb-3">Active Job Openings</h2>
-                        <div class="list-group">
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">Senior Frontend Developer</h3>
-                                        <p class="text-muted mb-0">Engineering Department</p>
-                                        <div class="progress mt-2" style="height: 5px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <span class="badge bg-success">Active</span>
-                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">Product Manager</h3>
-                                        <p class="text-muted mb-0">Product Department</p>
-                                        <div class="progress mt-2" style="height: 5px;">
-                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 45%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <span class="badge bg-warning">Urgent</span>
-                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">UX Designer</h3>
-                                        <p class="text-muted mb-0">Design Department</p>
-                                        <div class="progress mt-2" style="height: 5px;">
-                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 30%"></div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <span class="badge bg-danger">Closing Soon</span>
-                                        <button class="btn btn-sm btn-outline-primary">View Details</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Application Pipeline -->
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h4 mb-3">Application Pipeline</h2>
-                        <canvas id="pipelineChart" height="300"></canvas>
-                    </div>
-                </div>
+            <div class="col-md-5">
+                <input type="text" class="form-control" id="recruitQual" placeholder="Qualifications" required>
             </div>
-
-            <!-- Sidebar -->
-            <div class="col-lg-4">
-                <!-- Recent Applications -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h2 class="h4 mb-3">Recent Applications</h2>
-                        <div class="list-group">
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">Alex Johnson</h3>
-                                        <p class="text-muted mb-0">Senior Frontend Developer</p>
-                                        <small class="text-success">Applied 2 days ago</small>
-                                    </div>
-                                    <span class="badge bg-primary">Screening</span>
-                                </div>
-                            </div>
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">Sarah Williams</h3>
-                                        <p class="text-muted mb-0">Product Manager</p>
-                                        <small class="text-warning">Applied 1 day ago</small>
-                                    </div>
-                                    <span class="badge bg-warning">Review</span>
-                                </div>
-                            </div>
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h3 class="h6 mb-1">Michael Chen</h3>
-                                        <p class="text-muted mb-0">UX Designer</p>
-                                        <small class="text-info">Applied 5 hours ago</small>
-                                    </div>
-                                    <span class="badge bg-info">New</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recruitment Metrics -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h2 class="h4 mb-3">Recruitment Metrics</h2>
-                        <canvas id="metricsChart" height="200"></canvas>
-                    </div>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h2 class="h4 mb-3">Quick Stats</h2>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="border rounded p-3 text-center">
-                                    <h3 class="h2 mb-0">8</h3>
-                                    <p class="text-muted mb-0">Openings</p>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="border rounded p-3 text-center">
-                                    <h3 class="h2 mb-0">45</h3>
-                                    <p class="text-muted mb-0">Applications</p>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="border rounded p-3 text-center">
-                                    <h3 class="h2 mb-0">12</h3>
-                                    <p class="text-muted mb-0">Interviews</p>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="border rounded p-3 text-center">
-                                    <h3 class="h2 mb-0">3</h3>
-                                    <p class="text-muted mb-0">Offers</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">Add Recruit</button>
             </div>
         </div>
+    </form>
+    <div id="alertArea"></div>
+    <div class="card bg-dark border-secondary">
+        <div class="card-header bg-primary text-white">Applicants</div>
+        <div class="card-body p-0">
+            <table class="table table-dark table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Qualifications</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="recruitList"></tbody>
+            </table>
+        </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Pipeline Chart
-        const pipelineCtx = document.getElementById('pipelineChart').getContext('2d');
-        new Chart(pipelineCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'],
-                datasets: [{
-                    label: 'Applications',
-                    data: [45, 30, 20, 8, 3],
-                    backgroundColor: [
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(255, 205, 86, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(153, 102, 255, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgb(75, 192, 192)',
-                        'rgb(255, 99, 132)',
-                        'rgb(255, 205, 86)',
-                        'rgb(54, 162, 235)',
-                        'rgb(153, 102, 255)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-
-        // Metrics Chart
-        const metricsCtx = document.getElementById('metricsChart').getContext('2d');
-        new Chart(metricsCtx, {
-            type: 'radar',
-            data: {
-                labels: ['Time to Hire', 'Quality of Hire', 'Cost per Hire', 'Offer Acceptance', 'Diversity'],
-                datasets: [{
-                    label: 'Current Quarter',
-                    data: [85, 90, 75, 80, 85],
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgb(75, 192, 192)',
-                    pointBackgroundColor: 'rgb(75, 192, 192)'
-                }, {
-                    label: 'Target',
-                    data: [90, 90, 80, 85, 90],
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    pointBackgroundColor: 'rgb(255, 99, 132)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                },
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
-            }
-        });
-    </script>
+</div>
+<script>
+function showAlert(msg, type='success') {
+    document.getElementById('alertArea').innerHTML = `<div class="alert alert-${type} alert-dismissible fade show mt-2" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+}
+async function fetchRecruits() {
+    const res = await fetch('/api/recruits');
+    const recruits = await res.json();
+    const tbody = document.getElementById('recruitList');
+    tbody.innerHTML = recruits.map(r => `
+        <tr>
+            <td>${r.name}</td>
+            <td>${r.qualifications || ''}</td>
+            <td>
+                <span class="badge bg-${r.status === 'hired' ? 'success' : r.status === 'rejected' ? 'danger' : 'secondary'}">
+                    ${r.status}
+                </span>
+            </td>
+            <td>
+                ${r.status === 'applying' ? `<button class="btn btn-sm btn-success" onclick="hireRecruit(${r.id})">Make Fulltime</button>` : ''}
+            </td>
+        </tr>
+    `).join('');
+}
+document.getElementById('addRecruitForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('recruitName').value.trim();
+    const qualifications = document.getElementById('recruitQual').value.trim();
+    if (!name) return;
+    const res = await fetch('/api/recruits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, qualifications })
+    });
+    if (res.ok) {
+        showAlert('Recruit added!', 'success');
+        this.reset();
+        fetchRecruits();
+    } else {
+        showAlert('Error adding recruit', 'danger');
+    }
+};
+window.hireRecruit = async function(id) {
+    const res = await fetch(`/api/recruits/${id}/hire`, { method: 'POST' });
+    if (res.ok) {
+        showAlert('Recruit hired and added to employees!', 'success');
+        fetchRecruits();
+    } else {
+        showAlert('Error hiring recruit', 'danger');
+    }
+};
+fetchRecruits();
+</script>
 </body>
 </html> 

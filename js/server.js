@@ -14,6 +14,8 @@ const os = require('os');
 const fs = require('fs');
 const http = require('http');
 const { sendEmail } = require('./email'); // Import the sendEmail function
+const nodemailer = require('nodemailer');
+const puppeteer = require('puppeteer');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -1502,5 +1504,156 @@ app.post('/api/UpdateEmployeeSupervisor', async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         handleError(res, error, 'Failed to update employee supervisor');
+    }
+});
+
+// Generate PDF from HTML and data
+app.post('/api/generate-invoice-pdf', async (req, res) => {
+    try {
+        const { html, data } = req.body;
+        // Replace placeholders in html with data
+        let filledHtml = html;
+        for (const key in data) {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            filledHtml = filledHtml.replace(regex, data[key]);
+        }
+        // Generate PDF with puppeteer
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.setContent(filledHtml, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({ format: 'A4' });
+        await browser.close();
+        res.set({ 'Content-Type': 'application/pdf' });
+        res.send(pdfBuffer);
+    } catch (error) {
+        handleError(res, error, 'Failed to generate invoice PDF');
+    }
+});
+
+// Email PDF invoice
+app.post('/api/email-invoice', async (req, res) => {
+    try {
+        const { email, pdfBuffer, subject, body } = req.body;
+        // Configure nodemailer (use your SMTP settings)
+        let transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: process.env.SMTP_PORT,
+            secure: false,
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+        let info = await transporter.sendMail({
+            from: process.env.SMTP_FROM || 'no-reply@shopy.com',
+            to: email,
+            subject: subject || 'Your Invoice',
+            text: body || 'Please find your invoice attached.',
+            attachments: [{ filename: 'invoice.pdf', content: Buffer.from(pdfBuffer, 'base64') }]
+        });
+        res.json({ success: true, info });
+    } catch (error) {
+        handleError(res, error, 'Failed to email invoice');
+    }
+});
+
+// Invoice Templates CRUD
+app.get('/api/invoice-templates', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM invoice_templates WHERE is_active = TRUE ORDER BY updated_at DESC');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch invoice templates');
+    }
+});
+
+app.get('/api/invoice-templates/:id', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM invoice_templates WHERE id = $1 AND is_active = TRUE', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch invoice template');
+    }
+});
+
+app.post('/api/invoice-templates', async (req, res) => {
+    try {
+        const { name, html } = req.body;
+        const result = await pool.query(
+            'INSERT INTO invoice_templates (name, html) VALUES ($1, $2) RETURNING *',
+            [name, html]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create invoice template');
+    }
+});
+
+app.put('/api/invoice-templates/:id', async (req, res) => {
+    try {
+        const { name, html } = req.body;
+        const result = await pool.query(
+            'UPDATE invoice_templates SET name = $1, html = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
+            [name, html, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update invoice template');
+    }
+});
+
+app.delete('/api/invoice-templates/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'UPDATE invoice_templates SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete invoice template');
+    }
+});
+
+// Recruitment Endpoints
+app.get('/api/recruits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM recruits ORDER BY created_at DESC');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch recruits');
+    }
+});
+
+app.post('/api/recruits', async (req, res) => {
+    try {
+        const { name, qualifications } = req.body;
+        const result = await pool.query(
+            'INSERT INTO recruits (name, qualifications) VALUES ($1, $2) RETURNING *',
+            [name, qualifications]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to add recruit');
+    }
+});
+
+app.post('/api/recruits/:id/hire', async (req, res) => {
+    try {
+        const recruitRes = await pool.query('SELECT * FROM recruits WHERE id = $1', [req.params.id]);
+        if (recruitRes.rows.length === 0) return res.status(404).json({ error: 'Recruit not found' });
+        const recruit = recruitRes.rows[0];
+        // Insert into employees (add more fields as needed)
+        const empRes = await pool.query(
+            'INSERT INTO employees (name) VALUES ($1) RETURNING *',
+            [recruit.name]
+        );
+        // Update recruit status
+        await pool.query('UPDATE recruits SET status = $1 WHERE id = $2', ['hired', req.params.id]);
+        res.json({ employee: empRes.rows[0], recruit });
+    } catch (error) {
+        handleError(res, error, 'Failed to hire recruit');
     }
 });

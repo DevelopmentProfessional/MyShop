@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Templates - Shopy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 </head>
 <body>
     <div class="container py-5">
@@ -22,73 +23,83 @@
             </div>
             <div class="card-body">
                 <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Create Template</h5>
-                                <form>
-                                    <div class="mb-3">
-                                        <label class="form-label">Template Name</label>
-                                        <input type="text" class="form-control" placeholder="Enter template name">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Company Logo</label>
-                                        <input type="file" class="form-control">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Header Text</label>
-                                        <textarea class="form-control" rows="2"></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Footer Text</label>
-                                        <textarea class="form-control" rows="2"></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Color Scheme</label>
-                                        <select class="form-select">
-                                            <option>Default</option>
-                                            <option>Blue</option>
-                                            <option>Green</option>
-                                            <option>Red</option>
-                                        </select>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">Save Template</button>
-                                </form>
-                            </div>
+                    <div class="col-md-3 border-end">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">Templates</h5>
+                            <button class="btn btn-sm btn-primary" id="newTemplateBtn"><i class="bi bi-plus"></i> New</button>
                         </div>
+                        <div id="templateList" class="list-group mb-3"></div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Available Templates</h5>
-                                <div class="list-group">
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0">Default Template</h6>
-                                                <small class="text-muted">Last modified: 2 days ago</small>
-                                            </div>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <h6 class="mb-0">Professional Template</h6>
-                                                <small class="text-muted">Last modified: 1 week ago</small>
-                                            </div>
-                                            <div class="btn-group">
-                                                <button class="btn btn-sm btn-outline-primary">Edit</button>
-                                                <button class="btn btn-sm btn-outline-danger">Delete</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button class="btn btn-outline-primary w-100 mt-3">Preview All Templates</button>
+                        <form id="invoiceTemplateForm">
+                            <input type="hidden" id="templateId">
+                            <div class="mb-3">
+                                <label class="form-label">Template Name</label>
+                                <input type="text" class="form-control" id="templateName" required>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Invoice Body</label>
+                                <div id="editor-container" style="height: 300px;"></div>
+                                <button type="button" class="btn btn-secondary mt-2" id="uploadLogoBtn"><i class="bi bi-image"></i> Insert Logo</button>
+                            </div>
+                            <div class="mb-3 d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary" id="previewBtn">Preview</button>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                                <button type="button" class="btn btn-danger ms-auto" id="deleteTemplateBtn" style="display:none;">Delete</button>
+                            </div>
+                        </form>
+                        <div id="previewArea" class="mt-4 d-none">
+                            <h5>Invoice Preview</h5>
+                            <div class="border p-3 bg-light" id="invoicePreview"></div>
+                        </div>
+                        <div id="alertArea"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Placeholders</h6>
+                        <div id="placeholders" class="mb-3">
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{client.name}}">{{client.name}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{client.email}}">{{client.email}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{order.id}}">{{order.id}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{order.date}}">{{order.date}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{order.items}}">{{order.items}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{order.total}}">{{order.total}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{company.logo}}">{{company.logo}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{company.name}}">{{company.name}}</span>
+                            <span class="placeholder-tag badge bg-secondary mb-1" data-value="{{company.address}}">{{company.address}}</span>
+                        </div>
+                        <div class="alert alert-info small">Click a placeholder to insert at cursor.</div>
+                        <div class="mt-4">
+                            <h6>Sample Invoice HTML</h6>
+                            <textarea class="form-control" rows="12" readonly style="font-size:0.95em;">&lt;div style=&quot;max-width:600px;margin:auto;border:1px solid #eee;border-radius:12px;padding:32px 24px;background:#fff;font-family:sans-serif;&quot;&gt;
+  &lt;div style=&quot;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;&quot;&gt;
+    {{company.logo}}
+    &lt;div style=&quot;text-align:right;&quot;&gt;
+      &lt;div style=&quot;font-size:1.5em;font-weight:bold;color:#0d6efd;&quot;&gt;INVOICE&lt;/div&gt;
+      &lt;div style=&quot;font-size:1em;color:#888;&quot;&gt;#{{order.id}}&lt;/div&gt;
+      &lt;div style=&quot;font-size:0.95em;color:#888;&quot;&gt;Date: {{order.date}}&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div style=&quot;margin-bottom:24px;&quot;&gt;
+    &lt;div style=&quot;font-weight:bold;&quot;&gt;Billed To:&lt;/div&gt;
+    &lt;div&gt;{{client.name}}&lt;/div&gt;
+    &lt;div&gt;{{client.email}}&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div style=&quot;margin-bottom:24px;&quot;&gt;
+    &lt;div style=&quot;font-weight:bold;&quot;&gt;From:&lt;/div&gt;
+    &lt;div&gt;{{company.name}}&lt;/div&gt;
+    &lt;div&gt;{{company.address}}&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div style=&quot;margin-bottom:24px;&quot;&gt;
+    {{order.items}}
+  &lt;/div&gt;
+  &lt;div style=&quot;text-align:right;font-size:1.2em;font-weight:bold;margin-bottom:12px;&quot;&gt;
+    Total: {{order.total}}
+  &lt;/div&gt;
+  &lt;div style=&quot;font-size:0.95em;color:#888;text-align:center;margin-top:32px;&quot;&gt;
+    Thank you for your business!
+  &lt;/div&gt;
+&lt;/div&gt;</textarea>
+                            <div class="small text-muted mt-1">Copy and paste this into the editor for a beautiful invoice template.</div>
                         </div>
                     </div>
                 </div>
@@ -96,6 +107,159 @@
         </div>
     </div>
 
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.js"></script>
+    <script>
+    const apiBaseUrl = '/api/invoice-templates';
+    const templateList = document.getElementById('templateList');
+    const templateForm = document.getElementById('invoiceTemplateForm');
+    const templateIdInput = document.getElementById('templateId');
+    const templateNameInput = document.getElementById('templateName');
+    const saveBtn = templateForm.querySelector('.btn-primary');
+    const deleteBtn = document.getElementById('deleteTemplateBtn');
+    const newTemplateBtn = document.getElementById('newTemplateBtn');
+    const alertArea = document.getElementById('alertArea');
+    let templates = [];
+    let selectedTemplateId = null;
+    const quill = new Quill('#editor-container', { theme: 'snow', modules: { toolbar: [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline'],
+        ['image', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['clean']
+    ] } });
+    // Placeholders
+    const placeholders = document.querySelectorAll('.placeholder-tag');
+    placeholders.forEach(tag => {
+        tag.onclick = () => {
+            const range = quill.getSelection(true);
+            quill.insertText(range.index, tag.dataset.value);
+            quill.setSelection(range.index + tag.dataset.value.length);
+        };
+    });
+    // Logo upload
+    const uploadLogoBtn = document.getElementById('uploadLogoBtn');
+    uploadLogoBtn.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = evt => {
+                const range = quill.getSelection(true);
+                quill.insertEmbed(range.index, 'image', evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        };
+        input.click();
+    };
+    // Alerts
+    function showAlert(msg, type='success') {
+        alertArea.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show mt-2" role="alert">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+    }
+    // CRUD
+    async function fetchTemplates() {
+        const res = await fetch(apiBaseUrl);
+        templates = await res.json();
+        renderTemplateList();
+        if (templates.length > 0) {
+            selectTemplate(templates[0].id);
+        } else {
+            clearEditor();
+        }
+    }
+    function renderTemplateList() {
+        templateList.innerHTML = '';
+        templates.forEach(t => {
+            const item = document.createElement('a');
+            item.className = 'list-group-item list-group-item-action' + (t.id === selectedTemplateId ? ' active' : '');
+            item.textContent = t.name;
+            item.onclick = () => selectTemplate(t.id);
+            templateList.appendChild(item);
+        });
+    }
+    function selectTemplate(id) {
+        selectedTemplateId = id;
+        const t = templates.find(t => t.id === id);
+        if (!t) return;
+        templateIdInput.value = t.id;
+        templateNameInput.value = t.name;
+        quill.root.innerHTML = t.html;
+        deleteBtn.style.display = '';
+        renderTemplateList();
+    }
+    function clearEditor() {
+        selectedTemplateId = null;
+        templateIdInput.value = '';
+        templateNameInput.value = '';
+        quill.root.innerHTML = '';
+        deleteBtn.style.display = 'none';
+    }
+    newTemplateBtn.onclick = () => {
+        clearEditor();
+        templateNameInput.focus();
+    };
+    templateForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = templateIdInput.value;
+        const name = templateNameInput.value.trim();
+        const html = quill.root.innerHTML;
+        try {
+            let res;
+            if (id) {
+                res = await fetch(`${apiBaseUrl}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, html })
+                });
+            } else {
+                res = await fetch(apiBaseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, html })
+                });
+            }
+            if (!res.ok) throw new Error('Failed to save template');
+            showAlert('Template saved!', 'success');
+            await fetchTemplates();
+        } catch (err) {
+            showAlert('Error saving template', 'danger');
+        }
+    };
+    deleteBtn.onclick = async () => {
+        if (!selectedTemplateId) return;
+        if (!confirm('Delete this template?')) return;
+        try {
+            const res = await fetch(`${apiBaseUrl}/${selectedTemplateId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete');
+            showAlert('Template deleted!', 'success');
+            await fetchTemplates();
+        } catch (err) {
+            showAlert('Error deleting template', 'danger');
+        }
+    };
+    // Preview
+    const previewBtn = document.getElementById('previewBtn');
+    const previewArea = document.getElementById('previewArea');
+    const invoicePreview = document.getElementById('invoicePreview');
+    previewBtn.onclick = () => {
+        invoicePreview.innerHTML = quill.root.innerHTML
+            .replace(/{{client.name}}/g, 'Jane Doe')
+            .replace(/{{client.email}}/g, 'jane@example.com')
+            .replace(/{{order.id}}/g, 'INV-12345')
+            .replace(/{{order.date}}/g, '2024-07-01')
+            .replace(/{{order.items}}/g, '<table class="table"><tr><td>Widget A</td><td>2</td><td>$20</td></tr><tr><td>Widget B</td><td>1</td><td>$10</td></tr></table>')
+            .replace(/{{order.total}}/g, '$50.00')
+            .replace(/{{company.logo}}/g, '<img src="/logo.png" style="height:40px;">')
+            .replace(/{{company.name}}/g, 'Shopy Inc.')
+            .replace(/{{company.address}}/g, '123 Main St, City, Country');
+        previewArea.classList.remove('d-none');
+    };
+    // On load
+    fetchTemplates();
+    </script>
 </body>
 </html> 
