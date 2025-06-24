@@ -1484,3 +1484,23 @@ app.get('/api/org-chart', async (req, res) => {
         handleError(res, error, 'Failed to fetch org chart');
     }
 });
+
+// Update an employee's supervisor
+app.post('/api/UpdateEmployeeSupervisor', async (req, res) => {
+    try {
+        const { employee_id, supervisor_id } = req.body;
+        if (!employee_id) {
+            return res.status(400).json({ error: 'employee_id is required' });
+        }
+        const result = await pool.query(
+            'UPDATE employees SET supervisor_id = $1 WHERE id = $2 RETURNING *',
+            [supervisor_id || null, employee_id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update employee supervisor');
+    }
+});

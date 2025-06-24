@@ -6,19 +6,9 @@
     <title>Organization Chart</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/orgchart@4.0.0/dist/css/orgchart.min.css">
+    <link rel="stylesheet" href="orgchart.css">
     <style>
         body { background: #181a1b; color: #f8f9fa; }
-        .orgchart { background: #181a1b !important; }
-        .orgchart .node { background: #23272b; color: #f8f9fa; border: 1px solid #333; }
-        .orgchart .node .title { background: #343a40; color: #fff; }
-        .orgchart .node .content { color: #f8f9fa; }
-        .orgchart .node .department { font-size: 0.9em; color: #bbb; }
-        .orgchart .node .role { font-size: 0.9em; color: #8ecae6; }
-        .orgchart .node .status { font-size: 0.8em; color: #fff; background: #198754; border-radius: 4px; padding: 2px 6px; margin-left: 6px; }
-        .orgchart .node .status.inactive { background: #6c757d; }
-        .orgchart .node .actions { margin-top: 6px; }
-        .orgchart .node .actions button { margin-right: 4px; }
         .employee-table th, .employee-table td { vertical-align: middle; }
     </style>
 </head>
@@ -39,21 +29,26 @@
             </div>
             <div class="col-lg-5 mb-4">
                 <div class="card bg-dark border-secondary">
-                    <div class="card-header border-secondary">Employee List (No Supervisor)</div>
+                    <div class="card-header border-secondary d-flex align-items-center justify-content-between">
+                        <span>Employee List (No Supervisor)</span>
+                        <input type="text" class="form-control form-control-sm w-50 ms-2" id="employeeSearch" placeholder="Search employees...">
+                    </div>
                     <div class="card-body p-2">
-                        <table class="table table-dark table-striped table-hover employee-table mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                    <th>Department</th>
-                                    <th>Status</th>
-                                    <th>Edit</th>
-                                </tr>
-                            </thead>
-                            <tbody id="employeeListTable"></tbody>
-                        </table>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-bordered align-middle mb-0" id="employeeTable">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                        <th>Edit</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeeListTable"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,9 +104,16 @@
             </div>
         </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/orgchart@4.0.0/dist/js/orgchart.min.js"></script>
+    <script src="orgchart.js"></script>
     <script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof $.fn.orgchart !== 'function') {
+        console.error('jQuery OrgChart plugin is not loaded! Check your script tag and network connection.');
+        return;
+    }
+// --- Begin OrgChart logic ---
 const API_URL = window.location.origin;
 let orgChart = null;
 let employees = [];
@@ -122,13 +124,11 @@ async function fetchEmployees() {
 }
 
 function buildOrgChartData() {
-    // Only include employees with a supervisor or who are supervisors
+    // Include all employees, even those with no supervisor or subordinates
     const idMap = {};
     employees.forEach(e => { idMap[e.id] = e; });
-    // Find all employees who are supervisors
-    const supervisorIds = new Set(employees.filter(e => employees.some(sub => sub.supervisor_id === e.id)).map(e => e.id));
-    // Only include employees who are in the tree
-    const nodes = employees.filter(e => e.supervisor_id || supervisorIds.has(e.id)).map(e => ({
+    // Create nodes for all employees
+    const nodes = employees.map(e => ({
         id: e.id,
         name: e.name,
         title: e.role,
@@ -150,48 +150,90 @@ function buildOrgChartData() {
             roots.push(n);
         }
     });
+    // If only one root, return it; otherwise, create a virtual root
     return roots.length === 1 ? roots[0] : { id: 0, name: 'Company', title: '', children: roots };
 }
 
 function renderOrgChart() {
     const data = buildOrgChartData();
-    if (orgChart) orgChart.destroy();
-    orgChart = new OrgChart({
-        'chartContainer': '#orgChartContainer',
-        'data': data,
-        'nodeContent': 'department',
-        'pan': true,
-        'zoom': true,
-        'draggable': true,
-        'direction': 't2b',
-        'createNode': function(node, data) {
-            // Add actions (edit, delete)
-            const actions = document.createElement('div');
-            actions.className = 'actions';
-            actions.innerHTML = `
-                <button class="btn btn-sm btn-outline-warning me-1" onclick="editEmployee(${data.id})"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${data.id})"><i class="bi bi-trash"></i></button>
+    if (orgChart && orgChart.$chart) orgChart.$chart.remove();
+    const container = $('#orgChartContainer');
+    orgChart = container.orgchart({
+        nodeContent: 'department',
+        pan: true,
+        zoom: true,
+        draggable: true,
+        direction: 't2b',
+        data: data,
+        createNode: function(node, data) {
+            // Replace node content with a Bootstrap card
+            const card = document.createElement('div');
+            card.className = 'card text-bg-dark border-primary';
+            card.innerHTML = `
+                <div class="card-body p-2">
+                    <h6 class="card-title mb-1">${data.name}<button class="btn btn-sm btn-outline-warning ms-2" onclick="editEmployee(${data.id})"><i class="bi bi-pencil"></i></button>
+</h6>
+                   
+                </div>
             `;
-            node.appendChild(actions);
+            $(node).html(card);
+        },
+        dropCriteria: function($dragged, $dragZone, $dropZone) {
+            // Prevent dropping onto self or descendant
+            const draggedId = $dragged.data('nodeData').id;
+            const dropId = $dropZone.data('nodeData').id;
+            if (draggedId === dropId) return false;
+            // Prevent circular reference
+            let parent = $dropZone;
+            while (parent && parent.length) {
+                if (parent.data('nodeData') && parent.data('nodeData').id === draggedId) return false;
+                parent = parent.closest('.hierarchy').parent().siblings('.node');
+            }
+            return true;
+        }
+    });
+    // Listen for nodedrop event to update supervisor in DB
+    $('#orgChartContainer').on('nodedrop.orgchart', async function(e, extra) {
+        const draggedNode = extra.draggedNode;
+        const dropZone = extra.dropZone;
+        const employee_id = $(draggedNode).data('nodeData').id;
+        const supervisor_id = $(dropZone).data('nodeData').id;
+        try {
+            await fetch('/api/UpdateEmployeeSupervisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ employee_id, supervisor_id })
+            });
+            await refreshChartAndList();
+        } catch (err) {
+            alert('Failed to update supervisor.');
         }
     });
 }
 
 function renderEmployeeList() {
     const tbody = document.getElementById('employeeListTable');
-    // Only employees with no supervisor
-    const list = employees.filter(e => !e.supervisor_id);
+    const search = document.getElementById('employeeSearch').value.toLowerCase();
+    // Only employees with no supervisor, filtered by search
+    const list = employees.filter(e => !e.supervisor_id && (
+        e.name.toLowerCase().includes(search) ||
+        e.email.toLowerCase().includes(search) ||
+        e.role.toLowerCase().includes(search) ||
+        e.department.toLowerCase().includes(search)
+    ));
     tbody.innerHTML = list.map(e => `
         <tr>
             <td>${e.name}</td>
             <td>${e.email}</td>
             <td>${e.role}</td>
             <td>${e.department}</td>
-            <td><span class="badge bg-${e.status === 'active' ? 'success' : 'secondary'}">${e.status}</span></td>
+            <td><span class="badge bg-${e.status === 'active' ? 'primary' : 'secondary'}">${e.status}</span></td>
             <td><button class="btn btn-sm btn-outline-warning" onclick="editEmployee(${e.id})"><i class="bi bi-pencil"></i></button></td>
         </tr>
     `).join('');
 }
+
+document.getElementById('employeeSearch').addEventListener('input', renderEmployeeList);
 
 async function refreshChartAndList() {
     await fetchEmployees();
@@ -267,6 +309,8 @@ document.addEventListener('drop', async function(e) {
 
 // Initial load
 refreshChartAndList();
+// --- End OrgChart logic ---
+});
     </script>
 </body>
 </html> 

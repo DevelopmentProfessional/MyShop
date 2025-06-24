@@ -11,7 +11,7 @@
         .order-list-scroll { overflow-y: auto; padding-bottom: 260px; max-height: 100vh; }
         .fixed-bottom-stack { position: fixed; left: 0; bottom: 0; width: 100%; z-index: 1050; background: #181a1b; }
         .bottom-section { box-shadow: 0 -2px 12px #0004; border-top: 1px solid #333; }
-        .scanner-area { width: 100%; max-width: 480px; margin: 0 auto; aspect-ratio: 16/4; border: 2px solid #444; border-radius: 12px; background: #222; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 90px; }
+        .scanner-area { width: 100%; max-width: 480px; margin: 0 auto; aspect-ratio: 16/4; border: 2px solid #444; border-radius: 12px; background: #222; display: flex; align-items: center; justify-content: center; overflow: hidden; min-height: 130px; }
         .search-grid { display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 0.5rem; margin: 0.5rem 0; }
         .search-grid.active { display: grid; }
         .product-icon { font-size: 2.2rem; color: #bbb; }
@@ -20,7 +20,7 @@
         .scanner-controls { display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.5rem; }
         .bottom-nav-bar { background: #181a1b; border-top: 1px solid #333; padding: 0.5rem 0; }
         @media (max-width: 600px) {
-            .scanner-area { max-width: 100vw; min-height: 70px; }
+            .scanner-area { max-width: 100vw; min-height: 130px; }
         }
     </style>
 </head>
@@ -43,6 +43,7 @@
             </div>
             <input id="searchBox" type="text" class="form-control bg-dark text-light border-secondary mb-2" placeholder="🔍 Search products..." autocomplete="off">
             <div id="searchGrid" class="search-grid"></div>
+            <textarea id="scanErrorLog" class="form-control bg-dark text-danger border-secondary mt-2" rows="2" readonly style="font-size: 0.95em; resize: vertical; placeholder: 'Scanner errors will appear here...';"></textarea>
         </div>
         <div class="bottom-nav-bar d-flex align-items-center justify-content-between px-3">
             <a href="../index.html" class="btn btn-dark border-light me-2">
@@ -121,8 +122,26 @@
         </div>
       </div>
     </div>
+    <!-- Barcode Not Found Modal -->
+    <div class="modal fade" id="barcodeNotFoundModal" tabindex="-1" aria-labelledby="barcodeNotFoundModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light">
+          <div class="modal-header">
+            <h5 class="modal-title" id="barcodeNotFoundModalLabel">Barcode Not Found</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">The scanned barcode was not found in the product list.</div>
+            <div class="fw-bold fs-5 text-warning" id="notFoundBarcodeValue"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
     <script>
 const API_URL = window.location.origin;
 let products = [];
@@ -229,69 +248,139 @@ function updateTotal() {
 
 // --- Barcode Scanner Logic ---
 let scannerActive = false;
-let quaggaReady = false;
+let codeReader = null;
+let videoStream = null;
+let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const scanStatus = document.getElementById('scanStatus');
 const startScanBtn = document.getElementById('startScanBtn');
 const stopScanBtn = document.getElementById('stopScanBtn');
+const scannerArea = document.getElementById('scannerArea');
 
-startScanBtn.onclick = function() {
+// Add Not Found Modal (already present)
+const notFoundBarcodeValue = document.getElementById('notFoundBarcodeValue');
+const barcodeNotFoundModal = new bootstrap.Modal(document.getElementById('barcodeNotFoundModal'));
+
+let videoElem = null;
+
+// Add an error log box below the scanner area
+const scannerControls = document.querySelector('.scanner-controls');
+const errorLogBox = document.createElement('textarea');
+errorLogBox.id = 'scanErrorLog';
+errorLogBox.className = 'form-control bg-dark text-danger border-secondary mt-2';
+errorLogBox.rows = 2;
+errorLogBox.readOnly = true;
+errorLogBox.style.fontSize = '0.95em';
+errorLogBox.style.resize = 'vertical';
+errorLogBox.placeholder = 'Scanner errors will appear here...';
+scannerControls.parentNode.insertBefore(errorLogBox, scannerControls.nextSibling);
+
+// Add a Check Camera button above the scanner area
+const checkCameraBtn = document.createElement('button');
+checkCameraBtn.className = 'btn btn-outline-info mb-2';
+checkCameraBtn.textContent = 'Check Camera';
+checkCameraBtn.onclick = async function() {
+    errorLogBox.value += '\n--- Camera Check ---\n';
+    const result = await checkCameraStatus();
+    errorLogBox.value += (result ? 'Camera check passed.\n' : 'Camera check failed.\n');
+    errorLogBox.scrollTop = errorLogBox.scrollHeight;
+};
+scannerControls.parentNode.insertBefore(checkCameraBtn, scannerControls);
+
+startScanBtn.onclick = async function() {
     if (scannerActive) return;
     scanStatus.textContent = 'Starting camera...';
-    Quagga.init({
-        inputStream: {
-            type: 'LiveStream',
-            constraints: {
-                width: { min: 480 },
-                height: { min: 120 },
-                facingMode: 'environment'
-            },
-            target: document.getElementById('interactive')
-        },
-        decoder: {
-            readers: ['ean_reader','upc_reader','code_128_reader','code_39_reader']
-        },
-        locate: true
-    }, function(err) {
-        if (err) {
-            scanStatus.textContent = 'Camera error: ' + err.message;
-            return;
+    // Remove any previous video
+    if (videoElem) {
+        videoElem.remove();
+        videoElem = null;
+    }
+    videoElem = document.createElement('video');
+    videoElem.setAttribute('autoplay', '');
+    videoElem.setAttribute('playsinline', '');
+    videoElem.style.width = '100%';
+    videoElem.style.height = 'auto';
+    videoElem.style.borderRadius = '8px';
+    videoElem.style.background = '#222';
+    document.getElementById('interactive').innerHTML = '';
+    document.getElementById('interactive').appendChild(videoElem);
+
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    let constraints = {
+        video: {
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 },
+            frameRate: { ideal: 30, max: 30 },
+            facingMode: 'environment'
         }
-        Quagga.start();
+    };
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        videoElem.srcObject = videoStream;
+        videoElem.style.display = 'block';
         scannerActive = true;
-        quaggaReady = true;
-        scanStatus.textContent = 'Scanning...';
+        scanStatus.textContent = 'Scanning... Point camera at barcode.';
         startScanBtn.disabled = true;
         stopScanBtn.disabled = false;
-    });
+        // ZXing decode
+        codeReader.decodeFromVideoElementContinuously(videoElem, (result, error) => {
+            if (!scannerActive) return;
+            if (result) {
+                const code = result.text;
+                scanStatus.textContent = 'Detected: ' + code;
+                // Find product by barcode
+                const product = products.find(p => p.barcode && p.barcode.toString() === code);
+                if (product) {
+                    window.addToOrder(product.id);
+                    scanStatus.textContent = 'Product added: ' + product.name;
+                } else {
+                    scanStatus.textContent = 'Barcode not found.';
+                    notFoundBarcodeValue.textContent = code;
+                    barcodeNotFoundModal.show();
+                }
+                stopScan();
+            } else if (error && error.name && error.name !== 'NotFoundException') {
+                // Only log real errors, not normal 'no barcode found' or 'No MultiFormat Reader...' errors
+                const msg = error.message || error.name || JSON.stringify(error);
+                if (!msg.includes('No MultiFormat Reader were able to detect the code')) {
+                    scanStatus.textContent = 'Scan error: ' + msg;
+                    // Append error to the error log box
+                    errorLogBox.value += (new Date().toLocaleTimeString() + ': ' + msg + '\n');
+                    errorLogBox.scrollTop = errorLogBox.scrollHeight;
+                    console.error('ZXing scan error:', error);
+                }
+            }
+        });
+    } catch (err) {
+        scanStatus.textContent = 'Camera error: ' + err.message;
+        scannerActive = false;
+        startScanBtn.disabled = false;
+        stopScanBtn.disabled = true;
+    }
 };
-stopScanBtn.onclick = function() {
+
+function stopScan() {
     if (!scannerActive) return;
-    Quagga.stop();
+    if (codeReader) {
+        codeReader.reset();
+        codeReader = null;
+    }
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    if (videoElem) {
+        videoElem.pause();
+        videoElem.srcObject = null;
+        videoElem.remove();
+        videoElem = null;
+    }
     scannerActive = false;
-    quaggaReady = false;
     scanStatus.textContent = 'Scanner stopped.';
     startScanBtn.disabled = false;
     stopScanBtn.disabled = true;
-};
-Quagga.onDetected(function(result) {
-    if (!scannerActive) return;
-    const code = result.codeResult.code;
-    scanStatus.textContent = 'Detected: ' + code;
-    // Find product by barcode
-    const product = products.find(p => p.barcode && p.barcode.toString() === code);
-    if (product) {
-        window.addToOrder(product.id);
-        scanStatus.textContent = 'Product added: ' + product.name;
-    } else {
-        scanStatus.textContent = 'Barcode not found.';
-        searchBox.focus();
-    }
-    Quagga.stop();
-    scannerActive = false;
-    quaggaReady = false;
-    startScanBtn.disabled = false;
-    stopScanBtn.disabled = true;
-});
+}
+
+stopScanBtn.onclick = stopScan;
 
 // --- Checkout Logic ---
 const checkoutBtn = document.getElementById('checkoutBtn');
@@ -374,6 +463,56 @@ window.onload = async function() {
     await loadProducts();
     renderOrderList();
 };
+
+// Camera utility functions from barcode.html
+async function checkCameraStatus() {
+    let log = '';
+    try {
+        const permissions = await navigator.permissions.query({ name: 'camera' });
+        log += 'Camera permission state: ' + permissions.state + '\n';
+        if (permissions.state === 'denied') {
+            log += 'Camera permission denied. Please enable camera access in your browser settings.\n';
+            errorLogBox.value += log;
+            return false;
+        }
+    } catch (err) {
+        log += 'Could not check permissions: ' + err + '\n';
+    }
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        log += 'Found ' + videoDevices.length + ' video input devices.\n';
+        if (videoDevices.length === 0) {
+            log += 'No cameras detected on your device.\n';
+            errorLogBox.value += log;
+            return false;
+        }
+    } catch (err) {
+        log += 'Could not enumerate devices: ' + err + '\n';
+    }
+    // Test camera access with different methods
+    const testMethods = [
+        { name: 'Basic video', constraints: { video: true } },
+        { name: 'Environment camera', constraints: { video: { facingMode: 'environment' } } },
+        { name: 'User camera', constraints: { video: { facingMode: 'user' } } },
+        { name: 'Low resolution', constraints: { video: { width: 320, height: 240 } } }
+    ];
+    for (const method of testMethods) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia(method.constraints);
+            const tracks = stream.getTracks();
+            log += 'Tested ' + method.name + ': SUCCESS\n';
+            tracks.forEach(track => track.stop());
+            errorLogBox.value += log;
+            return true;
+        } catch (err) {
+            log += 'Tested ' + method.name + ': FAILED (' + err.name + ': ' + err.message + ')\n';
+        }
+    }
+    log += 'All camera test methods failed.\n';
+    errorLogBox.value += log;
+    return false;
+}
     </script>
 </body>
 </html> 
