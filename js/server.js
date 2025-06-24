@@ -16,6 +16,8 @@ const http = require('http');
 const { sendEmail } = require('./email'); // Import the sendEmail function
 const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
+const multer = require('multer');
+const helmet = require('helmet');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -1783,16 +1785,68 @@ app.delete('/api/contracts/:id', async (req, res) => {
     }
 });
 
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '..', 'uploads', 'contracts');
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename with timestamp
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    // Only allow PDF files
+    if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+    } else {
+        cb(new Error('Only PDF files are allowed'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
+
 // Contract upload endpoint
-app.post('/api/contracts/upload', async (req, res) => {
+app.post('/api/contracts/upload', upload.single('contract'), async (req, res) => {
     try {
-        // This would handle file upload using multer or similar
-        // For now, we'll create a contract record without the file
         const { title, contract_type, department, description } = req.body;
+        
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
         const result = await pool.query(`
-            INSERT INTO contracts (title, contract_type, status, department, description, created_by) 
-            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
-        `, [title || 'Uploaded Contract', contract_type || 'Service Agreement', 'draft', department, description, 1]);
+            INSERT INTO contracts (title, contract_type, status, department, description, created_by, 
+                                 contract_document, file_name, file_size, mime_type) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
+        `, [
+            title || 'Uploaded Contract', 
+            contract_type || 'Service Agreement', 
+            'draft', 
+            department, 
+            description, 
+            1, // created_by
+            fs.readFileSync(req.file.path), // Read file as buffer
+            req.file.originalname,
+            req.file.size,
+            req.file.mimetype
+        ]);
+        
+        // Clean up the temporary file
+        fs.unlinkSync(req.file.path);
         
         // Add to history
         await pool.query(`
@@ -1802,6 +1856,10 @@ app.post('/api/contracts/upload', async (req, res) => {
         
         res.status(201).json({ success: true, contract: result.rows[0] });
     } catch (error) {
+        // Clean up file if it exists
+        if (req.file && fs.existsSync(req.file.path)) {
+            fs.unlinkSync(req.file.path);
+        }
         handleError(res, error, 'Failed to upload contract');
     }
 });
