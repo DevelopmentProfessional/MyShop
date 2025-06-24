@@ -1657,3 +1657,246 @@ app.post('/api/recruits/:id/hire', async (req, res) => {
         handleError(res, error, 'Failed to hire recruit');
     }
 });
+
+app.delete('/api/recruits/:id', async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM recruits WHERE id = $1 RETURNING *', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Recruit not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete recruit');
+    }
+});
+
+// Contract Management Endpoints
+app.get('/api/contracts', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.*, e.name as assigned_employee_name 
+            FROM contracts c 
+            LEFT JOIN employees e ON c.assigned_employee_id = e.id 
+            WHERE c.is_active = TRUE 
+            ORDER BY c.updated_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contracts');
+    }
+});
+
+app.get('/api/contracts/:id', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT c.*, e.name as assigned_employee_name 
+            FROM contracts c 
+            LEFT JOIN employees e ON c.assigned_employee_id = e.id 
+            WHERE c.id = $1 AND c.is_active = TRUE
+        `, [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract');
+    }
+});
+
+app.post('/api/contracts', async (req, res) => {
+    try {
+        const { title, contract_type, status, department, description, assigned_employee_id, expires_at } = req.body;
+        const result = await pool.query(`
+            INSERT INTO contracts (title, contract_type, status, department, description, assigned_employee_id, expires_at, created_by) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+        `, [title, contract_type, status, department, description, assigned_employee_id, expires_at, 1]); // created_by = 1 for demo
+        
+        // Add to history
+        await pool.query(`
+            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+            VALUES ($1, $2, $3, $4)
+        `, [result.rows[0].id, 'created', 'Contract created', 1]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create contract');
+    }
+});
+
+app.put('/api/contracts/:id', async (req, res) => {
+    try {
+        const { title, contract_type, status, department, description, assigned_employee_id, expires_at, comment } = req.body;
+        
+        // Get current contract for comparison
+        const currentContract = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
+        if (currentContract.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        
+        const result = await pool.query(`
+            UPDATE contracts 
+            SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
+                assigned_employee_id = $6, expires_at = $7, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $8 RETURNING *
+        `, [title, contract_type, status, department, description, assigned_employee_id, expires_at, req.params.id]);
+        
+        // Add to history
+        const historyActions = [];
+        if (currentContract.rows[0].status !== status) {
+            historyActions.push(`Status changed from ${currentContract.rows[0].status} to ${status}`);
+        }
+        if (currentContract.rows[0].assigned_employee_id !== assigned_employee_id) {
+            if (assigned_employee_id) {
+                historyActions.push('Contract assigned to employee');
+            } else {
+                historyActions.push('Contract unassigned');
+            }
+        }
+        if (comment) {
+            historyActions.push(`Comment: ${comment}`);
+        }
+        
+        if (historyActions.length > 0) {
+            await pool.query(`
+                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+                VALUES ($1, $2, $3, $4)
+            `, [req.params.id, 'updated', historyActions.join('; '), 1]);
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update contract');
+    }
+});
+
+app.delete('/api/contracts/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'UPDATE contracts SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        
+        // Add to history
+        await pool.query(`
+            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+            VALUES ($1, $2, $3, $4)
+        `, [req.params.id, 'deleted', 'Contract deleted', 1]);
+        
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete contract');
+    }
+});
+
+// Contract upload endpoint
+app.post('/api/contracts/upload', async (req, res) => {
+    try {
+        // This would handle file upload using multer or similar
+        // For now, we'll create a contract record without the file
+        const { title, contract_type, department, description } = req.body;
+        const result = await pool.query(`
+            INSERT INTO contracts (title, contract_type, status, department, description, created_by) 
+            VALUES ($1, $2, $3, $4, $5, $6) RETURNING *
+        `, [title || 'Uploaded Contract', contract_type || 'Service Agreement', 'draft', department, description, 1]);
+        
+        // Add to history
+        await pool.query(`
+            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+            VALUES ($1, $2, $3, $4)
+        `, [result.rows[0].id, 'uploaded', 'Contract uploaded', 1]);
+        
+        res.status(201).json({ success: true, contract: result.rows[0] });
+    } catch (error) {
+        handleError(res, error, 'Failed to upload contract');
+    }
+});
+
+// Contract export endpoint
+app.get('/api/contracts/:id/export', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        
+        // Add to history
+        await pool.query(`
+            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+            VALUES ($1, $2, $3, $4)
+        `, [req.params.id, 'exported', 'Contract exported', 1]);
+        
+        // For demo, return a simple PDF (in production, this would generate from the actual contract document)
+        res.json({ success: true, message: 'Contract export initiated' });
+    } catch (error) {
+        handleError(res, error, 'Failed to export contract');
+    }
+});
+
+// Contract history endpoint
+app.get('/api/contracts/:id/history', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT ch.*, e.name as performed_by_name 
+            FROM contract_history ch 
+            LEFT JOIN employees e ON ch.performed_by = e.id 
+            WHERE ch.contract_id = $1 
+            ORDER BY ch.performed_at DESC
+        `, [req.params.id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract history');
+    }
+});
+
+// Signature Management Endpoints
+app.get('/api/signatures', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT s.*, e.name as employee_name 
+            FROM signatures s 
+            LEFT JOIN employees e ON s.employee_id = e.id 
+            ORDER BY s.created_at DESC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch signatures');
+    }
+});
+
+app.post('/api/signatures', async (req, res) => {
+    try {
+        const { signature_name, signature_data } = req.body;
+        const result = await pool.query(`
+            INSERT INTO signatures (employee_id, signature_name, signature_data) 
+            VALUES ($1, $2, $3) RETURNING *
+        `, [1, signature_name, signature_data]); // employee_id = 1 for demo
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create signature');
+    }
+});
+
+app.delete('/api/signatures/:id', async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM signatures WHERE id = $1 RETURNING *', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Signature not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete signature');
+    }
+});
+
+// Contract signature endpoint
+app.post('/api/contracts/:id/sign', async (req, res) => {
+    try {
+        const { signature_id, signature_comment } = req.body;
+        const result = await pool.query(`
+            INSERT INTO contract_signatures (contract_id, signature_id, signed_by, signature_comment) 
+            VALUES ($1, $2, $3, $4) RETURNING *
+        `, [req.params.id, signature_id, 1, signature_comment]); // signed_by = 1 for demo
+        
+        // Add to history
+        await pool.query(`
+            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+            VALUES ($1, $2, $3, $4)
+        `, [req.params.id, 'signed', `Contract signed${signature_comment ? ': ' + signature_comment : ''}`, 1]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to sign contract');
+    }
+});

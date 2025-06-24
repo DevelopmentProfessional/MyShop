@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .hero-header {
+            background: linear-gradient(90deg, #0d6efd 0%, #6ea8fe 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            padding: 2.5rem 1rem 1.5rem 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            padding: 1.2rem 1rem;
+            text-align: center;
+        }
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+        .table-contracts th {
+            background: #e9ecef;
+        }
+        .quick-actions-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .contract-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #0d6efd;
+        }
+        .contract-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-active { border-left-color: #198754; }
+        .status-pending { border-left-color: #ffc107; }
+        .status-draft { border-left-color: #6c757d; }
+        .status-expired { border-left-color: #dc3545; }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .contract-stats {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .contract-filters {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f1ff;
+            color: #0d6efd;
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="hero-header text-center">
+        <h1 class="display-5 fw-bold mb-2"><i class="bi bi-file-earmark-text me-2"></i>Contract Management</h1>
+        <p class="lead mb-0">Create, track, and manage all your legal contracts in one place.</p>
+    </div>
+    <div class="container pb-4">
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="bi bi-file-earmark-check fs-2 text-primary mb-2"></i>
+                    <div class="fw-bold fs-4" id="activeContracts">45</div>
+                    <div class="text-muted">Active Contracts</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="bi bi-clock-history fs-2 text-warning mb-2"></i>
+                    <div class="fw-bold fs-4" id="pendingContracts">8</div>
+                    <div class="text-muted">Pending Review</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="bi bi-exclamation-triangle fs-2 text-danger mb-2"></i>
+                    <div class="fw-bold fs-4" id="expiringContracts">3</div>
+                    <div class="text-muted">Expiring Soon</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <i class="bi bi-people fs-2 text-info mb-2"></i>
+                    <div class="fw-bold fs-4" id="assignedContracts">12</div>
+                    <div class="text-muted">Assigned</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-2"><i class="bi bi-upload me-2"></i>Upload New Contract</h6>
+                    <p class="text-muted mb-0">Upload a PDF contract to add it to your contract management system</p>
+                </div>
+                <div class="col-md-4">
+                    <input type="file" class="form-control mb-2" id="contractFile" accept=".pdf" onchange="handleFileUpload()">
+                    <button class="btn btn-primary w-100" onclick="uploadContract()">
+                        <i class="bi bi-upload"></i> Upload Contract
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-actions-row justify-content-center mb-4">
+            <a href="ContractEditor.html" class="btn btn-primary">
+                <i class="bi bi-pen"></i> Contract Editor
+            </a>
+            <button class="btn btn-outline-primary" onclick="loadContracts()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-outline-secondary">
+                <i class="bi bi-calendar-check"></i> Schedule Review
+            </button>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search contracts..." onkeyup="filterContracts()">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter" onchange="filterContracts()">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="draft">Draft</option>
+                    <option value="expired">Expired</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="typeFilter" onchange="filterContracts()">
+                    <option value="">All Types</option>
+                    <option value="Service Agreement">Service Agreement</option>
+                    <option value="Vendor Contract">Vendor Contract</option>
+                    <option value="Lease Agreement">Lease Agreement</option>
+                    <option value="HR Contract">HR Contract</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Contracts Accordion -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-list-ul me-2"></i>Contract List
+            </div>
+            <div class="card-body p-0">
+                <div class="accordion" id="contractsAccordion">
+                    <!-- Contracts will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="fab">
+            <a href="ContractEditor.html" class="btn btn-primary btn-lg rounded-circle shadow" title="Contract Editor">
+                <i class="bi bi-pen"></i>
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = window.location.origin;
+        let contracts = [];
+        let filteredContracts = [];
+
+        async function loadContracts() {
+            try {
+                const response = await fetch(`${API_URL}/api/contracts`);
+                contracts = await response.json();
+                filteredContracts = [...contracts];
+                updateStats();
+                renderContracts();
+            } catch (error) {
+                console.error('Error loading contracts:', error);
+                // Show sample data for demo
+                contracts = [
+                    {
+                        id: 1,
+                        title: 'Office Cleaning Services Agreement',
+                        contract_type: 'Service Agreement',
+                        status: 'active',
+                        department: 'Facilities',
+                        description: 'Contract for office cleaning services with ABC Cleaning Co.',
+                        assigned_employee_name: 'John Doe',
+                        created_at: '2024-01-15',
+                        expires_at: '2024-12-31'
+                    },
+                    {
+                        id: 2,
+                        title: 'Software License Agreement',
+                        contract_type: 'Vendor Contract',
+                        status: 'pending',
+                        department: 'IT',
+                        description: 'License agreement for software vendor XYZ Solutions',
+                        assigned_employee_name: 'Jane Smith',
+                        created_at: '2024-02-01',
+                        expires_at: '2025-06-30'
+                    },
+                    {
+                        id: 3,
+                        title: 'Office Lease Agreement',
+                        contract_type: 'Lease Agreement',
+                        status: 'active',
+                        department: 'Finance',
+                        description: 'Office space lease agreement for downtown location',
+                        assigned_employee_name: 'Bob Johnson',
+                        created_at: '2023-12-01',
+                        expires_at: '2024-11-30'
+                    },
+                    {
+                        id: 4,
+                        title: 'Employee Handbook Agreement',
+                        contract_type: 'HR Contract',
+                        status: 'active',
+                        department: 'Human Resources',
+                        description: 'Employee handbook acknowledgment and agreement',
+                        assigned_employee_name: null,
+                        created_at: '2024-01-01',
+                        expires_at: '2025-12-31'
+                    },
+                    {
+                        id: 5,
+                        title: 'Vendor Service Contract',
+                        contract_type: 'Service Agreement',
+                        status: 'draft',
+                        department: 'Operations',
+                        description: 'Vendor service agreement draft for new supplier',
+                        assigned_employee_name: null,
+                        created_at: '2024-03-01',
+                        expires_at: '2025-03-15'
+                    }
+                ];
+                filteredContracts = [...contracts];
+                updateStats();
+                renderContracts();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('activeContracts').textContent = contracts.filter(c => c.status === 'active').length;
+            document.getElementById('pendingContracts').textContent = contracts.filter(c => c.status === 'pending').length;
+            document.getElementById('expiringContracts').textContent = contracts.filter(c => {
+                if (!c.expires_at) return false;
+                const expiryDate = new Date(c.expires_at);
+                const now = new Date();
+                const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+                return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+            }).length;
+            document.getElementById('assignedContracts').textContent = contracts.filter(c => c.assigned_employee_name).length;
+        }
+
+        function renderContracts() {
+            const accordion = document.getElementById('contractsAccordion');
+            
+            if (filteredContracts.length === 0) {
+                accordion.innerHTML = '<div class="text-center text-muted py-4">No contracts found</div>';
+                return;
+            }
+
+            accordion.innerHTML = filteredContracts.map((contract, index) => `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#contract${contract.id}">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <div>
+                                    <span class="fw-bold">${contract.title}</span>
+                                    <br>
+                                    <small class="text-muted">${contract.department || 'No Department'} • ${contract.assigned_employee_name || 'Unassigned'}</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-${getStatusColor(contract.status)}">${contract.status}</span>
+                                    <span class="badge bg-secondary">${contract.contract_type}</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="contract${contract.id}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" data-bs-parent="#contractsAccordion">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <p class="text-muted mb-3">${contract.description || 'No description available'}</p>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>Department:</strong><br>
+                                            <span>${contract.department || 'Unassigned'}</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Assigned To:</strong><br>
+                                            <span>${contract.assigned_employee_name || 'Unassigned'}</span>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-3">
+                                        <div class="col-6">
+                                            <strong>Created:</strong><br>
+                                            <span>${new Date(contract.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Expires:</strong><br>
+                                            <span>${contract.expires_at ? new Date(contract.expires_at).toLocaleDateString() : 'No expiry date'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-grid gap-2">
+                                        <a href="ContractEditor.html" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-pencil"></i> Edit Contract
+                                        </a>
+                                        <button class="btn btn-outline-success btn-sm" onclick="exportContract(${contract.id})">
+                                            <i class="bi bi-download"></i> Export PDF
+                                        </button>
+                                        <button class="btn btn-outline-info btn-sm" onclick="viewHistory(${contract.id})">
+                                            <i class="bi bi-clock-history"></i> View History
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'active': return 'success';
+                case 'pending': return 'warning';
+                case 'draft': return 'secondary';
+                case 'expired': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        function filterContracts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+
+            filteredContracts = contracts.filter(contract => {
+                const matchesSearch = !searchTerm || 
+                    contract.title.toLowerCase().includes(searchTerm) ||
+                    contract.description?.toLowerCase().includes(searchTerm) ||
+                    contract.assigned_employee_name?.toLowerCase().includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || contract.status === statusFilter;
+                const matchesType = !typeFilter || contract.contract_type === typeFilter;
+                
+                return matchesSearch && matchesStatus && matchesType;
+            });
+            
+            renderContracts();
+        }
+
+        function handleFileUpload() {
+            const file = document.getElementById('contractFile').files[0];
+            if (file && !file.type.includes('pdf')) {
+                alert('Please select a PDF file');
+                document.getElementById('contractFile').value = '';
+            }
+        }
+
+        function uploadContract() {
+            const file = document.getElementById('contractFile').files[0];
+            if (!file) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            // For demo purposes, just show success message
+            alert('Contract uploaded successfully! (Demo mode)');
+            document.getElementById('contractFile').value = '';
+            loadContracts();
+        }
+
+        function exportContract(contractId) {
+            // For demo purposes, just show message
+            alert('Contract export feature would download the PDF here');
+        }
+
+        function viewHistory(contractId) {
+            // For demo purposes, just show message
+            alert('Contract history feature would show all changes and signatures here');
+        }
+
+        // Load contracts on page load
+        document.addEventListener('DOMContentLoaded', loadContracts);
+    </script>
+</body>
+</html> 
