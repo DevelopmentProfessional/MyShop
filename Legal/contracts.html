@@ -405,6 +405,14 @@
                                             <i class="bi bi-trash"></i> Delete
                                         </button>
                                     </div>
+                                    
+                                    ${contract.file_name ? `
+                                    <div class="mt-2 text-center">
+                                        <a href="${API_URL}/api/contracts/${contract.id}/pdf" class="btn btn-outline-secondary btn-sm" target="_blank">
+                                            <i class="bi bi-file-pdf"></i> View PDF
+                                        </a>
+                                    </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>

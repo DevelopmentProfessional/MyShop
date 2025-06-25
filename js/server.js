@@ -1968,6 +1968,33 @@ app.get('/api/contracts/:id/history', async (req, res) => {
     }
 });
 
+// Serve PDF file from database
+app.get('/api/contracts/:id/pdf', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT contract_document, file_name, mime_type FROM contracts WHERE id = $1', [req.params.id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
+        
+        const contract = result.rows[0];
+        
+        if (!contract.contract_document) {
+            return res.status(404).json({ error: 'No PDF file found for this contract' });
+        }
+        
+        // Set headers for PDF download/view
+        res.setHeader('Content-Type', contract.mime_type || 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${contract.file_name || 'contract.pdf'}"`);
+        res.setHeader('Content-Length', contract.contract_document.length);
+        
+        // Send the PDF buffer
+        res.send(contract.contract_document);
+    } catch (error) {
+        handleError(res, error, 'Failed to serve PDF file');
+    }
+});
+
 // Signature Management Endpoints
 app.get('/api/signatures', async (req, res) => {
     try {
