@@ -136,6 +136,32 @@ app.get('/api/test', async (req, res) =>  {try{
   await pool.query('SELECT NOW()'); res.json({ message: 'Database connection successful' }); } 
 catch (error) {handleError(res, error, 'Database connection failed', true);}
 });
+
+app.get('/api/test/contracts', async (req, res) => {
+    try {
+        // Test if contracts table exists and has data
+        const result = await pool.query(`
+            SELECT 
+                table_name,
+                column_name,
+                data_type
+            FROM information_schema.columns 
+            WHERE table_name = 'contracts'
+            ORDER BY ordinal_position
+        `);
+        
+        const contractsCount = await pool.query('SELECT COUNT(*) as count FROM contracts');
+        
+        res.json({ 
+            message: 'Contracts table check successful',
+            columns: result.rows,
+            contractsCount: contractsCount.rows[0].count
+        });
+    } catch (error) {
+        handleError(res, error, 'Contracts table check failed', true);
+    }
+});
+
 app.get('/api/services', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM services ORDER BY name');

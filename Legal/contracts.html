@@ -448,6 +448,17 @@
                 return;
             }
 
+            // Debug logging
+            console.log('Uploading file:', {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                title: title,
+                type: type,
+                department: department,
+                description: description
+            });
+
             try {
                 const formData = new FormData();
                 formData.append('contract', file);
@@ -456,16 +467,24 @@
                 formData.append('department', department);
                 formData.append('description', description);
 
+                console.log('FormData created, sending request...');
+
                 const response = await fetch(`${API_URL}/api/contracts/upload`, {
                     method: 'POST',
                     body: formData
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('Server error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
                 }
 
                 const result = await response.json();
+                console.log('Upload result:', result);
                 
                 if (result.success) {
                     alert('Contract uploaded successfully!');
@@ -484,7 +503,7 @@
                 }
             } catch (error) {
                 console.error('Error uploading contract:', error);
-                alert('Error uploading contract. Please try again.');
+                alert('Error uploading contract: ' + error.message);
             }
         }
 
