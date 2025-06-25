@@ -1822,39 +1822,82 @@ const upload = multer({
 // Contract upload endpoint
 app.post('/api/contracts/upload', upload.single('contract'), async (req, res) => {
     try {
-        const { title, contract_type, department, description } = req.body;
+        const { title, contract_type, department, description, status, assigned_employee_id, expires_at, comment, contract_id } = req.body;
         
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const result = await pool.query(`
-            INSERT INTO contracts (title, contract_type, status, department, description, created_by, 
-                                 contract_document, file_name, file_size, mime_type) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
-        `, [
-            title || 'Uploaded Contract', 
-            contract_type || 'Service Agreement', 
-            'draft', 
-            department, 
-            description, 
-            1, // created_by
-            fs.readFileSync(req.file.path), // Read file as buffer
-            req.file.originalname,
-            req.file.size,
-            req.file.mimetype
-        ]);
-        
-        // Clean up the temporary file
-        fs.unlinkSync(req.file.path);
-        
-        // Add to history
-        await pool.query(`
-            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-            VALUES ($1, $2, $3, $4)
-        `, [result.rows[0].id, 'uploaded', 'Contract uploaded', 1]);
-        
-        res.status(201).json({ success: true, contract: result.rows[0] });
+        // If contract_id is provided, update existing contract
+        if (contract_id) {
+            // Check if contract exists
+            const existingContract = await pool.query('SELECT * FROM contracts WHERE id = $1', [contract_id]);
+            if (existingContract.rows.length === 0) {
+                return res.status(404).json({ error: 'Contract not found' });
+            }
+
+            // Update existing contract with new file
+            const result = await pool.query(`
+                UPDATE contracts 
+                SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
+                    assigned_employee_id = $6, expires_at = $7, contract_document = $8, file_name = $9, 
+                    file_size = $10, mime_type = $11, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = $12 RETURNING *
+            `, [
+                title || existingContract.rows[0].title,
+                contract_type || existingContract.rows[0].contract_type,
+                status || existingContract.rows[0].status,
+                department || existingContract.rows[0].department,
+                description || existingContract.rows[0].description,
+                assigned_employee_id || existingContract.rows[0].assigned_employee_id,
+                expires_at || existingContract.rows[0].expires_at,
+                fs.readFileSync(req.file.path), // Read file as buffer
+                req.file.originalname,
+                req.file.size,
+                req.file.mimetype,
+                contract_id
+            ]);
+
+            // Clean up the temporary file
+            fs.unlinkSync(req.file.path);
+
+            // Add to history
+            await pool.query(`
+                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+                VALUES ($1, $2, $3, $4)
+            `, [contract_id, 'updated', `Contract updated with new file${comment ? ': ' + comment : ''}`, 1]);
+
+            res.json({ success: true, contract: result.rows[0] });
+        } else {
+            // Create new contract
+            const result = await pool.query(`
+                INSERT INTO contracts (title, contract_type, status, department, description, created_by, 
+                                     contract_document, file_name, file_size, mime_type) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
+            `, [
+                title || 'Uploaded Contract', 
+                contract_type || 'Service Agreement', 
+                'draft', 
+                department, 
+                description, 
+                1, // created_by
+                fs.readFileSync(req.file.path), // Read file as buffer
+                req.file.originalname,
+                req.file.size,
+                req.file.mimetype
+            ]);
+            
+            // Clean up the temporary file
+            fs.unlinkSync(req.file.path);
+            
+            // Add to history
+            await pool.query(`
+                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
+                VALUES ($1, $2, $3, $4)
+            `, [result.rows[0].id, 'uploaded', 'Contract uploaded', 1]);
+            
+            res.status(201).json({ success: true, contract: result.rows[0] });
+        }
     } catch (error) {
         // Clean up file if it exists
         if (req.file && fs.existsSync(req.file.path)) {
