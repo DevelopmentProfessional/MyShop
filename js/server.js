@@ -1720,7 +1720,11 @@ app.get('/api/contracts/:id', async (req, res) => {
             LEFT JOIN employees e ON c.assigned_employee_id = e.id 
             WHERE c.id = $1 AND c.is_active = TRUE
         `, [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Contract not found' });
+        }
+        
         res.json(result.rows[0]);
     } catch (error) {
         handleError(res, error, 'Failed to fetch contract');
@@ -1939,14 +1943,25 @@ app.get('/api/contracts/:id/export', async (req, res) => {
         const result = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
         
+        const contract = result.rows[0];
+        
+        if (!contract.contract_document) {
+            return res.status(404).json({ error: 'No PDF file found for this contract' });
+        }
+        
         // Add to history
         await pool.query(`
             INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
             VALUES ($1, $2, $3, $4)
         `, [req.params.id, 'exported', 'Contract exported', 1]);
         
-        // For demo, return a simple PDF (in production, this would generate from the actual contract document)
-        res.json({ success: true, message: 'Contract export initiated' });
+        // Set headers for PDF download
+        res.setHeader('Content-Type', contract.mime_type || 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${contract.file_name || `contract_${contract.id}.pdf`}"`);
+        res.setHeader('Content-Length', contract.contract_document.length);
+        
+        // Send the PDF buffer
+        res.send(contract.contract_document);
     } catch (error) {
         handleError(res, error, 'Failed to export contract');
     }

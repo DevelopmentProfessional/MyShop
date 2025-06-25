@@ -517,15 +517,41 @@
 
         async function exportContract(contractId) {
             try {
+                // Get contract info first
+                const contractResponse = await fetch(`${API_URL}/api/contracts/${contractId}`);
+                if (!contractResponse.ok) {
+                    throw new Error(`HTTP error! status: ${contractResponse.status}`);
+                }
+                const contract = await contractResponse.json();
+                
+                if (!contract.file_name) {
+                    alert('No PDF file available for export');
+                    return;
+                }
+                
+                // Fetch the PDF and download it
                 const response = await fetch(`${API_URL}/api/contracts/${contractId}/export`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const result = await response.json();
-                alert('Contract export initiated successfully!');
+                
+                const blob = await response.blob();
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = contract.file_name || `contract_${contractId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                console.log('Contract exported successfully');
             } catch (error) {
                 console.error('Error exporting contract:', error);
-                alert('Error exporting contract. Please try again.');
+                alert('Error exporting contract: ' + error.message);
             }
         }
 
