@@ -2028,14 +2028,22 @@ app.get('/api/signatures', async (req, res) => {
 app.post('/api/signatures', async (req, res) => {
     try {
         const { signature_name, signature_data } = req.body;
+        if (!signature_name || !signature_data) {
+            return res.status(400).json({ success: false, error: 'Missing signature_name or signature_data' });
+        }
+        // Check if signature_data is too large (e.g., > 800KB)
+        const base64Length = Buffer.byteLength(signature_data, 'utf8');
+        if (base64Length > 800 * 1024) {
+            return res.status(413).json({ success: false, error: 'Signature image is too large. Please use a smaller signature.' });
+        }
         const result = await pool.query(`
             INSERT INTO signatures (employee_id, signature_name, signature_data) 
             VALUES ($1, $2, $3) RETURNING *
         `, [1, signature_name, signature_data]); // employee_id = 1 for demo
-        
         res.status(201).json({ success: true, signature: result.rows[0] });
     } catch (error) {
-        handleError(res, error, 'Failed to create signature');
+        console.error('Error saving signature:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to create signature' });
     }
 });
 
@@ -2067,5 +2075,39 @@ app.post('/api/contracts/:id/sign', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (error) {
         handleError(res, error, 'Failed to sign contract');
+    }
+});
+
+// Update contract PDF endpoint
+const multerPDF = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype !== 'application/pdf') {
+            return cb(new Error('Only PDF files are allowed'));
+        }
+        cb(null, true);
+    }
+});
+
+app.put('/api/contracts/:id/pdf', multerPDF.single('pdf'), async (req, res) => {
+    try {
+        const contractId = req.params.id;
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No PDF file uploaded' });
+        }
+        const { originalname, buffer, size, mimetype } = req.file;
+        // Update the contract_document in the database
+        const result = await pool.query(
+            `UPDATE contracts SET contract_document = $1, file_name = $2, file_size = $3, mime_type = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *`,
+            [buffer, originalname, size, mimetype, contractId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Contract not found' });
+        }
+        res.json({ success: true, contract: result.rows[0] });
+    } catch (error) {
+        console.error('Error updating contract PDF:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to update contract PDF' });
     }
 });
