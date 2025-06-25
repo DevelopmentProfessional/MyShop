@@ -2033,7 +2033,7 @@ app.post('/api/signatures', async (req, res) => {
             VALUES ($1, $2, $3) RETURNING *
         `, [1, signature_name, signature_data]); // employee_id = 1 for demo
         
-        res.status(201).json(result.rows[0]);
+        res.status(201).json({ success: true, signature: result.rows[0] });
     } catch (error) {
         handleError(res, error, 'Failed to create signature');
     }
