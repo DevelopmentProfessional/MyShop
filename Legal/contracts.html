@@ -401,6 +401,9 @@
                                          <a href="ContractEditor.html?id=${contract.id}" class="btn btn-outline-primary btn-sm">
                                             <i class="bi bi-pencil"></i> Edit
                                         </a>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deleteContract(${contract.id}, '${contract.title}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -525,6 +528,34 @@
             } catch (error) {
                 console.error('Error loading contract history:', error);
                 alert('Error loading contract history. Please try again.');
+            }
+        }
+
+        async function deleteContract(contractId, contractTitle) {
+            if (!confirm(`Are you sure you want to delete the contract "${contractTitle}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Contract deleted successfully!');
+                    loadContracts(); // Reload the contracts list
+                } else {
+                    alert('Error deleting contract: ' + (result.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting contract:', error);
+                alert('Error deleting contract. Please try again.');
             }
         }
 
