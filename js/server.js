@@ -110,13 +110,14 @@ app.use(['/profile', '/Profile'],                     express.static(path.join(_
 app.use(['/projects', '/Projects'],                   express.static(path.join(__dirname, '..', 'Projects')));        app.get(['/projects', '/Projects'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Projects', 'index.html')); });
 
 
-const handleError = (res, error, message, details = false) => {
-  const response = {
-    error: message,
-    ...(details && { details: error.message })
-  };
-  res.status(500).json(response);
-};
+function handleError(res, error, message, details = false) {
+    console.error('Backend error:', error); // Log the real error for debugging
+    const response = {
+        error: message,
+        ...(details && { details: error.message })
+    };
+    res.status(500).json(response);
+}
 
 const validateService = [
     body('name').trim().notEmpty().withMessage('Name is required'),
@@ -303,7 +304,8 @@ app.get('/api/employees', async (req, res) => {
         const result = await pool.query('SELECT * FROM employees ORDER BY name');
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Check console');
+        console.error('Error fetching employees:', error);
+        res.status(500).json({ error: 'Failed to fetch employees' });
     }
 });
 
@@ -689,7 +691,7 @@ app.get('/api/user_permissions', async (req, res) => {
 
 app.get('/api/employees', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM employees ORDER BY last_name');
+        const result = await pool.query('SELECT * FROM employees ORDER BY name');
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching employees:', error);
@@ -1475,6 +1477,79 @@ const createTables = async () => {
                 updatedAt TIMESTAMPTZ DEFAULT NOW()
             );
         `);
+        
+        // Add contract-related tables
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS contracts (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                contract_type VARCHAR(100) NOT NULL,
+                status VARCHAR(50) DEFAULT 'draft',
+                department VARCHAR(100),
+                description TEXT,
+                contract_document BYTEA,
+                file_name VARCHAR(255),
+                file_size INTEGER,
+                mime_type VARCHAR(100) DEFAULT 'application/pdf',
+                assigned_employee_id INTEGER,
+                created_by INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expires_at DATE,
+                is_active BOOLEAN DEFAULT true
+            );
+            
+            CREATE TABLE IF NOT EXISTS contract_participants (
+                id SERIAL PRIMARY KEY,
+                contract_id INTEGER NOT NULL,
+                participant_type VARCHAR(50) NOT NULL,
+                participant_id INTEGER,
+                participant_name VARCHAR(255),
+                role VARCHAR(100),
+                email VARCHAR(255),
+                added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS assets (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                asset_type VARCHAR(100) NOT NULL,
+                description TEXT,
+                serial_number VARCHAR(100),
+                purchase_date DATE,
+                purchase_price DECIMAL(10,2),
+                current_value DECIMAL(10,2),
+                location VARCHAR(255),
+                status VARCHAR(50) DEFAULT 'active',
+                assigned_to INTEGER,
+                department VARCHAR(100),
+                manufacturer VARCHAR(255),
+                model VARCHAR(255),
+                warranty_expiry DATE,
+                maintenance_schedule VARCHAR(100),
+                last_maintenance_date DATE,
+                next_maintenance_date DATE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS contract_assets (
+                id SERIAL PRIMARY KEY,
+                contract_id INTEGER NOT NULL,
+                asset_id INTEGER NOT NULL,
+                role VARCHAR(100),
+                assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
+            CREATE TABLE IF NOT EXISTS contract_transactions (
+                id SERIAL PRIMARY KEY,
+                contract_id INTEGER NOT NULL,
+                transaction_type VARCHAR(20) NOT NULL,
+                transaction_id INTEGER NOT NULL,
+                linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+        
         console.log('Tables checked/created successfully.');
         
         // Check if appointments table needs to be updated with new columns
@@ -1497,6 +1572,24 @@ const createTables = async () => {
             }
         } catch (error) {
             console.error('Error updating appointments table:', error);
+        }
+        
+        // Add sample assets if the table is empty
+        try {
+            const assetsCount = await client.query('SELECT COUNT(*) as count FROM assets');
+            if (parseInt(assetsCount.rows[0].count) === 0) {
+                await client.query(`
+                    INSERT INTO assets (name, asset_type, description, serial_number, purchase_date, purchase_price, current_value, location, status, department, manufacturer, model, warranty_expiry) VALUES
+                    ('Dell Latitude 5520', 'Computer', 'Business laptop for office use', 'DL5520-2023-001', '2023-01-15', 1200.00, 900.00, 'IT Department', 'active', 'IT', 'Dell', 'Latitude 5520', '2026-01-15'),
+                    ('HP LaserJet Pro M404n', 'Printer', 'Office printer for document printing', 'HP404N-2023-002', '2023-02-20', 350.00, 280.00, 'Reception Area', 'active', 'Administration', 'HP', 'LaserJet Pro M404n', '2025-02-20'),
+                    ('iPhone 14 Pro', 'Mobile Device', 'Company phone for business communications', 'IP14P-2023-003', '2023-03-10', 999.00, 750.00, 'Sales Department', 'active', 'Sales', 'Apple', 'iPhone 14 Pro', '2025-03-10'),
+                    ('Office Desk Set', 'Furniture', 'Complete desk setup with chair and accessories', 'ODS-2023-004', '2023-01-05', 800.00, 600.00, 'Marketing Office', 'active', 'Marketing', 'IKEA', 'Bekant Series', '2028-01-05'),
+                    ('Canon EOS R6', 'Camera', 'Professional camera for marketing and events', 'CER6-2023-005', '2023-04-15', 2500.00, 2000.00, 'Marketing Department', 'active', 'Marketing', 'Canon', 'EOS R6', '2025-04-15')
+                `);
+                console.log('Sample assets added successfully.');
+            }
+        } catch (error) {
+            console.error('Error adding sample assets:', error);
         }
     } catch (error) {
         console.error('Error creating tables:', error);
@@ -1700,9 +1793,8 @@ app.delete('/api/recruits/:id', async (req, res) => {
 app.get('/api/contracts', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT c.*, e.name as assigned_employee_name 
+            SELECT c.* 
             FROM contracts c 
-            LEFT JOIN employees e ON c.assigned_employee_id = e.id 
             WHERE c.is_active = TRUE 
             ORDER BY c.updated_at DESC
         `);
@@ -1715,9 +1807,8 @@ app.get('/api/contracts', async (req, res) => {
 app.get('/api/contracts/:id', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT c.*, e.name as assigned_employee_name 
+            SELECT c.* 
             FROM contracts c 
-            LEFT JOIN employees e ON c.assigned_employee_id = e.id 
             WHERE c.id = $1 AND c.is_active = TRUE
         `, [req.params.id]);
         
@@ -1733,11 +1824,11 @@ app.get('/api/contracts/:id', async (req, res) => {
 
 app.post('/api/contracts', async (req, res) => {
     try {
-        const { title, contract_type, status, department, description, assigned_employee_id, expires_at } = req.body;
+        const { title, contract_type, status, department, description, expires_at } = req.body;
         const result = await pool.query(`
-            INSERT INTO contracts (title, contract_type, status, department, description, assigned_employee_id, expires_at, created_by) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
-        `, [title, contract_type, status, department, description, assigned_employee_id, expires_at, 1]); // created_by = 1 for demo
+            INSERT INTO contracts (title, contract_type, status, department, description, expires_at, created_by) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+        `, [title, contract_type, status, department, description, expires_at, 1]); // created_by = 1 for demo
         
         // Add to history
         await pool.query(`
@@ -1753,7 +1844,10 @@ app.post('/api/contracts', async (req, res) => {
 
 app.put('/api/contracts/:id', async (req, res) => {
     try {
-        const { title, contract_type, status, department, description, assigned_employee_id, expires_at, comment } = req.body;
+        const { title, contract_type, status, department, description, expires_at, comment } = req.body;
+        
+        // Convert empty string to null for optional date field
+        const expiryDate = expires_at === '' ? null : expires_at;
         
         // Get current contract for comparison
         const currentContract = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
@@ -1762,21 +1856,14 @@ app.put('/api/contracts/:id', async (req, res) => {
         const result = await pool.query(`
             UPDATE contracts 
             SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
-                assigned_employee_id = $6, expires_at = $7, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = $8 RETURNING *
-        `, [title, contract_type, status, department, description, assigned_employee_id, expires_at, req.params.id]);
+                expires_at = $6, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = $7 RETURNING *
+        `, [title, contract_type, status, department, description, expiryDate, req.params.id]);
         
         // Add to history
         const historyActions = [];
         if (currentContract.rows[0].status !== status) {
             historyActions.push(`Status changed from ${currentContract.rows[0].status} to ${status}`);
-        }
-        if (currentContract.rows[0].assigned_employee_id !== assigned_employee_id) {
-            if (assigned_employee_id) {
-                historyActions.push('Contract assigned to employee');
-            } else {
-                historyActions.push('Contract unassigned');
-            }
         }
         if (comment) {
             historyActions.push(`Comment: ${comment}`);
@@ -1852,7 +1939,10 @@ const upload = multer({
 // Contract upload endpoint
 app.post('/api/contracts/upload', upload.single('contract'), async (req, res) => {
     try {
-        const { title, contract_type, department, description, status, assigned_employee_id, expires_at, comment, contract_id } = req.body;
+        const { title, contract_type, department, description, status, expires_at, comment, contract_id } = req.body;
+        
+        // Convert empty string to null for optional date field
+        const expiryDate = expires_at === '' ? null : expires_at;
         
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
@@ -1870,17 +1960,16 @@ app.post('/api/contracts/upload', upload.single('contract'), async (req, res) =>
             const result = await pool.query(`
                 UPDATE contracts 
                 SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
-                    assigned_employee_id = $6, expires_at = $7, contract_document = $8, file_name = $9, 
-                    file_size = $10, mime_type = $11, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = $12 RETURNING *
+                    expires_at = $6, contract_document = $7, file_name = $8, 
+                    file_size = $9, mime_type = $10, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = $11 RETURNING *
             `, [
                 title || existingContract.rows[0].title,
                 contract_type || existingContract.rows[0].contract_type,
                 status || existingContract.rows[0].status,
                 department || existingContract.rows[0].department,
                 description || existingContract.rows[0].description,
-                assigned_employee_id || existingContract.rows[0].assigned_employee_id,
-                expires_at || existingContract.rows[0].expires_at,
+                expiryDate || existingContract.rows[0].expires_at,
                 fs.readFileSync(req.file.path), // Read file as buffer
                 req.file.originalname,
                 req.file.size,
@@ -2109,5 +2198,583 @@ app.put('/api/contracts/:id/pdf', multerPDF.single('pdf'), async (req, res) => {
     } catch (error) {
         console.error('Error updating contract PDF:', error);
         res.status(500).json({ success: false, error: error.message || 'Failed to update contract PDF' });
+    }
+});
+
+// Contract Participants Endpoints
+app.get('/api/contracts/:id/participants', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT cp.*, 
+                    CASE 
+                        WHEN cp.participant_type = 'employee' THEN e.name
+                        WHEN cp.participant_type = 'client' THEN c.name
+                        ELSE cp.participant_name
+                    END as display_name
+             FROM contract_participants cp
+             LEFT JOIN employees e ON cp.participant_type = 'employee' AND cp.participant_id = e.id
+             LEFT JOIN clients c ON cp.participant_type = 'client' AND cp.participant_id = c.id
+             WHERE cp.contract_id = $1 
+             ORDER BY cp.added_at ASC`,
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract participants');
+    }
+});
+
+app.post('/api/contracts/:id/participants', async (req, res) => {
+    try {
+        const { participant_type, participant_id, participant_name, role, email } = req.body;
+        if (!participant_type || (!participant_id && !participant_name)) {
+            return res.status(400).json({ error: 'Missing participant_type or participant_id/participant_name' });
+        }
+        const result = await pool.query(
+            `INSERT INTO contract_participants (contract_id, participant_type, participant_id, participant_name, role, email) \
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [req.params.id, participant_type, participant_id || null, participant_name || null, role || null, email || null]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to add contract participant');
+    }
+});
+
+app.delete('/api/contracts/:id/participants/:participantId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM contract_participants WHERE id = $1 AND contract_id = $2 RETURNING *',
+            [req.params.participantId, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Participant not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove contract participant');
+    }
+});
+
+// Recurring Payments Endpoints
+app.get('/api/contracts/:id/recurring-payments', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM recurring_payments WHERE contract_id = $1 ORDER BY start_date ASC',
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch recurring payments');
+    }
+});
+
+app.post('/api/contracts/:id/recurring-payments', async (req, res) => {
+    try {
+        const { amount, currency, frequency, start_date, end_date, description, status, transaction_id, link_existing } = req.body;
+        
+        if (link_existing && transaction_id) {
+            // Link existing transaction to this contract
+            const result = await pool.query(
+                'UPDATE recurring_payments SET contract_id = $1 WHERE id = $2 RETURNING *',
+                [req.params.id, transaction_id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Recurring payment not found' });
+            }
+            res.status(200).json(result.rows[0]);
+        } else {
+            // Create new recurring payment
+            if (!amount || !frequency || !start_date) {
+                return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
+            }
+            const result = await pool.query(
+                `INSERT INTO recurring_payments (contract_id, amount, currency, frequency, start_date, end_date, description, status) \
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                [req.params.id, amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active']
+            );
+            res.status(201).json(result.rows[0]);
+        }
+    } catch (error) {
+        handleError(res, error, 'Failed to add contract recurring payment');
+    }
+});
+
+app.delete('/api/contracts/:id/recurring-payments/:paymentId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM recurring_payments WHERE id = $1 AND contract_id = $2 RETURNING *',
+            [req.params.paymentId, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Recurring payment not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove recurring payment');
+    }
+});
+
+// One-Time Payments Endpoints
+app.get('/api/one-time-payments', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM one_time_payments ORDER BY created_at DESC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch one-time payments');
+    }
+});
+
+app.post('/api/one-time-payments', async (req, res) => {
+    try {
+        const { amount, currency, customer, contract_id, description, start_date, status } = req.body;
+        if (!amount || !start_date) {
+            return res.status(400).json({ error: 'Missing required fields (amount, start_date)' });
+        }
+        const result = await pool.query(
+            `INSERT INTO one_time_payments (amount, currency, customer, contract_id, description, start_date, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [amount, currency || 'USD', customer, contract_id || null, description, start_date, status || 'completed']
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create one-time payment');
+    }
+});
+
+app.delete('/api/one-time-payments/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM one_time_payments WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Payment not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete one-time payment');
+    }
+});
+
+// Global Recurring Payments Endpoints (not tied to a contract)
+app.get('/api/recurring-payments', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM recurring_payments ORDER BY created_at DESC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch recurring payments');
+    }
+});
+
+app.post('/api/recurring-payments', async (req, res) => {
+    try {
+        const { amount, currency, frequency, start_date, end_date, description, status, customer } = req.body;
+        if (!amount || !frequency || !start_date) {
+            return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
+        }
+        const result = await pool.query(
+            `INSERT INTO recurring_payments (amount, currency, frequency, start_date, end_date, description, status, customer)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+            [amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active', customer]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create recurring payment');
+    }
+});
+
+// Get individual recurring payment by ID
+app.get('/api/recurring-payments/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM recurring_payments WHERE id = $1',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Recurring payment not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch recurring payment');
+    }
+});
+
+// Update individual recurring payment by ID
+app.put('/api/recurring-payments/:id', async (req, res) => {
+    try {
+        const { amount, currency, frequency, start_date, end_date, description, status, customer } = req.body;
+        if (!amount || !frequency || !start_date) {
+            return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
+        }
+        
+        const result = await pool.query(
+            `UPDATE recurring_payments 
+             SET amount = $1, currency = $2, frequency = $3, start_date = $4, end_date = $5, 
+                 description = $6, status = $7, customer = $8
+             WHERE id = $9 RETURNING *`,
+            [amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active', customer || null, req.params.id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Recurring payment not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update recurring payment');
+    }
+});
+
+// Delete individual recurring payment by ID
+app.delete('/api/recurring-payments/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM recurring_payments WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Recurring payment not found' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete recurring payment');
+    }
+});
+
+// Delete individual recurring payment by ID
+app.delete('/api/recurring-payments/:id', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM recurring_payments WHERE id = $1 RETURNING *',
+            [req.params.id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Recurring payment not found' });
+        }
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete recurring payment');
+    }
+});
+
+// Contract Assets Endpoints
+app.get('/api/contracts/:id/assets', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT ca.id, ca.contract_id, ca.asset_id, ca.role, ca.assigned_at,
+                   a.name, a.asset_type, a.description, a.location, a.current_value, a.status
+            FROM contract_assets ca
+            JOIN assets a ON ca.asset_id = a.id
+            WHERE ca.contract_id = $1
+            ORDER BY a.name
+        `, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract assets');
+    }
+});
+
+app.post('/api/contracts/:id/assets', async (req, res) => {
+    try {
+        const { asset_id, role } = req.body;
+        if (!asset_id) {
+            return res.status(400).json({ error: 'Missing asset_id' });
+        }
+        const result = await pool.query(
+            `INSERT INTO contract_assets (contract_id, asset_id, role) \
+             VALUES ($1, $2, $3) RETURNING *`,
+            [req.params.id, asset_id, role || null]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to add contract asset');
+    }
+});
+
+app.delete('/api/contracts/:id/assets/:assetId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM contract_assets WHERE id = $1 AND contract_id = $2 RETURNING *',
+            [req.params.assetId, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract asset not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove contract asset');
+    }
+});
+
+// Assets Endpoint (for dropdown)
+app.get('/api/assets/types', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT DISTINCT asset_type FROM assets WHERE asset_type IS NOT NULL ORDER BY asset_type'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching asset types:', error);
+        res.status(500).json({ error: 'Failed to fetch asset types' });
+    }
+});
+
+app.get('/api/assets', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT id, name, asset_type, description, location, current_value, status, 
+                   serial_number, purchase_date, purchase_price, current_value, department, 
+                   manufacturer, model, warranty_expiry, created_at, updated_at
+            FROM assets 
+            ORDER BY name ASC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch assets');
+    }
+});
+
+app.get('/api/assets/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT id, name, asset_type, description, location, current_value, status, 
+                   serial_number, purchase_date, purchase_price, current_value, department, 
+                   manufacturer, model, warranty_expiry, created_at, updated_at
+            FROM assets 
+            WHERE id = $1
+        `, [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch asset');
+    }
+});
+
+app.post('/api/assets', async (req, res) => {
+    try {
+        const { name, asset_type, description, location, current_value, status, serial_number, 
+                purchase_date, purchase_price, department, manufacturer, model, warranty_expiry } = req.body;
+        
+        // Validate required fields
+        if (!name || !asset_type || !status) {
+            return res.status(400).json({ error: 'Name, asset type, and status are required' });
+        }
+        
+        const result = await pool.query(`
+            INSERT INTO assets (name, asset_type, description, location, current_value, status, 
+                               serial_number, purchase_date, purchase_price, current_value, 
+                               department, manufacturer, model, warranty_expiry, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
+            RETURNING id, name, asset_type, description, location, current_value, status, 
+                      serial_number, purchase_date, purchase_price, current_value, department, 
+                      manufacturer, model, warranty_expiry, created_at, updated_at
+        `, [name, asset_type, description, location, current_value, status, serial_number, 
+            purchase_date, purchase_price, current_value, department, manufacturer, model, warranty_expiry]);
+        
+        
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create asset');
+    }
+});
+
+app.put('/api/assets/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, asset_type, description, location, current_value, status, serial_number, 
+                purchase_date, purchase_price, department, manufacturer, model, warranty_expiry } = req.body;
+        
+        // Validate required fields
+        if (!name || !asset_type || !status) {
+            return res.status(400).json({ error: 'Name, asset type, and status are required' });
+        }
+        
+        const result = await pool.query(`
+            UPDATE assets 
+            SET name = $1, asset_type = $2, description = $3, location = $4, current_value = $5, status = $6,
+                serial_number = $7, purchase_date = $8, purchase_price = $9, current_value = $10,
+                department = $11, manufacturer = $12, model = $13, warranty_expiry = $14, updated_at = NOW()
+            WHERE id = $15
+            RETURNING id, name, asset_type, description, location, current_value, status, 
+                      serial_number, purchase_date, purchase_price, current_value, department, 
+                      manufacturer, model, warranty_expiry, created_at, updated_at
+        `, [name, asset_type, description, location, current_value, status, serial_number, 
+            purchase_date, purchase_price, current_value, department, manufacturer, model, warranty_expiry, id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update asset');
+    }
+});
+
+app.delete('/api/assets/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // First check if asset exists
+        const checkResult = await pool.query('SELECT id FROM assets WHERE id = $1', [id]);
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Asset not found' });
+        }
+        
+        // Delete from contract_assets first (if any)
+        await pool.query('DELETE FROM contract_assets WHERE asset_id = $1', [id]);
+        
+        // Delete the asset
+        const result = await pool.query('DELETE FROM assets WHERE id = $1 RETURNING id', [id]);
+        
+        res.json({ message: 'Asset deleted successfully', id: result.rows[0].id });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete asset');
+    }
+});
+
+// Contract One-Time Payments Endpoints
+app.get('/api/contracts/:id/one-time-payments', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM one_time_payments WHERE contract_id = $1 ORDER BY start_date ASC',
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract one-time payments');
+    }
+});
+
+app.post('/api/contracts/:id/one-time-payments', async (req, res) => {
+    try {
+        const { amount, currency, customer, description, start_date, status, transaction_id, link_existing } = req.body;
+        
+        if (link_existing && transaction_id) {
+            // Link existing transaction to this contract
+            const result = await pool.query(
+                'UPDATE one_time_payments SET contract_id = $1 WHERE id = $2 RETURNING *',
+                [req.params.id, transaction_id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'One-time payment not found' });
+            }
+            res.status(200).json(result.rows[0]);
+        } else {
+            // Create new one-time payment
+            if (!amount || !start_date) {
+                return res.status(400).json({ error: 'Missing required fields (amount, start_date)' });
+            }
+            const result = await pool.query(
+                `INSERT INTO one_time_payments (contract_id, amount, currency, customer, description, start_date, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [req.params.id, amount, currency || 'USD', customer, description, start_date, status || 'completed']
+            );
+            res.status(201).json(result.rows[0]);
+        }
+    } catch (error) {
+        handleError(res, error, 'Failed to add contract one-time payment');
+    }
+});
+
+app.delete('/api/contracts/:id/one-time-payments/:paymentId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM one_time_payments WHERE id = $1 AND contract_id = $2 RETURNING *',
+            [req.params.paymentId, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'One-time payment not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove contract one-time payment');
+    }
+});
+
+// Contract Transactions Endpoints (for linking existing transactions to contracts)
+app.get('/api/contracts/:id/transactions', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT ct.*, 
+                    CASE 
+                        WHEN ct.transaction_type = 'recurring' THEN rp.amount || ' ' || rp.currency || ' - ' || rp.frequency
+                        WHEN ct.transaction_type = 'one-time' THEN otp.amount || ' ' || otp.currency || ' - One-time'
+                    END as display_info,
+                    CASE 
+                        WHEN ct.transaction_type = 'recurring' THEN rp.amount
+                        WHEN ct.transaction_type = 'one-time' THEN otp.amount
+                    END as amount,
+                    CASE 
+                        WHEN ct.transaction_type = 'recurring' THEN rp.currency
+                        WHEN ct.transaction_type = 'one-time' THEN otp.currency
+                    END as currency,
+                    CASE 
+                        WHEN ct.transaction_type = 'recurring' THEN rp.frequency
+                        ELSE NULL
+                    END as frequency
+             FROM contract_transactions ct
+             LEFT JOIN recurring_payments rp ON ct.transaction_type = 'recurring' AND ct.transaction_id = rp.id
+             LEFT JOIN one_time_payments otp ON ct.transaction_type = 'one-time' AND ct.transaction_id = otp.id
+             WHERE ct.contract_id = $1 
+             ORDER BY ct.linked_at ASC`,
+            [req.params.id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch contract transactions');
+    }
+});
+
+app.post('/api/contracts/:id/transactions', async (req, res) => {
+    try {
+        const { transaction_type, transaction_id } = req.body;
+        if (!transaction_type || !transaction_id) {
+            return res.status(400).json({ error: 'Missing transaction_type or transaction_id' });
+        }
+        
+        // Check if transaction exists
+        const tableName = transaction_type === 'recurring' ? 'recurring_payments' : 'one_time_payments';
+        const transactionCheck = await pool.query(
+            `SELECT id FROM ${tableName} WHERE id = $1`,
+            [transaction_id]
+        );
+        
+        if (transactionCheck.rows.length === 0) {
+            return res.status(404).json({ error: `${transaction_type} transaction not found` });
+        }
+        
+        // Check if already linked
+        const existingLink = await pool.query(
+            'SELECT id FROM contract_transactions WHERE contract_id = $1 AND transaction_type = $2 AND transaction_id = $3',
+            [req.params.id, transaction_type, transaction_id]
+        );
+        
+        if (existingLink.rows.length > 0) {
+            return res.status(400).json({ error: 'Transaction already linked to this contract' });
+        }
+        
+        // Link transaction to contract
+        const result = await pool.query(
+            `INSERT INTO contract_transactions (contract_id, transaction_type, transaction_id) \
+             VALUES ($1, $2, $3) RETURNING *`,
+            [req.params.id, transaction_type, transaction_id]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to link transaction to contract');
+    }
+});
+
+app.delete('/api/contracts/:id/transactions/:transactionId', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM contract_transactions WHERE id = $1 AND contract_id = $2 RETURNING *',
+            [req.params.transactionId, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract transaction not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove contract transaction');
     }
 });
