@@ -2519,11 +2519,14 @@ app.get('/api/assets/types', async (req, res) => {
 app.get('/api/assets', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT id, name, asset_type, description, location, current_value, status, 
-                   serial_number, purchase_date, purchase_price, current_value, department, 
-                   manufacturer, model, warranty_expiry, created_at, updated_at
-            FROM assets 
-            ORDER BY name ASC
+            SELECT a.id, a.name, a.asset_type, a.description, a.location, a.current_value, a.status, 
+                   a.serial_number, a.purchase_date, a.purchase_price, a.current_value, a.department, 
+                   a.manufacturer, a.model, a.warranty_expiry, a.created_at, a.updated_at,
+                   c.title AS contract_title
+            FROM assets a
+            LEFT JOIN contract_assets ca ON ca.asset_id = a.id
+            LEFT JOIN contracts c ON ca.contract_id = c.id
+            ORDER BY a.name ASC
         `);
         res.json(result.rows);
     } catch (error) {
@@ -2776,5 +2779,238 @@ app.delete('/api/contracts/:id/transactions/:transactionId', async (req, res) =>
         res.json({ success: true });
     } catch (error) {
         handleError(res, error, 'Failed to remove contract transaction');
+    }
+});
+
+// Vendor Management Endpoints
+app.get('/api/vendors', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM vendors ORDER BY name ASC');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch vendors');
+    }
+});
+
+app.post('/api/vendors', async (req, res) => {
+    try {
+        const { name, contact_name, email, phone, address, notes } = req.body;
+        const result = await pool.query(
+            'INSERT INTO vendors (name, contact_name, email, phone, address, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [name, contact_name, email, phone, address, notes]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create vendor');
+    }
+});
+
+app.put('/api/vendors/:id', async (req, res) => {
+    try {
+        const { name, contact_name, email, phone, address, notes } = req.body;
+        const result = await pool.query(
+            'UPDATE vendors SET name = $1, contact_name = $2, email = $3, phone = $4, address = $5, notes = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
+            [name, contact_name, email, phone, address, notes, req.params.id]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update vendor');
+    }
+});
+
+app.delete('/api/vendors/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM vendors WHERE id = $1', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete vendor');
+    }
+});
+
+// Get all assigned benefits for an employee
+app.get('/api/employees/:id/benefits', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT b.name, b.type, eb.benefit_level, 
+                   CASE eb.benefit_level
+                       WHEN 1 THEN b.level_1_value
+                       WHEN 2 THEN b.level_2_value
+                       WHEN 3 THEN b.level_3_value
+                       WHEN 4 THEN b.level_4_value
+                       WHEN 5 THEN b.level_5_value
+                   END AS value,
+                   b.unit, b.description
+            FROM employee_benefits eb
+            JOIN benefits b ON eb.benefit_id = b.id
+            WHERE eb.employee_id = $1
+            ORDER BY b.type, b.name
+        `, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch employee benefits');
+    }
+});
+
+// Get all assigned deductions for an employee
+app.get('/api/employees/:id/deductions', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT d.name, d.type, d.value, d.value_type, d.description
+            FROM employee_deductions ed
+            JOIN deductions d ON ed.deduction_id = d.id
+            WHERE ed.employee_id = $1
+            ORDER BY d.type, d.name
+        `, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch employee deductions');
+    }
+});
+
+// Get payroll history for an employee
+app.get('/api/employees/:id/payroll', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT id, pay_date, gross_amount, net_amount
+            FROM payroll
+            WHERE employee_id = $1
+            ORDER BY pay_date DESC
+        `, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch payroll records');
+    }
+});
+
+// Get payroll details for a payroll record
+app.get('/api/payroll/:payrollId/details', async (req, res) => {
+    try {
+        const { payrollId } = req.params;
+        const result = await pool.query(`
+            SELECT 
+                pd.benefit_value, pd.deduction_value,
+                b.name AS benefit_name, d.name AS deduction_name,
+                pr.score AS performance_score
+            FROM payroll_details pd
+            LEFT JOIN benefits b ON pd.benefit_id = b.id
+            LEFT JOIN deductions d ON pd.deduction_id = d.id
+            LEFT JOIN performance_reviews pr ON pd.performance_review_id = pr.id
+            WHERE pd.payroll_id = $1
+        `, [payrollId]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch payroll details');
+    }
+});
+
+// Get all performance reviews for an employee
+app.get('/api/employees/:id/performance_reviews', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(`
+            SELECT review_date, score, comments
+            FROM performance_reviews
+            WHERE employee_id = $1
+            ORDER BY review_date DESC
+        `, [id]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch performance reviews');
+    }
+});
+
+// --- Benefits CRUD ---
+app.get('/api/benefits', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM benefits ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch benefits');
+    }
+});
+app.post('/api/benefits', async (req, res) => {
+    try {
+        const { name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description } = req.body;
+        const result = await pool.query(
+            `INSERT INTO benefits (name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create benefit');
+    }
+});
+app.put('/api/benefits/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description } = req.body;
+        const result = await pool.query(
+            `UPDATE benefits SET name=$1, type=$2, unit=$3, level_1_value=$4, level_2_value=$5, level_3_value=$6, level_4_value=$7, level_5_value=$8, description=$9 WHERE id=$10 RETURNING *`,
+            [name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description, id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Benefit not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update benefit');
+    }
+});
+// --- Deductions CRUD ---
+app.get('/api/deductions', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM deductions ORDER BY name');
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch deductions');
+    }
+});
+app.post('/api/deductions', async (req, res) => {
+    try {
+        const { name, type, value, value_type, description } = req.body;
+        const result = await pool.query(
+            `INSERT INTO deductions (name, type, value, value_type, description)
+             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+            [name, type, value, value_type, description]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create deduction');
+    }
+});
+app.put('/api/deductions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, type, value, value_type, description } = req.body;
+        const result = await pool.query(
+            `UPDATE deductions SET name=$1, type=$2, value=$3, value_type=$4, description=$5 WHERE id=$6 RETURNING *`,
+            [name, type, value, value_type, description, id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Deduction not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update deduction');
+    }
+});
+app.delete('/api/benefits/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM benefits WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Benefit not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete benefit');
+    }
+});
+app.delete('/api/deductions/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM deductions WHERE id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Deduction not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete deduction');
     }
 });
