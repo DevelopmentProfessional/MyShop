@@ -2874,7 +2874,7 @@ app.get('/api/employees/:id/payroll', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(`
-            SELECT id, pay_date, gross_amount, net_amount
+            SELECT payroll_id, pay_date, gross_salary, net_salary
             FROM payroll
             WHERE employee_id = $1
             ORDER BY pay_date DESC

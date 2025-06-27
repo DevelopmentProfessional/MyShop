@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Payroll - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">My Payroll</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-start pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card bg-dark text-light border-secondary shadow-sm mt-4">
+                    <div class="card-header bg-dark border-secondary">
+                        <h2 class="h5 mb-0"><i class="bi bi-currency-dollar me-2 text-success"></i>Payroll History</h2>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Gross Amount</th>
+                                        <th>Net Amount</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payrollTbody">
+                                    <!-- Payroll records will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Payroll Details Modal -->
+        <div class="modal fade" id="payrollDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-dark text-light">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title">Payroll Details</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="payrollDetailsContent">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="p-5"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="index.html" class="btn btn-outline-primary rounded-5 text-center">
+            <i class="bi bi-arrow-left"></i> Profile
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Placeholder: Replace with actual employee ID from session/auth
+    const EMPLOYEE_ID = 1;
+    const API_URL = window.location.origin;
+    async function fetchPayroll() {
+        const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/payroll`);
+        if (!res.ok) {
+            document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-danger'>Failed to load payroll records.</td></tr>`;
+            return;
+        }
+        const payroll = await res.json();
+        if (!payroll.length) {
+            document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-muted text-center'>No payroll records found.</td></tr>`;
+            return;
+        }
+        document.getElementById('payrollTbody').innerHTML = payroll.map(p => `
+            <tr>
+                <td>${p.pay_date}</td>
+                <td>$${Number(p.gross_salary).toFixed(2)}</td>
+                <td>$${Number(p.net_salary).toFixed(2)}</td>
+                <td><button class='btn btn-sm btn-outline-info' onclick='showPayrollDetails(${p.payroll_id})'>View</button></td>
+            </tr>
+        `).join('');
+    }
+    async function showPayrollDetails(payrollId) {
+        const res = await fetch(`${API_URL}/api/payroll/${payrollId}/details`);
+        if (!res.ok) {
+            document.getElementById('payrollDetailsContent').innerHTML = `<div class='text-danger'>Failed to load details.</div>`;
+        } else {
+            const details = await res.json();
+            if (!details.length) {
+                document.getElementById('payrollDetailsContent').innerHTML = `<div class='text-muted'>No details found for this payroll record.</div>`;
+            } else {
+                document.getElementById('payrollDetailsContent').innerHTML = `
+                    <table class='table table-dark table-hover align-middle'>
+                        <thead class='table-secondary'>
+                            <tr>
+                                <th>Benefit</th>
+                                <th>Deduction</th>
+                                <th>Performance Review</th>
+                                <th>Benefit Value</th>
+                                <th>Deduction Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${details.map(d => `
+                                <tr>
+                                    <td>${d.benefit_name || ''}</td>
+                                    <td>${d.deduction_name || ''}</td>
+                                    <td>${d.performance_score !== null ? d.performance_score : ''}</td>
+                                    <td>${d.benefit_value !== null ? d.benefit_value : ''}</td>
+                                    <td>${d.deduction_value !== null ? d.deduction_value : ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+        const modal = new bootstrap.Modal(document.getElementById('payrollDetailsModal'));
+        modal.show();
+    }
+    document.addEventListener('DOMContentLoaded', fetchPayroll);
+    </script>
+</body>
+</html> 
