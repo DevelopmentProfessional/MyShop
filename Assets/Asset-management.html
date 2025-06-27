@@ -324,6 +324,7 @@
                 
                 const assetName = asset.name || 'Unnamed Asset';
                 const assetValue = asset.current_value ? `$${Number(asset.current_value).toFixed(2)}` : 'N/A';
+                const contractTitle = asset.contract_title ? asset.contract_title : '';
                 
                 return `
                     <div class="col p-1">
@@ -343,6 +344,9 @@
                                     </div>
                                 </div>
                                 ${asset.location ? `<div class="mt-1"><small class="text-muted"><i class="bi bi-geo-alt"></i> ${asset.location}</small></div>` : ''}
+                                <div class="mt-1">
+                                    <span class="badge bg-info w-100 text-dark">${contractTitle}</span>
+                                </div>
                             </div>
                             <div class="card-footer d-flex justify-content-between align-items-center bg-transparent border-0">
                                 <button class="btn btn-sm btn-outline-danger" title="Delete" onclick="deleteAsset(${asset.id})">

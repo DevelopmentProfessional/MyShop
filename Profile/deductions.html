@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Deductions - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">My Deductions</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-start pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card bg-dark text-light border-secondary shadow-sm mt-4">
+                    <div class="card-header bg-dark border-secondary">
+                        <h2 class="h5 mb-0"><i class="bi bi-cash-stack me-2 text-danger"></i>Assigned Deductions</h2>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Deduction</th>
+                                        <th>Type</th>
+                                        <th>Value</th>
+                                        <th>Value Type</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deductionsTbody">
+                                    <!-- Deductions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="p-5"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="index.html" class="btn btn-outline-primary rounded-5 text-center">
+            <i class="bi bi-arrow-left"></i> Profile
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Placeholder: Replace with actual employee ID from session/auth
+    const EMPLOYEE_ID = 1;
+    const API_URL = window.location.origin;
+    async function fetchDeductions() {
+        // This endpoint should return the employee's assigned deductions
+        const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/deductions`);
+        if (!res.ok) {
+            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-danger'>Failed to load deductions.</td></tr>`;
+            return;
+        }
+        const deductions = await res.json();
+        if (!deductions.length) {
+            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-muted text-center'>No deductions assigned.</td></tr>`;
+            return;
+        }
+        document.getElementById('deductionsTbody').innerHTML = deductions.map(d => `
+            <tr>
+                <td>${d.name}</td>
+                <td>${d.type}</td>
+                <td>${d.value}</td>
+                <td>${d.value_type}</td>
+                <td>${d.description || ''}</td>
+            </tr>
+        `).join('');
+    }
+    document.addEventListener('DOMContentLoaded', fetchDeductions);
+    </script>
+</body>
+</html> 

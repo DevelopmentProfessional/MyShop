@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deductions Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">Deductions Management</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-start pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card bg-dark text-light border-secondary shadow-sm mt-4">
+                    <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0"><i class="bi bi-cash-stack me-2 text-danger"></i>All Deductions</h2>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#deductionModal" onclick="openDeductionModal()">
+                            <i class="bi bi-plus-circle"></i> Add Deduction
+                        </button>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Value</th>
+                                        <th>Value Type</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deductionsTbody">
+                                    <!-- Deductions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Deduction Modal -->
+        <div class="modal fade" id="deductionModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-light">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="deductionModalTitle">Add Deduction</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="deductionForm">
+                        <div class="modal-body">
+                            <input type="hidden" id="deductionId">
+                            <div class="mb-2">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="deductionName" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Type</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="deductionType" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Value</label>
+                                <input type="number" class="form-control bg-dark text-light border-secondary" id="deductionValue" step="0.0001" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Value Type</label>
+                                <select class="form-select bg-dark text-light border-secondary" id="deductionValueType" required>
+                                    <option value="percent">Percent</option>
+                                    <option value="fixed">Fixed</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control bg-dark text-light border-secondary" id="deductionDescription" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Deduction</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="p-5"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="index.html" class="btn btn-outline-primary rounded-5 text-center">
+            <i class="bi bi-arrow-left"></i> HR Home
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const API_URL = window.location.origin;
+    let deductions = [];
+    let editingDeductionId = null;
+    async function loadDeductions() {
+        const res = await fetch(`${API_URL}/api/deductions`);
+        if (!res.ok) {
+            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='6' class='text-danger'>Failed to load deductions.</td></tr>`;
+            return;
+        }
+        deductions = await res.json();
+        if (!deductions.length) {
+            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='6' class='text-muted text-center'>No deductions found.</td></tr>`;
+            return;
+        }
+        document.getElementById('deductionsTbody').innerHTML = deductions.map(d => `
+            <tr>
+                <td>${d.name}</td>
+                <td>${d.type}</td>
+                <td>${d.value}</td>
+                <td>${d.value_type}</td>
+                <td>${d.description || ''}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editDeduction(${d.id})"><i class="bi bi-pencil"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    function openDeductionModal() {
+        editingDeductionId = null;
+        document.getElementById('deductionModalTitle').textContent = 'Add Deduction';
+        document.getElementById('deductionForm').reset();
+        document.getElementById('deductionId').value = '';
+    }
+    function editDeduction(id) {
+        const d = deductions.find(x => x.id === id);
+        if (!d) return;
+        editingDeductionId = id;
+        document.getElementById('deductionModalTitle').textContent = 'Edit Deduction';
+        document.getElementById('deductionId').value = d.id;
+        document.getElementById('deductionName').value = d.name;
+        document.getElementById('deductionType').value = d.type;
+        document.getElementById('deductionValue').value = d.value;
+        document.getElementById('deductionValueType').value = d.value_type;
+        document.getElementById('deductionDescription').value = d.description || '';
+        const modal = new bootstrap.Modal(document.getElementById('deductionModal'));
+        modal.show();
+    }
+    document.getElementById('deductionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const deduction = {
+            name: document.getElementById('deductionName').value.trim(),
+            type: document.getElementById('deductionType').value.trim(),
+            value: document.getElementById('deductionValue').value,
+            value_type: document.getElementById('deductionValueType').value,
+            description: document.getElementById('deductionDescription').value.trim()
+        };
+        const id = document.getElementById('deductionId').value;
+        let url = `${API_URL}/api/deductions`;
+        let method = 'POST';
+        if (id) {
+            url += `/${id}`;
+            method = 'PUT';
+        }
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(deduction)
+        });
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('deductionModal')).hide();
+            loadDeductions();
+        } else {
+            alert('Failed to save deduction.');
+        }
+    });
+    document.addEventListener('DOMContentLoaded', loadDeductions);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Reviews - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">Performance Reviews</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-start pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card bg-dark text-light border-secondary shadow-sm mt-4">
+                    <div class="card-header bg-dark border-secondary">
+                        <h2 class="h5 mb-0"><i class="bi bi-clipboard-check me-2 text-info"></i>Review History</h2>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Score</th>
+                                        <th>Comments</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reviewsTbody">
+                                    <!-- Reviews will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="p-5"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="index.html" class="btn btn-outline-primary rounded-5 text-center">
+            <i class="bi bi-arrow-left"></i> Profile
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Placeholder: Replace with actual employee ID from session/auth
+    const EMPLOYEE_ID = 1;
+    const API_URL = window.location.origin;
+    async function fetchReviews() {
+        const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/performance_reviews`);
+        if (!res.ok) {
+            document.getElementById('reviewsTbody').innerHTML = `<tr><td colspan='3' class='text-danger'>Failed to load reviews.</td></tr>`;
+            return;
+        }
+        const reviews = await res.json();
+        if (!reviews.length) {
+            document.getElementById('reviewsTbody').innerHTML = `<tr><td colspan='3' class='text-muted text-center'>No reviews found.</td></tr>`;
+            return;
+        }
+        document.getElementById('reviewsTbody').innerHTML = reviews.map(r => `
+            <tr>
+                <td>${r.review_date}</td>
+                <td>${r.score}</td>
+                <td>${r.comments || ''}</td>
+            </tr>
+        `).join('');
+    }
+    document.addEventListener('DOMContentLoaded', fetchReviews);
+    </script>
+</body>
+</html> 

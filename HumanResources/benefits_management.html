@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benefits Management - Shopy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light d-flex flex-column min-vh-100">
+    <header class="text-center bg-dark rounded shadow-sm p-1 sticky-top border-bottom border-secondary">
+        <h1 class="display-4 text-light">Benefits Management</h1>
+    </header>
+    <main class="container-fluid flex-grow-1 d-flex flex-column justify-content-start pb-5 mb-5">
+        <div class="row g-1 p-1 w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card bg-dark text-light border-secondary shadow-sm mt-4">
+                    <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0"><i class="bi bi-gift me-2 text-warning"></i>All Benefits</h2>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#benefitModal" onclick="openBenefitModal()">
+                            <i class="bi bi-plus-circle"></i> Add Benefit
+                        </button>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover align-middle mb-0">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Type</th>
+                                        <th>Unit</th>
+                                        <th>Level 1</th>
+                                        <th>Level 2</th>
+                                        <th>Level 3</th>
+                                        <th>Level 4</th>
+                                        <th>Level 5</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="benefitsTbody">
+                                    <!-- Benefits will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Benefit Modal -->
+        <div class="modal fade" id="benefitModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark text-light">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="benefitModalTitle">Add Benefit</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="benefitForm">
+                        <div class="modal-body">
+                            <input type="hidden" id="benefitId">
+                            <div class="mb-2">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="benefitName" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Type</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="benefitType" required>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Unit</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" id="benefitUnit">
+                            </div>
+                            <div class="mb-2 row g-1">
+                                <div class="col">
+                                    <label class="form-label">Level 1</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="level1" step="0.01">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">Level 2</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="level2" step="0.01">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">Level 3</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="level3" step="0.01">
+                                </div>
+                            </div>
+                            <div class="mb-2 row g-1">
+                                <div class="col">
+                                    <label class="form-label">Level 4</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="level4" step="0.01">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label">Level 5</label>
+                                    <input type="number" class="form-control bg-dark text-light border-secondary" id="level5" step="0.01">
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control bg-dark text-light border-secondary" id="benefitDescription" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Benefit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div class="p-5"></div>
+    <div class="position-fixed bottom-0 start-0 w-100 bg-white p-2 border-top text-center z-3">
+        <a href="index.html" class="btn btn-outline-primary rounded-5 text-center">
+            <i class="bi bi-arrow-left"></i> HR Home
+        </a>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const API_URL = window.location.origin;
+    let benefits = [];
+    let editingBenefitId = null;
+    async function loadBenefits() {
+        const res = await fetch(`${API_URL}/api/benefits`);
+        if (!res.ok) {
+            document.getElementById('benefitsTbody').innerHTML = `<tr><td colspan='10' class='text-danger'>Failed to load benefits.</td></tr>`;
+            return;
+        }
+        benefits = await res.json();
+        if (!benefits.length) {
+            document.getElementById('benefitsTbody').innerHTML = `<tr><td colspan='10' class='text-muted text-center'>No benefits found.</td></tr>`;
+            return;
+        }
+        document.getElementById('benefitsTbody').innerHTML = benefits.map(b => `
+            <tr>
+                <td>${b.name}</td>
+                <td>${b.type}</td>
+                <td>${b.unit || ''}</td>
+                <td>${b.level_1_value ?? ''}</td>
+                <td>${b.level_2_value ?? ''}</td>
+                <td>${b.level_3_value ?? ''}</td>
+                <td>${b.level_4_value ?? ''}</td>
+                <td>${b.level_5_value ?? ''}</td>
+                <td>${b.description || ''}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editBenefit(${b.id})"><i class="bi bi-pencil"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    function openBenefitModal() {
+        editingBenefitId = null;
+        document.getElementById('benefitModalTitle').textContent = 'Add Benefit';
+        document.getElementById('benefitForm').reset();
+        document.getElementById('benefitId').value = '';
+    }
+    function editBenefit(id) {
+        const b = benefits.find(x => x.id === id);
+        if (!b) return;
+        editingBenefitId = id;
+        document.getElementById('benefitModalTitle').textContent = 'Edit Benefit';
+        document.getElementById('benefitId').value = b.id;
+        document.getElementById('benefitName').value = b.name;
+        document.getElementById('benefitType').value = b.type;
+        document.getElementById('benefitUnit').value = b.unit || '';
+        document.getElementById('level1').value = b.level_1_value ?? '';
+        document.getElementById('level2').value = b.level_2_value ?? '';
+        document.getElementById('level3').value = b.level_3_value ?? '';
+        document.getElementById('level4').value = b.level_4_value ?? '';
+        document.getElementById('level5').value = b.level_5_value ?? '';
+        document.getElementById('benefitDescription').value = b.description || '';
+        const modal = new bootstrap.Modal(document.getElementById('benefitModal'));
+        modal.show();
+    }
+    document.getElementById('benefitForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const benefit = {
+            name: document.getElementById('benefitName').value.trim(),
+            type: document.getElementById('benefitType').value.trim(),
+            unit: document.getElementById('benefitUnit').value.trim(),
+            level_1_value: document.getElementById('level1').value || null,
+            level_2_value: document.getElementById('level2').value || null,
+            level_3_value: document.getElementById('level3').value || null,
+            level_4_value: document.getElementById('level4').value || null,
+            level_5_value: document.getElementById('level5').value || null,
+            description: document.getElementById('benefitDescription').value.trim()
+        };
+        const id = document.getElementById('benefitId').value;
+        let url = `${API_URL}/api/benefits`;
+        let method = 'POST';
+        if (id) {
+            url += `/${id}`;
+            method = 'PUT';
+        }
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(benefit)
+        });
+        if (res.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('benefitModal')).hide();
+            loadBenefits();
+        } else {
+            alert('Failed to save benefit.');
+        }
+    });
+    document.addEventListener('DOMContentLoaded', loadBenefits);
+    </script>
+</body>
+</html> 
