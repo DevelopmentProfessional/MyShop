@@ -124,9 +124,11 @@
         let employees = [];
         let activeRotations = [];
         let currentSchedule = [];
+        let isInitialized = false; // Flag to prevent multiple initializations
 
         // Load schedule data
         async function loadSchedule() {
+            console.log('Debug - loadSchedule() called');
             try {
                 // Use a date range that includes the dates in your data
                 // Start from a few days ago to include past assignments
@@ -150,6 +152,7 @@
 
         // Load employees
         async function loadEmployees() {
+            console.log('Debug - loadEmployees() called');
             try {
                 employees = await shiftSchedulingAPI.getEmployees();
                 populateEmployeeSelection();
@@ -160,6 +163,7 @@
 
         // Load shift templates
         async function loadShiftTemplates() {
+            console.log('Debug - loadShiftTemplates() called');
             try {
                 console.log('Debug - Loading shift templates...');
                 shiftTemplates = await shiftSchedulingAPI.getActiveTemplates();
@@ -233,6 +237,11 @@
         // Populate template selection
         function populateTemplateSelection() {
             console.log('Debug - Populating template selection with:', shiftTemplates);
+            if (!shiftTemplates || shiftTemplates.length === 0) {
+                console.log('Debug - No templates to populate');
+                return;
+            }
+            
             const select = $('#selectedTemplate');
             select.empty().append('<option value="">Choose a shift template</option>');
             
@@ -343,7 +352,7 @@
                 $('#shiftAssignmentModal').modal('hide');
                 form[0].reset();
                 $('#employeeSelectionList input').prop('checked', false);
-                loadSchedule();
+                console.log('Debug - Assignment created, modal closed');
             } catch (error) {
                 console.error('Error saving assignment:', error);
                 alert('Failed to create assignment. Please try again.');
@@ -362,18 +371,22 @@
 
         // Initialize
         $(document).ready(() => {
-            loadSchedule();
-            loadEmployees();
-            loadShiftTemplates();
-            loadActiveRotations();
-            
-            // Set default dates
-            const today = new Date().toISOString().split('T')[0];
-            $('#assignmentDate').val(today);
-            
-            // Set default times
-            $('#templateStartTime').val('09:00');
-            $('#templateEndTime').val('17:00');
+            if (!isInitialized) {
+                loadSchedule();
+                loadEmployees();
+                loadShiftTemplates();
+                loadActiveRotations();
+                
+                // Set default dates
+                const today = new Date().toISOString().split('T')[0];
+                $('#assignmentDate').val(today);
+                
+                // Set default times
+                $('#templateStartTime').val('09:00');
+                $('#templateEndTime').val('17:00');
+                
+                isInitialized = true;
+            }
         });
     </script>
 </body>
