@@ -53,10 +53,27 @@ router.get('/shift-templates/active', async (req, res) => {
 // Create new shift template
 router.post('/shift-templates', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { name, start_time, end_time, description, color } = req.body;
         
         if (!name || !start_time || !end_time) {
-            return res.status(400).json({ success: false, error: 'Name, start time, and end time are required' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Name, start time, and end time are required',
+                details: 'Missing: ' + [
+                    !name ? 'name' : null,
+                    !start_time ? 'start_time' : null,
+                    !end_time ? 'end_time' : null
+                ].filter(Boolean).join(', ')
+            });
         }
 
         const dbPool = checkPool();
@@ -217,10 +234,26 @@ router.get('/shift-rotations/:id', async (req, res) => {
 // Create new shift rotation
 router.post('/shift-rotations', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { name, description, start_date, cycle_duration } = req.body;
 
         if (!name || !start_date) {
-            return res.status(400).json({ success: false, error: 'Name and start date are required' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Name and start date are required',
+                details: 'Missing: ' + [
+                    !name ? 'name' : null,
+                    !start_date ? 'start_date' : null
+                ].filter(Boolean).join(', ')
+            });
         }
 
         const dbPool = checkPool();
@@ -468,10 +501,29 @@ router.get('/shift-assignments', async (req, res) => {
 // Create individual shift assignment
 router.post('/shift-assignments', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { template_id, employee_id, date, start_time, end_time, notes } = req.body;
 
         if (!template_id || !employee_id || !date || !start_time || !end_time) {
-            return res.status(400).json({ success: false, error: 'All fields are required' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'All fields are required',
+                details: 'Missing: ' + [
+                    !template_id ? 'template_id' : null,
+                    !employee_id ? 'employee_id' : null,
+                    !date ? 'date' : null,
+                    !start_time ? 'start_time' : null,
+                    !end_time ? 'end_time' : null
+                ].filter(Boolean).join(', ')
+            });
         }
 
         const dbPool = checkPool();
@@ -573,11 +625,27 @@ router.delete('/shift-assignments/:id', async (req, res) => {
 // Create assignments from rotation
 router.post('/shift-rotations/:id/generate-assignments', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { id } = req.params;
         const { start_date, days_count } = req.body;
 
         if (!start_date || !days_count) {
-            return res.status(400).json({ success: false, error: 'Start date and days count are required' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Start date and days count are required',
+                details: 'Missing: ' + [
+                    !start_date ? 'start_date' : null,
+                    !days_count ? 'days_count' : null
+                ].filter(Boolean).join(', ')
+            });
         }
 
         const dbPool = checkPool();
@@ -620,10 +688,31 @@ router.get('/shift-recurring-patterns', async (req, res) => {
 // Create recurring shift pattern
 router.post('/shift-recurring-patterns', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { template_id, employee_id, pattern_type, start_date, end_date, start_time, end_time, notes } = req.body;
 
         if (!template_id || !employee_id || !pattern_type || !start_date || !end_date || !start_time || !end_time) {
-            return res.status(400).json({ success: false, error: 'All fields are required' });
+            return res.status(400).json({ 
+                success: false, 
+                error: 'All fields are required',
+                details: 'Missing: ' + [
+                    !template_id ? 'template_id' : null,
+                    !employee_id ? 'employee_id' : null,
+                    !pattern_type ? 'pattern_type' : null,
+                    !start_date ? 'start_date' : null,
+                    !end_date ? 'end_date' : null,
+                    !start_time ? 'start_time' : null,
+                    !end_time ? 'end_time' : null
+                ].filter(Boolean).join(', ')
+            });
         }
 
         const dbPool = checkPool();
@@ -727,7 +816,30 @@ router.get('/employees', async (req, res) => {
 // Check for shift conflicts
 router.post('/check-conflicts', async (req, res) => {
     try {
+        // Check if req.body exists
+        if (!req.body) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Request body is missing or invalid',
+                details: 'Please ensure Content-Type is application/json'
+            });
+        }
+
         const { employee_id, date, start_time, end_time, exclude_id } = req.body;
+        
+        if (!employee_id || !date || !start_time || !end_time) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Employee ID, date, start time, and end time are required',
+                details: 'Missing: ' + [
+                    !employee_id ? 'employee_id' : null,
+                    !date ? 'date' : null,
+                    !start_time ? 'start_time' : null,
+                    !end_time ? 'end_time' : null
+                ].filter(Boolean).join(', ')
+            });
+        }
+
         const dbPool = checkPool();
 
         let query = `

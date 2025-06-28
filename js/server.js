@@ -110,9 +110,6 @@ pool.query('SELECT NOW()', (err, res) => {
 // Set the pool for the shift scheduling API
 shiftSchedulingRouter.setPool(pool);
 
-// Mount shift scheduling API routes FIRST (before static file serving)
-app.use('/api', shiftSchedulingRouter.router);
-
 // Middleware
 app.use(express.json({ 
   limit: '922kb',
@@ -123,6 +120,9 @@ app.use(express.json({
   }
 }));
 app.use(cors());
+
+// Mount shift scheduling API routes AFTER middleware setup
+app.use('/api', shiftSchedulingRouter.router);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
