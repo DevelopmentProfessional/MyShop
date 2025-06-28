@@ -501,8 +501,16 @@ router.get('/shift-assignments', async (req, res) => {
 // Create individual shift assignment
 router.post('/shift-assignments', async (req, res) => {
     try {
+        console.log('=== SHIFT ASSIGNMENT CREATE REQUEST ===');
+        console.log('Request headers:', req.headers);
+        console.log('Request body:', req.body);
+        console.log('Request body type:', typeof req.body);
+        console.log('Request body keys:', req.body ? Object.keys(req.body) : 'undefined');
+        console.log('=====================================');
+
         // Check if req.body exists
         if (!req.body) {
+            console.log('ERROR: req.body is undefined or null');
             return res.status(400).json({ 
                 success: false, 
                 error: 'Request body is missing or invalid',
@@ -511,6 +519,15 @@ router.post('/shift-assignments', async (req, res) => {
         }
 
         const { template_id, employee_id, date, start_time, end_time, notes } = req.body;
+
+        console.log('Destructured values:', {
+            template_id,
+            employee_id,
+            date,
+            start_time,
+            end_time,
+            notes
+        });
 
         if (!template_id || !employee_id || !date || !start_time || !end_time) {
             return res.status(400).json({ 
@@ -558,6 +575,7 @@ router.post('/shift-assignments', async (req, res) => {
             WHERE sa.id = $1
         `, [rows[0].id]);
 
+        console.log('Assignment created successfully:', assignmentResult.rows[0]);
         res.json({ success: true, data: assignmentResult.rows[0] });
     } catch (error) {
         console.error('Error creating shift assignment:', error);
