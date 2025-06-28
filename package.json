@@ -23,9 +23,9 @@
     "multer": "^2.0.1",
     "nodemailer": "^7.0.3",
     "orgchart": "^3.8.0",
+    "pg": "^8.11.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.3.31",
-    "pg": "^8.11.0",
     "puppeteer": "^24.10.2",
     "selfsigned": "^2.1.1"
   },

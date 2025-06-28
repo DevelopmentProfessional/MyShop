@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Review</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-dark text-light">
+
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+            <a href="Projects.html" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>Projects
+            </a>
+            <a href="ProjectOverview.html" class="btn btn-outline-primary" id="projectDetailsLink">
+                <i class="bi bi-gear"></i> Overview
+            </a>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 id="projectTitle">Project Review</h1>
+            <div>
+               
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Project Review Form -->
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Project Review</h5>
+                        <form id="reviewForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reviewStatus" class="form-label">Review Status</label>
+                                        <select class="form-select bg-dark text-light" id="reviewStatus">
+                                            <option value="pending">Pending</option>
+                                            <option value="in_review">In Review</option>
+                                            <option value="approved">Approved</option>
+                                            <option value="rejected">Rejected</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reviewPriority" class="form-label">Priority</label>
+                                        <select class="form-select bg-dark text-light" id="reviewPriority">
+                                            <option value="low">Low</option>
+                                            <option value="medium">Medium</option>
+                                            <option value="high">High</option>
+                                            <option value="critical">Critical</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reviewNotes" class="form-label">Review Notes</label>
+                                <textarea class="form-control bg-dark text-light" id="reviewNotes" rows="4" placeholder="Enter detailed review notes..."></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="recommendations" class="form-label">Recommendations</label>
+                                <textarea class="form-control bg-dark text-light" id="recommendations" rows="3" placeholder="Enter recommendations for improvement..."></textarea>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="saveReview()">Save Review</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Project Metrics -->
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Project Metrics</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong>Total Tasks:</strong> <span id="totalTasks">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Completed Tasks:</strong> <span id="completedTasks">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Team Members:</strong> <span id="teamMembers">0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Resources Assigned:</strong> <span id="resourcesAssigned">0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <strong>Budget Used:</strong> <span id="budgetUsed">$0</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Progress:</strong> <span id="overallProgress">0%</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Timeline Status:</strong> <span id="timelineStatus">-</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Risk Level:</strong> <span id="riskLevel">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <!-- Review History -->
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Review History</h5>
+                        <div id="reviewHistory" class="text-muted">Loading review history...</div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Quick Actions</h5>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success" onclick="approveProject()">
+                                <i class="bi bi-check-circle"></i> Approve Project
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="rejectProject()">
+                                <i class="bi bi-x-circle"></i> Reject Project
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="requestChanges()">
+                                <i class="bi bi-arrow-clockwise"></i> Request Changes
+                            </button>
+                            <button class="btn btn-outline-info" onclick="scheduleFollowUp()">
+                                <i class="bi bi-calendar"></i> Schedule Follow-up
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Charts -->
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Performance Overview</h5>
+                        <canvas id="performanceChart" width="300" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Timeline -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Review Timeline</h5>
+                        <div id="reviewTimeline">Loading timeline...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Follow-up Modal -->
+    <div class="modal fade" id="followUpModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Schedule Follow-up Review</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="followUpForm">
+                        <div class="form-floating mb-3">
+                            <input type="datetime-local" class="form-control bg-dark text-light" id="followUpDate" required>
+                            <label for="followUpDate">Follow-up Date & Time</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <textarea class="form-control bg-dark text-light" id="followUpReason" placeholder="Reason for follow-up" style="height: 80px" required></textarea>
+                            <label for="followUpReason">Reason for Follow-up</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmFollowUp()">Schedule Follow-up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3030';
+        let projectId = new URLSearchParams(window.location.search).get('project_id');
+        let performanceChart;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!projectId) {
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger">Project ID not found. <a href="index.html">Return to projects</a></div></div>';
+                return;
+            }
+
+            // Update the project details link with the correct project ID
+            document.getElementById('projectDetailsLink').href = `ProjectOverview.html?project_id=${projectId}`;
+
+            loadProjectReview();
+        });
+
+        async function loadProjectReview() {
+            try {
+                const [projectRes, tasksRes, teamsRes, resourcesRes, commentsRes] = await Promise.all([
+                    fetch(`${API_URL}/api/projects/${projectId}`),
+                    fetch(`${API_URL}/api/projects/${projectId}/tasks`),
+                    fetch(`${API_URL}/api/projects/${projectId}/teams`),
+                    fetch(`${API_URL}/api/projects/${projectId}/resource-assignments`),
+                    fetch(`${API_URL}/api/projects/${projectId}/comments`)
+                ]);
+                
+                const project = projectRes.ok ? await projectRes.json() : {};
+                const tasks = tasksRes.ok ? await tasksRes.json() : [];
+                const teams = teamsRes.ok ? await teamsRes.json() : [];
+                const resources = resourcesRes.ok ? await resourcesRes.json() : [];
+                const comments = commentsRes.ok ? await commentsRes.json() : [];
+                
+                // Update project title
+                document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Review`;
+                
+                // Load review data
+                loadReviewData(project);
+                
+                // Update metrics
+                updateProjectMetrics(tasks, teams, resources, project);
+                
+                // Load review history
+                loadReviewHistory(project, comments);
+                
+                // Initialize performance chart
+                initializePerformanceChart(tasks, resources);
+                
+                // Load review timeline
+                loadReviewTimeline(project, comments);
+                
+            } catch (error) {
+                console.error('Error loading project review:', error);
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger">Failed to load project review data. <a href="index.html">Return to projects</a></div></div>';
+            }
+        }
+
+        function loadReviewData(project) {
+            document.getElementById('reviewStatus').value = project.review_status || 'pending';
+            document.getElementById('reviewPriority').value = project.priority || 'medium';
+            document.getElementById('reviewNotes').value = project.review_notes || '';
+            document.getElementById('recommendations').value = project.recommendations || '';
+        }
+
+        function updateProjectMetrics(tasks, teams, resources, project) {
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const totalTeamMembers = teams.reduce((total, team) => total + (team.member_count || 0), 0);
+            const totalBudget = resources.reduce((total, res) => total + (parseFloat(res.total_cost) || 0), 0);
+            const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+            
+            document.getElementById('totalTasks').textContent = tasks.length;
+            document.getElementById('completedTasks').textContent = completedTasks;
+            document.getElementById('teamMembers').textContent = totalTeamMembers;
+            document.getElementById('resourcesAssigned').textContent = resources.length;
+            document.getElementById('budgetUsed').textContent = `$${totalBudget.toFixed(2)}`;
+            document.getElementById('overallProgress').textContent = `${progress}%`;
+            
+            // Calculate timeline status
+            const timelineStatus = calculateTimelineStatus(project, tasks);
+            document.getElementById('timelineStatus').textContent = timelineStatus;
+            
+            // Calculate risk level
+            const riskLevel = calculateRiskLevel(tasks, resources, progress);
+            document.getElementById('riskLevel').textContent = riskLevel;
+        }
+
+        function calculateTimelineStatus(project, tasks) {
+            if (!project.created_at || !project.end_date) return 'Not set';
+            
+            const now = new Date();
+            const endDate = new Date(project.end_date);
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const totalTasks = tasks.length;
+            
+            if (now > endDate && completedTasks < totalTasks) {
+                return 'Overdue';
+            } else if (now > endDate && completedTasks === totalTasks) {
+                return 'Completed';
+            } else if (now < endDate) {
+                return 'On Track';
+            }
+            
+            return 'Unknown';
+        }
+
+        function calculateRiskLevel(tasks, resources, progress) {
+            const overdueTasks = tasks.filter(t => {
+                if (!t.end_time) return false;
+                return new Date() > new Date(t.end_time) && t.status !== 'completed';
+            }).length;
+            
+            const totalCost = resources.reduce((sum, res) => sum + (parseFloat(res.total_cost) || 0), 0);
+            
+            if (overdueTasks > 0 || progress < 50) return 'High';
+            if (totalCost > 10000 || progress < 75) return 'Medium';
+            return 'Low';
+        }
+
+        function loadReviewHistory(project, comments) {
+            const history = [];
+            
+            // Add project creation
+            if (project.created_at) {
+                history.push({
+                    date: new Date(project.created_at),
+                    event: 'Project Created',
+                    user: 'System'
+                });
+            }
+            
+            // Add status changes
+            if (project.review_status) {
+                history.push({
+                    date: new Date(project.updated_at || project.created_at),
+                    event: `Status changed to ${project.review_status}`,
+                    user: 'Reviewer'
+                });
+            }
+            
+            // Add recent comments
+            comments.slice(0, 5).forEach(comment => {
+                history.push({
+                    date: new Date(comment.created_at),
+                    event: 'Comment added',
+                    user: comment.author_name || 'Unknown',
+                    details: comment.comment_text
+                });
+            });
+            
+            // Sort by date
+            history.sort((a, b) => b.date - a.date);
+            
+            if (history.length === 0) {
+                document.getElementById('reviewHistory').innerHTML = '<p class="text-muted">No review history available</p>';
+                return;
+            }
+            
+            let html = '';
+            history.forEach(item => {
+                html += `<div class="mb-2">
+                    <div class="small">
+                        <strong>${item.event}</strong>
+                        <br>
+                        <span class="text-muted">${item.user} • ${item.date.toLocaleDateString()}</span>
+                        ${item.details ? `<br><small>${item.details}</small>` : ''}
+                    </div>
+                </div>`;
+            });
+            
+            document.getElementById('reviewHistory').innerHTML = html;
+        }
+
+        function initializePerformanceChart(tasks, resources) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            
+            const taskProgress = tasks.length > 0 ? 
+                Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0;
+            
+            const resourceUtilization = resources.length > 0 ? 
+                Math.round((resources.filter(r => r.status === 'in_use').length / resources.length) * 100) : 0;
+            
+            performanceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Task Progress', 'Resource Utilization'],
+                    datasets: [{
+                        data: [taskProgress, resourceUtilization],
+                        backgroundColor: ['#198754', '#0d6efd'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#fff',
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadReviewTimeline(project, comments) {
+            const timeline = [];
+            
+            // Add project milestones
+            if (project.created_at) {
+                timeline.push({
+                    date: new Date(project.created_at),
+                    event: 'Project Started',
+                    type: 'milestone'
+                });
+            }
+            
+            if (project.end_date) {
+                timeline.push({
+                    date: new Date(project.end_date),
+                    event: 'Project Deadline',
+                    type: 'deadline'
+                });
+            }
+            
+            // Add review events
+            comments.forEach(comment => {
+                timeline.push({
+                    date: new Date(comment.created_at),
+                    event: 'Review Comment',
+                    type: 'comment',
+                    details: comment.comment_text
+                });
+            });
+            
+            // Sort by date
+            timeline.sort((a, b) => a.date - b.date);
+            
+            if (timeline.length === 0) {
+                document.getElementById('reviewTimeline').innerHTML = '<p class="text-muted">No timeline events available</p>';
+                return;
+            }
+            
+            let html = '<div class="timeline">';
+            timeline.forEach(item => {
+                const icon = item.type === 'milestone' ? 'bi-flag' : 
+                           item.type === 'deadline' ? 'bi-calendar-x' : 'bi-chat';
+                const color = item.type === 'milestone' ? 'text-success' : 
+                            item.type === 'deadline' ? 'text-danger' : 'text-info';
+                
+                html += `<div class="d-flex align-items-start mb-3">
+                    <i class="bi ${icon} ${color} me-3 mt-1"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-bold">${item.event}</div>
+                        <div class="text-muted small">${item.date.toLocaleDateString()}</div>
+                        ${item.details ? `<div class="small mt-1">${item.details}</div>` : ''}
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            
+            document.getElementById('reviewTimeline').innerHTML = html;
+        }
+
+        async function saveReview() {
+            const status = document.getElementById('reviewStatus').value;
+            const priority = document.getElementById('reviewPriority').value;
+            const notes = document.getElementById('reviewNotes').value;
+            const recommendations = document.getElementById('recommendations').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        review_status: status,
+                        priority: priority,
+                        review_notes: notes,
+                        recommendations: recommendations
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Review saved successfully!');
+                    loadProjectReview();
+                } else {
+                    alert('Failed to save review');
+                }
+            } catch (error) {
+                console.error('Error saving review:', error);
+                alert('Failed to save review');
+            }
+        }
+
+        function approveProject() {
+            document.getElementById('reviewStatus').value = 'approved';
+            document.getElementById('reviewNotes').value += '\n\nProject approved on ' + new Date().toLocaleString();
+            saveReview();
+        }
+
+        function rejectProject() {
+            document.getElementById('reviewStatus').value = 'rejected';
+            document.getElementById('reviewNotes').value += '\n\nProject rejected on ' + new Date().toLocaleString();
+            saveReview();
+        }
+
+        function requestChanges() {
+            document.getElementById('reviewStatus').value = 'in_review';
+            document.getElementById('reviewNotes').value += '\n\nChanges requested on ' + new Date().toLocaleString();
+            saveReview();
+        }
+
+        function scheduleFollowUp() {
+            const modal = new bootstrap.Modal(document.getElementById('followUpModal'));
+            modal.show();
+        }
+
+        async function confirmFollowUp() {
+            const followUpDate = document.getElementById('followUpDate').value;
+            const reason = document.getElementById('followUpReason').value;
+            
+            if (!followUpDate || !reason) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        comment_text: `Follow-up scheduled for ${new Date(followUpDate).toLocaleString()}. Reason: ${reason}`,
+                        author_name: 'Reviewer'
+                    })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('followUpModal')).hide();
+                    document.getElementById('followUpForm').reset();
+                    loadProjectReview();
+                    alert('Follow-up scheduled successfully!');
+                } else {
+                    alert('Failed to schedule follow-up');
+                }
+            } catch (error) {
+                console.error('Error scheduling follow-up:', error);
+                alert('Failed to schedule follow-up');
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Teams</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-dark text-light">
+
+    <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
+            <a href="Projects.html" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i>Projects
+            </a>
+            <a href="ProjectOverview.html" class="btn btn-outline-primary" id="projectDetailsLink">
+                <i class="bi bi-gear"></i> Overview
+            </a>
+        </div>
+    </nav>
+
+
+    <div class="container-fluid py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 id="projectTitle">Project Teams</h1>
+            <div>
+               
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Project Teams</h5>
+            <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#assignTeamModal">
+                <i class="bi bi-plus-circle"></i> Assign Team
+            </button>
+        </div>
+
+        <div id="teamsContent">Loading teams...</div>
+
+        <!-- Team Performance Summary -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Team Performance</h5>
+                        <div id="teamPerformanceContent">Loading performance data...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title">Workload Distribution</h5>
+                        <div id="workloadContent">Loading workload data...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Team Modal -->
+    <div class="modal fade" id="assignTeamModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Assign Team to Project</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-floating mb-3">
+                        <select class="form-select bg-dark text-light" id="teamSelect">
+                            <option value="">Select a team...</option>
+                        </select>
+                        <label for="teamSelect">Team</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="date" class="form-control bg-dark text-light" id="assignmentDate" required>
+                        <label for="assignmentDate">Assignment Date</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control bg-dark text-light" id="assignmentNotes" placeholder="Notes" style="height: 80px"></textarea>
+                        <label for="assignmentNotes">Assignment Notes</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="assignTeamToProject()">Assign Team</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Details Modal -->
+    <div class="modal fade" id="teamDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title" id="teamDetailsTitle">Team Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="teamDetailsContent">Loading team details...</div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = 'http://localhost:3030';
+        let projectId = new URLSearchParams(window.location.search).get('project_id');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!projectId) {
+                document.body.innerHTML = '<div class="container mt-5"><div class="alert alert-danger">Project ID not found. <a href="index.html">Return to projects</a></div></div>';
+                return;
+            }
+
+            // Update the project details link with the correct project ID
+            document.getElementById('projectDetailsLink').href = `ProjectOverview.html?project_id=${projectId}`;
+
+            loadProjectTeams();
+            setDefaultAssignmentDate();
+        });
+
+        function setDefaultAssignmentDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('assignmentDate').value = today;
+        }
+
+        async function loadProjectTeams() {
+            try {
+                const [projectRes, teamsRes, projectTeamsRes, employeesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/projects/${projectId}`),
+                    fetch(`${API_URL}/api/teams`),
+                    fetch(`${API_URL}/api/projects/${projectId}/teams`),
+                    fetch(`${API_URL}/api/employees`)
+                ]);
+                
+                const project = projectRes.ok ? await projectRes.json() : {};
+                const teams = teamsRes.ok ? await teamsRes.json() : [];
+                const projectTeams = projectTeamsRes.ok ? await projectTeamsRes.json() : [];
+                const employees = employeesRes.ok ? await employeesRes.json() : [];
+                
+                // Update project title
+                document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Teams`;
+                
+                // Populate team select
+                const teamSelect = document.getElementById('teamSelect');
+                teamSelect.innerHTML = '<option value="">Select a team...</option>';
+                teams.forEach(team => {
+                    teamSelect.innerHTML += `<option value="${team.team_id}">${team.name}</option>`;
+                });
+                
+                // Display project teams
+                displayProjectTeams(projectTeams, employees);
+                
+                // Load performance and workload data
+                loadTeamPerformance(projectTeams, employees);
+                loadWorkloadDistribution(projectTeams, employees);
+                
+            } catch (error) {
+                console.error('Error loading project teams:', error);
+                document.getElementById('teamsContent').innerHTML = '<div class="alert alert-danger">Failed to load teams</div>';
+            }
+        }
+
+        function displayProjectTeams(projectTeams, employees) {
+            let html = '';
+            if (!projectTeams.length) {
+                html = `<div class="text-muted text-center py-4">
+                    <i class="bi bi-people fs-1"></i>
+                    <p class="mt-2">No teams assigned to this project</p>
+                    <p class="small">Click "Assign Team" to add teams to the project</p>
+                </div>`;
+            } else {
+                html = `<div class="row g-3">`;
+                projectTeams.forEach(team => {
+                    const teamMembers = employees.filter(emp => emp.team_id === team.team_id);
+                    const completedTasks = 0; // Placeholder - would come from tasks API
+                    const totalTasks = 0; // Placeholder - would come from tasks API
+                    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                    
+                    html += `<div class="col-md-6 col-lg-4">
+                        <div class="card bg-dark border-secondary h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">${team.name}</h6>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-dark">
+                                            <li><a class="dropdown-item" href="#" onclick="viewTeamDetails(${team.team_id})">
+                                                <i class="bi bi-eye"></i> View Details
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="#" onclick="editTeamAssignment(${team.team_id})">
+                                                <i class="bi bi-pencil"></i> Edit Assignment
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="#" onclick="removeTeamFromProject(${team.team_id})">
+                                                <i class="bi bi-trash"></i> Remove Team
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <p class="card-text small text-muted mb-2">${team.description || 'No description'}</p>
+                                <div class="mb-2">
+                                    <small class="text-muted">Members: ${teamMembers.length}</small>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Progress: ${progress}%</small>
+                                    <div class="progress" style="height: 4px;">
+                                        <div class="progress-bar" role="progressbar" style="width: ${progress}%"></div>
+                                    </div>
+                                </div>
+                                <div class="small">
+                                    <strong>Members:</strong>
+                                    <div class="mt-1">
+                                        ${teamMembers.map(member => `<span class="badge bg-secondary me-1">${member.name}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Assigned: ${team.assigned_at ? new Date(team.assigned_at).toLocaleDateString() : 'Unknown'}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                html += `</div>`;
+            }
+            
+            document.getElementById('teamsContent').innerHTML = html;
+        }
+
+        function loadTeamPerformance(projectTeams, employees) {
+            let html = '';
+            if (!projectTeams.length) {
+                html = '<p class="text-muted">No teams to display performance data</p>';
+            } else {
+                html = '<div class="table-responsive"><table class="table table-dark table-sm">';
+                html += '<thead><tr><th>Team</th><th>Members</th><th>Tasks</th><th>Progress</th></tr></thead><tbody>';
+                
+                projectTeams.forEach(team => {
+                    const teamMembers = employees.filter(emp => emp.team_id === team.team_id);
+                    const completedTasks = 0; // Placeholder
+                    const totalTasks = 0; // Placeholder
+                    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                    
+                    html += `<tr>
+                        <td>${team.name}</td>
+                        <td>${teamMembers.length}</td>
+                        <td>${completedTasks}/${totalTasks}</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar" style="width: ${progress}%">${progress}%</div>
+                            </div>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            document.getElementById('teamPerformanceContent').innerHTML = html;
+        }
+
+        function loadWorkloadDistribution(projectTeams, employees) {
+            let html = '';
+            if (!projectTeams.length) {
+                html = '<p class="text-muted">No teams to display workload data</p>';
+            } else {
+                html = '<div class="table-responsive"><table class="table table-dark table-sm">';
+                html += '<thead><tr><th>Team</th><th>Workload</th><th>Capacity</th><th>Utilization</th></tr></thead><tbody>';
+                
+                projectTeams.forEach(team => {
+                    const teamMembers = employees.filter(emp => emp.team_id === team.team_id);
+                    const workload = 75; // Placeholder - would calculate from tasks
+                    const capacity = 100;
+                    const utilization = Math.round((workload / capacity) * 100);
+                    
+                    let utilizationClass = 'bg-success';
+                    if (utilization > 90) utilizationClass = 'bg-danger';
+                    else if (utilization > 75) utilizationClass = 'bg-warning';
+                    
+                    html += `<tr>
+                        <td>${team.name}</td>
+                        <td>${workload}%</td>
+                        <td>${capacity}%</td>
+                        <td><span class="badge ${utilizationClass}">${utilization}%</span></td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            }
+            
+            document.getElementById('workloadContent').innerHTML = html;
+        }
+
+        async function assignTeamToProject() {
+            const teamId = document.getElementById('teamSelect').value;
+            const assignmentDate = document.getElementById('assignmentDate').value;
+            const notes = document.getElementById('assignmentNotes').value;
+            
+            if (!teamId) {
+                alert('Please select a team');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}/teams`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        team_id: parseInt(teamId),
+                        assigned_at: assignmentDate,
+                        notes: notes
+                    })
+                });
+                
+                if (response.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('assignTeamModal')).hide();
+                    document.getElementById('teamSelect').value = '';
+                    document.getElementById('assignmentNotes').value = '';
+                    loadProjectTeams();
+                } else {
+                    alert('Failed to assign team');
+                }
+            } catch (error) {
+                console.error('Error assigning team:', error);
+                alert('Failed to assign team');
+            }
+        }
+
+        async function removeTeamFromProject(teamId) {
+            if (!confirm('Are you sure you want to remove this team from the project?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}/teams/${teamId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    loadProjectTeams();
+                } else {
+                    alert('Failed to remove team');
+                }
+            } catch (error) {
+                console.error('Error removing team:', error);
+                alert('Failed to remove team');
+            }
+        }
+
+        async function viewTeamDetails(teamId) {
+            try {
+                const [teamRes, employeesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/teams/${teamId}`),
+                    fetch(`${API_URL}/api/employees`)
+                ]);
+                
+                const team = teamRes.ok ? await teamRes.json() : {};
+                const employees = employeesRes.ok ? await employeesRes.json() : [];
+                const teamMembers = employees.filter(emp => emp.team_id === teamId);
+                
+                document.getElementById('teamDetailsTitle').textContent = `Team: ${team.name}`;
+                
+                let html = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Team Information</h6>
+                            <p><strong>Name:</strong> ${team.name}</p>
+                            <p><strong>Description:</strong> ${team.description || 'No description'}</p>
+                            <p><strong>Created:</strong> ${team.created_at ? new Date(team.created_at).toLocaleDateString() : 'Unknown'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Team Members (${teamMembers.length})</h6>
+                            <div class="list-group list-group-flush">
+                `;
+                
+                teamMembers.forEach(member => {
+                    html += `<div class="list-group-item bg-dark text-light border-secondary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>${member.name}</strong><br>
+                                <small class="text-muted">${member.role || 'No role'}</small>
+                            </div>
+                            <span class="badge bg-success">${member.status || 'Active'}</span>
+                        </div>
+                    </div>`;
+                });
+                
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('teamDetailsContent').innerHTML = html;
+                
+                const modal = new bootstrap.Modal(document.getElementById('teamDetailsModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error loading team details:', error);
+                alert('Failed to load team details');
+            }
+        }
+
+        function editTeamAssignment(teamId) {
+            // Placeholder for edit functionality
+            alert('Edit team assignment functionality coming soon');
+        }
+    </script>
+</body>
+</html> 

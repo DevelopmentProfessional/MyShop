@@ -1,0 +1,190 @@
+<div class="row">
+    <div class="col-md-8">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Project Review</h5>
+                <div class="mb-3">
+                    <label for="reviewStatus" class="form-label">Review Status</label>
+                    <select class="form-select bg-dark text-light" id="reviewStatus">
+                        <option value="pending">Pending</option>
+                        <option value="in_review">In Review</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="reviewNotes" class="form-label">Review Notes</label>
+                    <textarea class="form-control bg-dark text-light" id="reviewNotes" rows="4" placeholder="Enter review notes..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveReview()">Save Review</button>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Project Metrics</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Total Tasks:</strong> <span id="totalTasks">0</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Completed Tasks:</strong> <span id="completedTasks">0</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Team Members:</strong> <span id="teamMembers">0</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Resources Assigned:</strong> <span id="resourcesAssigned">0</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Budget Used:</strong> <span id="budgetUsed">$0</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Progress:</strong> <span id="overallProgress">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Review History</h5>
+                <div id="reviewHistory" class="text-muted">Loading review history...</div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success" onclick="approveProject()">
+                        <i class="bi bi-check-circle"></i> Approve Project
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="rejectProject()">
+                        <i class="bi bi-x-circle"></i> Reject Project
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="requestChanges()">
+                        <i class="bi bi-arrow-clockwise"></i> Request Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function initReviewTab(projectId) {
+    loadReviewData(projectId);
+}
+
+async function loadReviewData(projectId) {
+    try {
+        const [projectRes, tasksRes, teamsRes, resourcesRes] = await Promise.all([
+            fetch(`http://localhost:3030/api/projects/${projectId}`),
+            fetch(`http://localhost:3030/api/projects/${projectId}/tasks`),
+            fetch(`http://localhost:3030/api/projects/${projectId}/teams`),
+            fetch(`http://localhost:3030/api/projects/${projectId}/resource-assignments`)
+        ]);
+        
+        const project = projectRes.ok ? await projectRes.json() : {};
+        const tasks = tasksRes.ok ? await tasksRes.json() : [];
+        const teams = teamsRes.ok ? await teamsRes.json() : [];
+        const resources = resourcesRes.ok ? await resourcesRes.json() : [];
+        
+        // Update review status
+        document.getElementById('reviewStatus').value = project.review_status || 'pending';
+        document.getElementById('reviewNotes').value = project.review_notes || '';
+        
+        // Update metrics
+        const completedTasks = tasks.filter(t => t.status === 'completed').length;
+        const totalTeamMembers = teams.reduce((total, team) => total + (team.member_count || 0), 0);
+        const totalBudget = resources.reduce((total, res) => total + (parseFloat(res.total_cost) || 0), 0);
+        const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+        
+        document.getElementById('totalTasks').textContent = tasks.length;
+        document.getElementById('completedTasks').textContent = completedTasks;
+        document.getElementById('teamMembers').textContent = totalTeamMembers;
+        document.getElementById('resourcesAssigned').textContent = resources.length;
+        document.getElementById('budgetUsed').textContent = `$${totalBudget.toFixed(2)}`;
+        document.getElementById('overallProgress').textContent = `${progress}%`;
+        
+        // Load review history (placeholder)
+        document.getElementById('reviewHistory').innerHTML = `
+            <div class="small">
+                <div class="mb-2">
+                    <strong>Created:</strong> ${project.created_at ? new Date(project.created_at).toLocaleDateString() : 'Unknown'}
+                </div>
+                <div class="mb-2">
+                    <strong>Last Updated:</strong> ${project.updated_at ? new Date(project.updated_at).toLocaleDateString() : 'Unknown'}
+                </div>
+                <div class="mb-2">
+                    <strong>Status:</strong> <span class="badge bg-${getStatusBadgeColor(project.review_status)}">${project.review_status || 'pending'}</span>
+                </div>
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading review data:', error);
+        document.getElementById('reviewHistory').innerHTML = '<div class="alert alert-danger">Failed to load review data</div>';
+    }
+}
+
+function getStatusBadgeColor(status) {
+    switch (status) {
+        case 'approved': return 'success';
+        case 'rejected': return 'danger';
+        case 'in_review': return 'warning';
+        default: return 'secondary';
+    }
+}
+
+async function saveReview() {
+    const status = document.getElementById('reviewStatus').value;
+    const notes = document.getElementById('reviewNotes').value;
+    
+    try {
+        const response = await fetch(`http://localhost:3030/api/projects/${projectId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                review_status: status,
+                review_notes: notes
+            })
+        });
+        
+        if (response.ok) {
+            alert('Review saved successfully!');
+            loadReviewData(projectId);
+        } else {
+            alert('Failed to save review');
+        }
+    } catch (error) {
+        console.error('Error saving review:', error);
+        alert('Failed to save review');
+    }
+}
+
+function approveProject() {
+    document.getElementById('reviewStatus').value = 'approved';
+    document.getElementById('reviewNotes').value += '\n\nProject approved on ' + new Date().toLocaleString();
+    saveReview();
+}
+
+function rejectProject() {
+    document.getElementById('reviewStatus').value = 'rejected';
+    document.getElementById('reviewNotes').value += '\n\nProject rejected on ' + new Date().toLocaleString();
+    saveReview();
+}
+
+function requestChanges() {
+    document.getElementById('reviewStatus').value = 'in_review';
+    document.getElementById('reviewNotes').value += '\n\nChanges requested on ' + new Date().toLocaleString();
+    saveReview();
+}
+</script> 

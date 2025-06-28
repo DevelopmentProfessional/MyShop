@@ -1,0 +1,433 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Project Resources</h5>
+    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#multiResourceModal">
+        <i class="bi bi-plus-circle"></i> Add Resources
+    </button>
+</div>
+
+<div id="resourcesContent">Loading resources...</div>
+
+<!-- Multi-Resource Selection Modal -->
+<div class="modal fade" id="multiResourceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Add Resources to Project</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="list-group list-group-flush">
+                            <button class="list-group-item list-group-item-action active" data-resource-type="assets">
+                                <i class="bi bi-box-seam"></i> Assets
+                            </button>
+                            <button class="list-group-item list-group-item-action" data-resource-type="facilities">
+                                <i class="bi bi-building"></i> Facilities
+                            </button>
+                            <button class="list-group-item list-group-item-action" data-resource-type="equipment">
+                                <i class="bi bi-tools"></i> Equipment
+                            </button>
+                            <button class="list-group-item list-group-item-action" data-resource-type="services">
+                                <i class="bi bi-gear"></i> Services
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="mb-3">
+                            <input type="text" class="form-control bg-dark text-light" id="resourceSearch" placeholder="Search resources...">
+                        </div>
+                        <div id="resourceList" class="row g-2"></div>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <h6>Selected Resources</h6>
+                    <div id="selectedResources" class="row g-2"></div>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="assignSelectedResources()">Assign Resources</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resource Assignment Details Modal -->
+<div class="modal fade" id="resourceAssignmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Resource Assignment Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resourceAssignmentForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control bg-dark text-light" id="assignedQuantity" placeholder="Quantity" value="1" min="1" required>
+                                <label for="assignedQuantity">Quantity</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="number" class="form-control bg-dark text-light" id="dailyRate" placeholder="Daily Rate" step="0.01" required>
+                                <label for="dailyRate">Daily Rate ($)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control bg-dark text-light" id="startDate" required>
+                                <label for="startDate">Start Date</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="date" class="form-control bg-dark text-light" id="endDate" required>
+                                <label for="endDate">End Date</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <textarea class="form-control bg-dark text-light" id="assignmentNotes" placeholder="Notes" style="height: 80px"></textarea>
+                        <label for="assignmentNotes">Notes</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmResourceAssignment()">Confirm Assignment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedResources = [];
+let currentResourceType = 'assets';
+
+function initResourcesTab(projectId) {
+    loadResourcesData(projectId);
+    initializeResourceModal();
+}
+
+function initializeResourceModal() {
+    // Resource type selection
+    document.querySelectorAll('[data-resource-type]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('[data-resource-type]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentResourceType = this.dataset.resourceType;
+            loadResourcesByType(currentResourceType);
+        });
+    });
+    
+    // Resource search
+    document.getElementById('resourceSearch')?.addEventListener('input', function() {
+        filterResources(this.value);
+    });
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextMonthStr = nextMonth.toISOString().split('T')[0];
+    
+    document.getElementById('startDate').value = today;
+    document.getElementById('endDate').value = nextMonthStr;
+}
+
+async function loadResourcesData(projectId) {
+    try {
+        const [assetsRes, facilitiesRes, projectResourcesRes, assignmentsRes] = await Promise.all([
+            fetch(`http://localhost:3030/api/assets`),
+            fetch(`http://localhost:3030/api/facilities`),
+            fetch(`http://localhost:3030/api/project-resources`),
+            fetch(`http://localhost:3030/api/projects/${projectId}/resource-assignments`)
+        ]);
+        
+        const assets = assetsRes.ok ? await assetsRes.json() : [];
+        const facilities = facilitiesRes.ok ? await facilitiesRes.json() : [];
+        const projectResources = projectResourcesRes.ok ? await projectResourcesRes.json() : [];
+        const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
+        
+        // Store data for modal
+        window.projectAssets = assets;
+        window.projectFacilities = facilities;
+        window.projectResources = projectResources;
+        
+        // Display assignments
+        let html = '';
+        if (!assignments.length) {
+            html = `<div class="text-muted text-center py-4">
+                <i class="bi bi-box-seam fs-1"></i>
+                <p class="mt-2">No resources assigned to this project</p>
+                <p class="small">Click "Add Resources" to assign assets, facilities, or equipment</p>
+            </div>`;
+        } else {
+            html = `<div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Resource</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Quantity</th>
+                            <th>Duration</th>
+                            <th>Daily Rate</th>
+                            <th>Total Cost</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            assignments.forEach(assignment => {
+                const startDate = new Date(assignment.start_date).toLocaleDateString();
+                const endDate = new Date(assignment.end_date).toLocaleDateString();
+                const duration = `${startDate} - ${endDate}`;
+                
+                let statusBadge = '';
+                switch (assignment.status) {
+                    case 'assigned': statusBadge = '<span class="badge bg-primary">Assigned</span>'; break;
+                    case 'in_use': statusBadge = '<span class="badge bg-success">In Use</span>'; break;
+                    case 'returned': statusBadge = '<span class="badge bg-secondary">Returned</span>'; break;
+                    case 'cancelled': statusBadge = '<span class="badge bg-danger">Cancelled</span>'; break;
+                    default: statusBadge = '<span class="badge bg-warning">Unknown</span>';
+                }
+                
+                html += `<tr>
+                    <td>
+                        <div>
+                            <strong>${assignment.resource_name}</strong>
+                            <br><small class='text-muted'>${assignment.resource_description || 'No description'}</small>
+                        </div>
+                    </td>
+                    <td><span class='badge bg-info'>${assignment.resource_type}</span></td>
+                    <td>${assignment.resource_category}</td>
+                    <td>${assignment.assigned_quantity}</td>
+                    <td>${duration}</td>
+                    <td>$${assignment.daily_rate}</td>
+                    <td>$${assignment.total_cost}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class='btn btn-sm btn-outline-danger' onclick='removeResourceAssignment(${assignment.assignment_id})'>
+                            <i class='bi bi-trash'></i>
+                        </button>
+                    </td>
+                </tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+        }
+        
+        document.getElementById('resourcesContent').innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading resources data:', error);
+        document.getElementById('resourcesContent').innerHTML = '<div class="alert alert-danger">Failed to load resources</div>';
+    }
+}
+
+function loadResourcesByType(type) {
+    const resourceList = document.getElementById('resourceList');
+    let resources = [];
+    
+    switch(type) {
+        case 'assets':
+            resources = window.projectAssets || [];
+            break;
+        case 'facilities':
+            resources = window.projectFacilities || [];
+            break;
+        case 'equipment':
+        case 'services':
+            resources = (window.projectResources || []).filter(r => r.resource_type === type);
+            break;
+    }
+    
+    renderResourceList(resources, type);
+}
+
+function renderResourceList(resources, type) {
+    const resourceList = document.getElementById('resourceList');
+    
+    if (!resources.length) {
+        resourceList.innerHTML = '<div class="col-12 text-center text-muted py-4">No resources available</div>';
+        return;
+    }
+    
+    let html = '';
+    resources.forEach(resource => {
+        const isSelected = selectedResources.some(sr => sr.id === resource.id && sr.type === type);
+        const name = resource.name || resource.resource_name;
+        const description = resource.description || resource.resource_description || '';
+        const category = resource.asset_type || resource.facility_type || resource.category || '';
+        
+        html += `<div class="col-md-6 col-lg-4">
+            <div class="card bg-dark border-secondary h-100 ${isSelected ? 'border-success' : ''}" 
+                 onclick="toggleResourceSelection('${type}', ${resource.id || resource.facility_id || resource.resource_id}, '${name}', '${description}', '${category}')">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h6 class="card-title mb-1">${name}</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" ${isSelected ? 'checked' : ''} disabled>
+                        </div>
+                    </div>
+                    <p class="card-text small text-muted mb-1">${description}</p>
+                    <span class="badge bg-info">${category}</span>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    resourceList.innerHTML = html;
+}
+
+function toggleResourceSelection(type, id, name, description, category) {
+    const index = selectedResources.findIndex(sr => sr.id === id && sr.type === type);
+    
+    if (index > -1) {
+        selectedResources.splice(index, 1);
+    } else {
+        selectedResources.push({
+            id: id,
+            type: type,
+            name: name,
+            description: description,
+            category: category
+        });
+    }
+    
+    renderSelectedResources();
+    loadResourcesByType(currentResourceType);
+}
+
+function renderSelectedResources() {
+    const selectedContainer = document.getElementById('selectedResources');
+    
+    if (!selectedResources.length) {
+        selectedContainer.innerHTML = '<div class="col-12 text-center text-muted">No resources selected</div>';
+        return;
+    }
+    
+    let html = '';
+    selectedResources.forEach((resource, index) => {
+        html += `<div class="col-md-6 col-lg-4">
+            <div class="card bg-success bg-opacity-25 border-success">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1 small">${resource.name}</h6>
+                            <span class="badge bg-success">${resource.type}</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="removeSelectedResource(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    selectedContainer.innerHTML = html;
+}
+
+function removeSelectedResource(index) {
+    selectedResources.splice(index, 1);
+    renderSelectedResources();
+    loadResourcesByType(currentResourceType);
+}
+
+function filterResources(searchTerm) {
+    const cards = document.querySelectorAll('#resourceList .card');
+    cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        const matches = text.includes(searchTerm.toLowerCase());
+        card.style.display = matches ? 'block' : 'none';
+    });
+}
+
+function assignSelectedResources() {
+    if (!selectedResources.length) {
+        alert('Please select at least one resource');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('resourceAssignmentModal'));
+    modal.show();
+}
+
+async function confirmResourceAssignment() {
+    const form = document.getElementById('resourceAssignmentForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const quantity = parseInt(document.getElementById('assignedQuantity').value);
+    const dailyRate = parseFloat(document.getElementById('dailyRate').value);
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const notes = document.getElementById('assignmentNotes').value;
+    
+    try {
+        for (const resource of selectedResources) {
+            const response = await fetch(`http://localhost:3030/api/projects/${projectId}/resource-assignments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resourceType: resource.type,
+                    resourceId: resource.id,
+                    assignedQuantity: quantity,
+                    startDate: startDate,
+                    endDate: endDate,
+                    dailyRate: dailyRate,
+                    notes: notes
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to assign ${resource.name}`);
+            }
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('resourceAssignmentModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('multiResourceModal')).hide();
+        
+        selectedResources = [];
+        renderSelectedResources();
+        document.getElementById('resourceAssignmentForm').reset();
+        
+        loadResourcesData(projectId);
+        
+        alert('Resources assigned successfully!');
+        
+    } catch (error) {
+        console.error('Error assigning resources:', error);
+        alert('Failed to assign resources: ' + error.message);
+    }
+}
+
+async function removeResourceAssignment(assignmentId) {
+    if (!confirm('Are you sure you want to remove this resource assignment?')) return;
+    
+    try {
+        const response = await fetch(`http://localhost:3030/api/projects/${projectId}/resource-assignments/${assignmentId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadResourcesData(projectId);
+        } else {
+            alert('Failed to remove resource assignment');
+        }
+    } catch (error) {
+        console.error('Error removing resource assignment:', error);
+        alert('Failed to remove resource assignment');
+    }
+}
+</script> 

@@ -18,9 +18,14 @@ const nodemailer = require('nodemailer');
 const puppeteer = require('puppeteer');
 const multer = require('multer');
 const helmet = require('helmet');
+
+// Import shift scheduling API
+const shiftSchedulingRouter = require('./shift-scheduling-api');
+
 const app = express();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3030;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 // Better environment detection
 const isOnRender = process.env.RENDER || process.env.RENDER_EXTERNAL_URL || process.env.RENDER_INTERNAL_URL;
@@ -54,15 +59,59 @@ console.log('isLocalDevelopment:', isLocalDevelopment);
 console.log('DATABASE_URL set:', !!dbUrl);
 console.log('==============================');
 
-pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-    require: true
-  },
-  statement_timeout: 30000, // 30 seconds
-  query_timeout: 30000
+if (dbUrl) {
+    // Use remote database with SSL
+    console.log('Using remote database with SSL');
+    pool = new Pool({
+        connectionString: dbUrl,
+        ssl: {
+            rejectUnauthorized: false,
+            require: true
+        },
+        statement_timeout: 30000, // 30 seconds
+        query_timeout: 30000
+    });
+} else {
+    // Use local database without SSL
+    console.log('Using local database without SSL');
+    const localConfig = {
+        host: 'localhost',
+        user: 'postgres',
+        database: 'shopy_db',
+        port: 5432,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        password: process.env.DB_PASSWORD || '' // Always provide a password string
+    };
+    
+    console.log('Local database config:', { ...localConfig, password: localConfig.password ? '[SET]' : '[EMPTY]' });
+    console.log('Password type:', typeof localConfig.password);
+    console.log('Password value:', localConfig.password === '' ? 'empty string' : localConfig.password);
+    
+    pool = new Pool(localConfig);
+}
+
+// Test the database connection immediately
+pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
 });
+
+// Test connection
+pool.query('SELECT NOW()', (err, res) => {
+    if (err) {
+        console.error('Database connection test failed:', err);
+    } else {
+        console.log('Database connection test successful:', res.rows[0]);
+    }
+});
+
+// Set the pool for the shift scheduling API
+shiftSchedulingRouter.setPool(pool);
+
+// Mount shift scheduling API routes FIRST (before static file serving)
+app.use('/api', shiftSchedulingRouter.router);
 
 // Middleware
 app.use(express.json({ 
@@ -108,7 +157,6 @@ app.use(['/payments', '/Payments'],                   express.static(path.join(_
 app.use(['/products', '/Products'],                   express.static(path.join(__dirname, '..', 'Products')));        app.get(['/products', '/Products'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Products', 'index.html')); });
 app.use(['/profile', '/Profile'],                     express.static(path.join(__dirname, '..', 'Profile')));         app.get(['/profile', '/Profile'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Profile', 'index.html')); });
 app.use(['/projects', '/Projects'],                   express.static(path.join(__dirname, '..', 'Projects')));        app.get(['/projects', '/Projects'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Projects', 'index.html')); });
-
 
 function handleError(res, error, message, details = false) {
     console.error('Backend error:', error); // Log the real error for debugging
@@ -720,666 +768,66 @@ app.post('/api/payroll', async (req, res) => {
 
 app.get('/api/projects', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM projects ORDER BY start_date DESC');
+        const result = await pool.query('SELECT * FROM projects ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (error) {
-        console.error('Error fetching projects:', error);
+        handleError(res, error, 'Failed to fetch projects');
+    }
+});
+
+app.get('/api/projects/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('SELECT * FROM projects WHERE project_id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch project');
+    }
+});
+
+app.post('/api/projects', async (req, res) => {
+    try {
+        const { name, description, is_template, roi, swot, review_status, created_by } = req.body;
+        const result = await pool.query(
+            `INSERT INTO projects (name, description, is_template, roi, swot, review_status, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [name, description, is_template || false, roi, swot, review_status || 'pending', created_by]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create project');
+    }
+});
+
+app.put('/api/projects/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, is_template, roi, swot, review_status, created_by } = req.body;
+        const result = await pool.query(
+            `UPDATE projects SET name=$1, description=$2, is_template=$3, roi=$4, swot=$5, review_status=$6, created_by=$7 WHERE project_id=$8 RETURNING *`,
+            [name, description, is_template, roi, swot, review_status, created_by, id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update project');
+    }
+});
+
+app.delete('/api/projects/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM projects WHERE project_id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to delete project');
     }
 });
 
 app.get('/api/tasks', async (req, res) => {
     try {
-        const result = await pool.query(`SELECT t.*, p.name as project_name, e.first_name, e.last_name FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id LEFT JOIN employees e ON t.assigned_to = e.employee_id ORDER BY t.due_date`);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching tasks:', error);
-    }
-});
-
-app.post('/api/tasks', async (req, res) => {
-    try {
-        const { project_id, title, description, assigned_to, due_date, priority, status } = req.body;
-        const result = await pool.query('INSERT INTO tasks (project_id, title, description, assigned_to, due_date, priority, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *', [project_id, title, description, assigned_to, due_date, priority, status]);
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Error creating task:', error);
-    }
-});
-
-app.put('/api/tasks/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status, progress } = req.body;
-        const result = await pool.query('UPDATE tasks SET status = $1, progress = $2, updated_at = NOW() WHERE task_id = $3 RETURNING *', [status, progress, id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Task not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Error updating task:', error);
-    }
-});
-
-app.get('/api/boards', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM boards ORDER BY created_at DESC');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching boards:', error);
-    }
-});
-
-app.get('/api/boards/:id/notes', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query(`SELECT n.*, e.first_name, e.last_name FROM notes n LEFT JOIN employees e ON n.created_by = e.employee_id WHERE n.board_id = $1 ORDER BY n.created_at DESC`, [id]);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching notes:', error);
-    }
-});
-
-app.post('/api/boards/:id/notes', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { content, created_by, color } = req.body;
-        const result = await pool.query('INSERT INTO notes (board_id, content, created_by, color) VALUES ($1, $2, $3, $4) RETURNING *', [id, content, created_by, color]);
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error('Error creating note:', error);
-    }
-});
-
-app.get('/api/photos_services', async (req, res) => {
-    try { 
-        const result = await pool.query('SELECT * FROM photos_services'); 
-        res.json(result.rows); 
-    } 
-    catch (error) { 
-        handleError(res, error, 'Failed to fetch service photos', true); 
-    }
-});
-app.get('/api/photos_services/:serviceId', async (req, res) => {
-    try {
-        const { serviceId } = req.params;
-        const result = await pool.query('SELECT * FROM photos_services WHERE service_id = $1', [serviceId]);
-        res.json(result.rows);
-    }
-    catch (error) {
-        handleError(res, error, 'Failed to fetch service photos', true);
-    }
-});
-
-app.post('/api/uploadservicephotos', async (req, res) => {
-  try{ 
-    const { photos } = req.body;
-    // Validate total payload size
-    const totalSize = JSON.stringify(photos).length;
-    if (totalSize > 922 * 1024) {
-      return res.status(413).json({ 
-        success: false, 
-        error: 'Total payload size exceeds limit of 922KB',
-        details: `Current size: ${Math.round(totalSize / 1024)}KB`
-      });
-    }
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const results = [];
-      for (const photo of photos) {
-        const result = await client.query(
-          'INSERT INTO photos_services (service_id, url, filename) VALUES ($1, $2, $3) RETURNING *',
-          [photo.service_id, photo.url, photo.filename]
-        );
-        results.push(result.rows[0]);
-      }
-      await client.query('COMMIT');
-      res.status(201).json({ success: true, photos: results });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to upload service photos',
-        details: error.message
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Server error',
-      details: error.message
-    });
-  }
-});
-
-// Customer Reminder Templates API
-app.get('/api/customer-reminders', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM CustomerReminders ORDER BY name');
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch email templates', true);
-    }
-});
-
-app.post('/api/customer-reminders', async (req, res) => {
-    try {
-        const { name, subject, body } = req.body;
-        if (!name || !subject || !body) {
-            return res.status(400).json({ error: 'Name, subject, and body are required' });
-        }
-        const result = await pool.query(
-            'INSERT INTO CustomerReminders (name, subject, body) VALUES ($1, $2, $3) RETURNING *',
-            [name, subject, body]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create reminder template', true);
-    }
-});
-
-app.put('/api/customer-reminders/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, subject, body } = req.body;
-        if (!name || !subject || !body) {
-            return res.status(400).json({ error: 'Name, subject, and body are required' });
-        }
-        const result = await pool.query(
-            'UPDATE CustomerReminders SET name = $1, subject = $2, body = $3, updatedAt = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
-            [name, subject, body, id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Template not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update reminder template', true);
-    }
-});
-
-app.delete('/api/customer-reminders/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query('DELETE FROM CustomerReminders WHERE id = $1 RETURNING *', [id]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Template not found' });
-        }
-        res.json({ message: 'Reminder template deleted successfully' });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete reminder template', true);
-    }
-});
-
-app.post('/api/send-reminder-email', async (req, res) => {
-    const { templateId, appointmentId } = req.body;
-
-    // -- Diagnostic Logging --
-    console.log(`[send-reminder-email] Received request. Template ID: ${templateId}, Appointment ID: ${appointmentId}`);
-    console.log(`[send-reminder-email] Type of Appointment ID: ${typeof appointmentId}`);
-
-    if (!templateId || !appointmentId) {
-        return res.status(400).json({ error: 'templateId and appointmentId are required' });
-    }
-
-    try {
-        let template, appointmentData;
-
-        if (!dbUrl) {
-            // Use mock data for testing
-            const mockTemplates = [
-                {
-                    id: 1,
-                    name: 'Appointment Reminder',
-                    subject: 'Reminder: Your appointment with {{company.name}}',
-                    body: '<p>Hello {{client.name}},</p><p>This is a reminder for your appointment on {{appointment.date}} at {{appointment.time}}.</p><p>Service: {{service.name}}</p><p>Employee: {{employee.name}}</p>'
-                },
-                {
-                    id: 2,
-                    name: 'Welcome Email',
-                    subject: 'Welcome to {{company.name}}!',
-                    body: '<p>Hello {{client.name}},</p><p>Welcome to {{company.name}}! We\'re excited to have you as a client.</p>'
-                }
-            ];
-            
-            template = mockTemplates.find(t => t.id === parseInt(templateId));
-            if (!template) {
-                return res.status(404).json({ error: 'Template not found' });
-            }
-
-            // Mock appointment data
-            appointmentData = {
-                client_name: 'Test Client',
-                client_email: 'test@example.com',
-                date: '2024-01-15',
-                time: '14:00',
-                service_name: 'Test Service',
-                employee_name: 'Test Employee'
-            };
-        } else {
-            // 1. Fetch the template
-            const templateRes = await pool.query('SELECT * FROM CustomerReminders WHERE id = $1', [templateId]);
-            if (templateRes.rows.length === 0) {
-                return res.status(404).json({ error: 'Template not found' });
-            }
-            template = templateRes.rows[0];
-
-            // 2. Fetch appointment and related data
-            const appointmentRes = await pool.query(
-                `SELECT
-                    a.date, a.time,
-                    c.name as client_name, c.email as client_email,
-                    s.name as service_name,
-                    e.name as employee_name
-                 FROM appointments a
-                 JOIN clients c ON a.client_id = c.id
-                 JOIN services s ON a.service_id = s.id
-                 JOIN employees e ON a.employee_id = e.id
-                 WHERE a.id = $1`,
-                [appointmentId]
-            );
-
-            if (appointmentRes.rows.length === 0) {
-                return res.status(404).json({ error: 'Appointment not found' });
-            }
-            appointmentData = appointmentRes.rows[0];
-        }
-
-        // 3. Replace placeholders
-        const replacements = {
-            '{{client.name}}': appointmentData.client_name,
-            '{{client.email}}': appointmentData.client_email,
-            '{{appointment.date}}': new Date(appointmentData.date).toLocaleDateString(),
-            '{{appointment.time}}': appointmentData.time,
-            '{{appointment.name}}': appointmentData.service_name,
-            '{{service.name}}': appointmentData.service_name,
-            '{{employee.name}}': appointmentData.employee_name,
-            '{{company.name}}': 'Shopy' // Example of a static variable
-        };
-
-        let processedBody = template.body;
-        let processedSubject = template.subject;
-        for (const placeholder in replacements) {
-            const value = replacements[placeholder];
-            // Use a regex with 'g' flag to replace all occurrences
-            processedBody = processedBody.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), value);
-            processedSubject = processedSubject.replace(new RegExp(placeholder.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g'), value);
-        }
-
-        // 4. Send email
-        const emailResult = await sendEmail({
-            to: appointmentData.client_email,
-            subject: processedSubject,
-            html: processedBody
-        });
-
-        if (emailResult.success) {
-            res.json({ message: 'Email sent successfully!', ...emailResult });
-        } else {
-            throw new Error(emailResult.error);
-        }
-
-    } catch (error) {
-        handleError(res, error, 'Failed to send reminder email', true);
-    }
-});
-
-// SSL certificate generation
-const pems = selfsigned.generate([{ name: 'commonName', value: DISPLAY_HOST }], {
-  keySize: 2048,
-  days: 365,
-  algorithm: 'sha256',
-  extensions: [{
-    name: 'subjectAltName',
-    altNames: [
-      { type: 2, value: 'localhost' },
-      { type: 2, value: '127.0.0.1' },
-      { type: 2, value: DISPLAY_HOST },
-      { type: 7, ip: '192.168.4.106' }
-    ]
-  }]
-});
-
-// Test database connection with retry logic
-const testDatabaseConnection = async (retries = 3) => {
-  // Skip database test if we're in test mode
-  if (!dbUrl) {
-    console.log('Skipping database connection test - running in test mode');
-    return true;
-  }
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      const client = await pool.connect();
-      const result = await client.query('SELECT NOW()');
-      client.release();
-      console.log('Database connected successfully');
-      console.log(`Database URL: ${dbUrl ? dbUrl.substring(0, 20) + '...' : 'Not set'}`);
-      console.log(`SSL enabled: ${isOnRender ? 'Yes (Required for Render database)' : 'No (Local development)'}`);
-      console.log(`Environment: ${isOnRender ? 'Render' : 'Local'} (NODE_ENV: ${process.env.NODE_ENV})`);
-      return true;
-    } catch (error) {
-      console.error(`Database connection attempt ${i + 1} failed:`, error.message);
-      if (i === retries - 1) {
-        console.error('All database connection attempts failed');
-        console.error('Please check your DATABASE_URL environment variable');
-        console.error('Make sure your DATABASE_URL is correct and includes SSL parameters');
-        return false;
-      }
-      // Wait 2 seconds before retrying
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-};
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('Global error handler caught:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
-  });
-});
-
-// --- Server Startup ---
-if (!isOnRender) {
-  // Local development: use both HTTPS and HTTP
-  const httpsServer = https.createServer(
-    { key: pems.private, cert: pems.cert },
-    app
-  ).listen(PORT, HOST, () => {
-    console.log(`HTTPS server running at https://${DISPLAY_HOST}:${PORT}`);
-    console.log(`HTTP server running at http://${DISPLAY_HOST}:${PORT}`);
-    console.log(`Environment: Local Development (NODE_ENV: ${process.env.NODE_ENV})`);
-    // Only test database connection if we have a database URL
-    if (dbUrl) {
-      testDatabaseConnection();
-      createTables(); // Ensure tables are created/updated
-    }
-  });
-  
-  // Also start HTTP server for easier development
-  const httpServer = app.listen(PORT + 1, HOST, () => {
-    console.log(`HTTP server running at http://${DISPLAY_HOST}:${PORT + 1}`);
-  });
-  
-  httpsServer.on('error', (error) => {
-    console.error('HTTPS server startup error:', error);
-    process.exit(1);
-  });
-  
-  httpServer.on('error', (error) => {
-    console.error('HTTP server startup error:', error);
-    // Don't exit if HTTP fails, HTTPS might still work
-  });
-} else {
-  // Production (Render): use HTTP only
-  const server = app.listen(PORT, HOST, () => {
-    // Show the Render domain, no port if DOMAIN is set
-    console.log(`HTTP server running at https://${DISPLAY_HOST}`);
-    console.log(`Environment: Render Production (NODE_ENV: ${process.env.NODE_ENV})`);
-    // Only test database connection if we have a database URL
-    if (dbUrl) {
-      testDatabaseConnection();
-      createTables(); // Ensure tables are created/updated
-    }
-  });
-  server.on('error', (error) => {
-    console.error('Server startup error:', error);
-    process.exit(1);
-  });
-}
-
-// Handle unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-app.get('/api/debug/photos-products-table', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT column_name, data_type, is_nullable, column_default 
-      FROM information_schema.columns 
-      WHERE table_name = 'photos_products' 
-      ORDER BY ordinal_position
-    `);
-    console.log('[DEBUG] photos_products table structure:', JSON.stringify(result.rows, null, 2));
-    res.json(result.rows);
-  } catch (error) {
-    console.error('[DEBUG] Error getting photos_products table structure:', error);
-    res.status(500).json({ error: 'Failed to get table structure', details: error.message });
-  }
-});
-
-app.get('/api/debug/appointments-table', async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT column_name, data_type, is_nullable, column_default 
-      FROM information_schema.columns 
-      WHERE table_name = 'appointments' 
-      ORDER BY ordinal_position
-    `);
-    console.log('[DEBUG] appointments table structure:', JSON.stringify(result.rows, null, 2));
-    res.json(result.rows);
-  } catch (error) {
-    console.error('[DEBUG] Error getting appointments table structure:', error);
-    res.status(500).json({ error: 'Failed to get table structure', details: error.message });
-  }
-});
-
-app.post('/api/debug/insert-test-data', async (req, res) => {
-  try {
-    const client = await pool.connect();
-    
-    // Insert test service
-    const serviceResult = await client.query(`
-      INSERT INTO services (name, description, category, price, duration, status) 
-      VALUES ('Test Service', 'A test service', 'Test Category', 50.00, 60, 'active')
-      ON CONFLICT (name) DO NOTHING
-      RETURNING id
-    `);
-    
-    // Insert test client
-    const clientResult = await client.query(`
-      INSERT INTO clients (name, email, phone) 
-      VALUES ('Test Client', 'test@example.com', '555-1234')
-      ON CONFLICT (email) DO NOTHING
-      RETURNING id
-    `);
-    
-    // Insert test employee
-    const employeeResult = await client.query(`
-      INSERT INTO employees (name, email, phone, role, status) 
-      VALUES ('Test Employee', 'employee@example.com', '555-5678', 'Test Role', 'active')
-      ON CONFLICT (email) DO NOTHING
-      RETURNING id
-    `);
-    
-    // Insert test appointment
-    const appointmentResult = await client.query(`
-      INSERT INTO appointments (service_id, client_id, employee_id, date, time, duration, price, status) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *
-    `, [
-      serviceResult.rows[0]?.id || 1,
-      clientResult.rows[0]?.id || 1,
-      employeeResult.rows[0]?.id || 1,
-      new Date().toISOString().split('T')[0], // Today's date
-      '10:00:00',
-      60,
-      50.00,
-      'scheduled'
-    ]);
-    
-    client.release();
-    
-    res.json({
-      message: 'Test data inserted successfully',
-      service: serviceResult.rows[0],
-      client: clientResult.rows[0],
-      employee: employeeResult.rows[0],
-      appointment: appointmentResult.rows[0]
-    });
-  } catch (error) {
-    console.error('[DEBUG] Error inserting test data:', error);
-    res.status(500).json({ error: 'Failed to insert test data', details: error.message });
-  }
-});
-
-// Analytics API endpoints
-app.get('/api/analytics/metrics', async (req, res) => {
-    try {
-        const { days = 30 } = req.query;
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-        const result = await pool.query(`
-            SELECT 
-                COUNT(*) as total_appointments,
-                COUNT(CASE WHEN a.status = 'completed' THEN 1 END) as completed_appointments,
-                SUM(COALESCE(a.price, 0)) as total_revenue,
-                AVG(COALESCE(a.price, 0)) as avg_revenue
-            FROM appointments a
-            WHERE a.date >= $1
-        `, [cutoffDate.toISOString().split('T')[0]]);
-        const servicesResult = await pool.query(`
-            SELECT COUNT(*) as active_services 
-            FROM services 
-            WHERE status = 'active'
-        `);
-        const metrics = result.rows[0];
-        const completionRate = metrics.total_appointments > 0 
-            ? Math.round((metrics.completed_appointments / metrics.total_appointments) * 100) 
-            : 0;
-        res.json({
-            totalAppointments: parseInt(metrics.total_appointments) || 0,
-            completedAppointments: parseInt(metrics.completed_appointments) || 0,
-            completionRate: completionRate,
-            totalRevenue: parseFloat(metrics.total_revenue) || 0,
-            avgRevenue: parseFloat(metrics.avg_revenue) || 0,
-            activeServices: parseInt(servicesResult.rows[0].active_services) || 0
-        });
-    } catch (error) {
-        console.error('Analytics metrics error:', error);
-        handleError(res, error, 'Failed to fetch analytics metrics', true);
-    }
-});
-
-app.get('/api/analytics/trends', async (req, res) => {
-    try {
-        const { days = 7 } = req.query;
-        const trends = [];
-        const labels = [];
-        for (let i = parseInt(days) - 1; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            const result = await pool.query(`
-                SELECT COUNT(*) as count
-                FROM appointments a
-                WHERE a.date = $1
-            `, [dateStr]);
-            trends.push(parseInt(result.rows[0].count) || 0);
-            labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-        }
-        res.json({ labels, data: trends });
-    } catch (error) {
-        console.error('Analytics trends error:', error);
-        handleError(res, error, 'Failed to fetch trends data', true);
-    }
-});
-
-app.get('/api/analytics/service-distribution', async (req, res) => {
-    try {
-        const { days = 30 } = req.query;
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-        const result = await pool.query(`
-            SELECT 
-                s.name,
-                COUNT(a.id) as appointment_count
-            FROM services s
-            LEFT JOIN appointments a ON s.id = a.service_id 
-                AND a.date >= $1
-            WHERE s.status = 'active'
-            GROUP BY s.id, s.name
-            ORDER BY appointment_count DESC
-        `, [cutoffDate.toISOString().split('T')[0]]);
-        const labels = result.rows.map(row => row.name);
-        const data = result.rows.map(row => parseInt(row.appointment_count) || 0);
-        res.json({ labels, data });
-    } catch (error) {
-        console.error('Service distribution error:', error);
-        handleError(res, error, 'Failed to fetch service distribution', true);
-    }
-});
-
-app.get('/api/analytics/staff-performance', async (req, res) => {
-    try {
-        const { days = 30 } = req.query;
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-        const result = await pool.query(`
-            SELECT 
-                e.name,
-                COUNT(a.id) as appointment_count,
-                COUNT(CASE WHEN a.status = 'completed' THEN 1 END) as completed_count
-            FROM employees e
-            LEFT JOIN appointments a ON e.id = a.employee_id 
-                AND a.date >= $1
-            WHERE e.status = 'active'
-            GROUP BY e.id, e.name
-            ORDER BY appointment_count DESC
-        `, [cutoffDate.toISOString().split('T')[0]]);
-        const labels = result.rows.map(row => row.name);
-        const data = result.rows.map(row => parseInt(row.appointment_count) || 0);
-        res.json({ labels, data });
-    } catch (error) {
-        console.error('Staff performance error:', error);
-        handleError(res, error, 'Failed to fetch staff performance', true);
-    }
-});
-
-app.get('/api/analytics/peak-hours', async (req, res) => {
-    try {
-        const { days = 30 } = req.query;
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
-        const result = await pool.query(`
-            SELECT 
-                EXTRACT(HOUR FROM a.time::time) as hour,
-                COUNT(*) as appointment_count
-            FROM appointments a
-            WHERE a.date >= $1 AND a.time IS NOT NULL
-            GROUP BY EXTRACT(HOUR FROM a.time::time)
-            ORDER BY hour
-        `, [cutoffDate.toISOString().split('T')[0]]);
-        // Create array for all 24 hours
-        const hourData = Array(24).fill(0);
-        result.rows.forEach(row => {
-            const hour = parseInt(row.hour);
-            hourData[hour] = parseInt(row.appointment_count) || 0;
-        });
-        const labels = hourData.map((_, i) => `${i.toString().padStart(2, '0')}:00`);
-        const data = hourData;
-        res.json({ labels, data });
-    } catch (error) {
-        console.error('Peak hours error:', error);
-        handleError(res, error, 'Failed to fetch peak hours data', true);
-    }
-});
-
-app.get('/api/analytics/recent-appointments', async (req, res) => {
-    try {
-        const { limit = 10 } = req.query;
         const result = await pool.query(`
             SELECT 
                 a.*,
@@ -1391,1626 +839,553 @@ app.get('/api/analytics/recent-appointments', async (req, res) => {
             LEFT JOIN services s ON a.service_id = s.id
             LEFT JOIN clients c ON a.client_id = c.id
             LEFT JOIN employees e ON a.employee_id = e.id
-            ORDER BY a.date DESC, a.time DESC
-            LIMIT $1
-        `, [parseInt(limit)]);
+            ORDER BY a.date, a.time
+        `);
+        
+        // Transform the result to match the expected format
         const appointments = result.rows.map(row => ({
             ...row,
             service: { name: row.service_name || 'Unknown Service' },
             client: { name: row.client_name || 'Unknown Client', email: row.client_email || '' },
-            employee: { name: row.employee_name || 'Unknown Employee' }
+            employee: { name: row.employee_name || 'Unknown Employee', username: row.employee_name || 'unknown' }
         }));
+        
         res.json(appointments);
     } catch (error) {
-        console.error('Recent appointments error:', error);
-        handleError(res, error, 'Failed to fetch recent appointments', true);
+        console.error('Appointments endpoint error:', error);
+        handleError(res, error, 'Failed to fetch appointments', true);
     }
 });
 
-const createTables = async () => {
-    const client = await pool.connect();
+app.post('/api/appointments', async (req, res) => {
     try {
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS services (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                description TEXT,
-                category VARCHAR(100),
-                price NUMERIC(10, 2) NOT NULL,
-                duration INT NOT NULL,
-                status VARCHAR(20) DEFAULT 'active'
-            );
-            CREATE TABLE IF NOT EXISTS clients (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE,
-                phone VARCHAR(50)
-            );
-            CREATE TABLE IF NOT EXISTS employees (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE,
-                phone VARCHAR(50),
-                role VARCHAR(100),
-                profile_picture TEXT,
-                status VARCHAR(20) DEFAULT 'active'
-            );
-            CREATE TABLE IF NOT EXISTS appointments (
-                id SERIAL PRIMARY KEY,
-                service_id INT REFERENCES services(id),
-                client_id INT REFERENCES clients(id),
-                employee_id INT REFERENCES employees(id),
-                date DATE NOT NULL,
-                time TIME NOT NULL,
-                duration INT,
-                price NUMERIC(10, 2),
-                notes TEXT,
-                status VARCHAR(20) DEFAULT 'scheduled'
-            );
-            CREATE TABLE IF NOT EXISTS photos (
-                id SERIAL PRIMARY KEY,
-                product_id INTEGER,
-                url TEXT,
-                filename TEXT
-            );
-            CREATE TABLE IF NOT EXISTS photos_products (
-                id SERIAL PRIMARY KEY,
-                product_id INTEGER,
-                url TEXT,
-                filename TEXT
-            );
-            CREATE TABLE IF NOT EXISTS photos_services (
-                id SERIAL PRIMARY KEY,
-                service_id INTEGER,
-                url TEXT,
-                filename TEXT
-            );
-        `);
-        // Add the new table separately to avoid issues
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS CustomerReminders (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                subject VARCHAR(255) NOT NULL,
-                body TEXT NOT NULL,
-                createdAt TIMESTAMPTZ DEFAULT NOW(),
-                updatedAt TIMESTAMPTZ DEFAULT NOW()
-            );
-        `);
-        
-        // Add contract-related tables
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS contracts (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                contract_type VARCHAR(100) NOT NULL,
-                status VARCHAR(50) DEFAULT 'draft',
-                department VARCHAR(100),
-                description TEXT,
-                contract_document BYTEA,
-                file_name VARCHAR(255),
-                file_size INTEGER,
-                mime_type VARCHAR(100) DEFAULT 'application/pdf',
-                assigned_employee_id INTEGER,
-                created_by INTEGER NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                expires_at DATE,
-                is_active BOOLEAN DEFAULT true
-            );
-            
-            CREATE TABLE IF NOT EXISTS contract_participants (
-                id SERIAL PRIMARY KEY,
-                contract_id INTEGER NOT NULL,
-                participant_type VARCHAR(50) NOT NULL,
-                participant_id INTEGER,
-                participant_name VARCHAR(255),
-                role VARCHAR(100),
-                email VARCHAR(255),
-                added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            CREATE TABLE IF NOT EXISTS assets (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                asset_type VARCHAR(100) NOT NULL,
-                description TEXT,
-                serial_number VARCHAR(100),
-                purchase_date DATE,
-                purchase_price DECIMAL(10,2),
-                current_value DECIMAL(10,2),
-                location VARCHAR(255),
-                status VARCHAR(50) DEFAULT 'active',
-                assigned_to INTEGER,
-                department VARCHAR(100),
-                manufacturer VARCHAR(255),
-                model VARCHAR(255),
-                warranty_expiry DATE,
-                maintenance_schedule VARCHAR(100),
-                last_maintenance_date DATE,
-                next_maintenance_date DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            CREATE TABLE IF NOT EXISTS contract_assets (
-                id SERIAL PRIMARY KEY,
-                contract_id INTEGER NOT NULL,
-                asset_id INTEGER NOT NULL,
-                role VARCHAR(100),
-                assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            CREATE TABLE IF NOT EXISTS contract_transactions (
-                id SERIAL PRIMARY KEY,
-                contract_id INTEGER NOT NULL,
-                transaction_type VARCHAR(20) NOT NULL,
-                transaction_id INTEGER NOT NULL,
-                linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        
-        console.log('Tables checked/created successfully.');
-        
-        // Check if appointments table needs to be updated with new columns
-        try {
-            const columnsResult = await client.query(`
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'appointments'
-            `);
-            const existingColumns = columnsResult.rows.map(row => row.column_name);
-            
-            if (!existingColumns.includes('duration')) {
-                await client.query('ALTER TABLE appointments ADD COLUMN duration INT');
-                console.log('Added duration column to appointments table');
-            }
-            
-            if (!existingColumns.includes('price')) {
-                await client.query('ALTER TABLE appointments ADD COLUMN price NUMERIC(10, 2)');
-                console.log('Added price column to appointments table');
-            }
-        } catch (error) {
-            console.error('Error updating appointments table:', error);
-        }
-        
-        // Add sample assets if the table is empty
-        try {
-            const assetsCount = await client.query('SELECT COUNT(*) as count FROM assets');
-            if (parseInt(assetsCount.rows[0].count) === 0) {
-                await client.query(`
-                    INSERT INTO assets (name, asset_type, description, serial_number, purchase_date, purchase_price, current_value, location, status, department, manufacturer, model, warranty_expiry) VALUES
-                    ('Dell Latitude 5520', 'Computer', 'Business laptop for office use', 'DL5520-2023-001', '2023-01-15', 1200.00, 900.00, 'IT Department', 'active', 'IT', 'Dell', 'Latitude 5520', '2026-01-15'),
-                    ('HP LaserJet Pro M404n', 'Printer', 'Office printer for document printing', 'HP404N-2023-002', '2023-02-20', 350.00, 280.00, 'Reception Area', 'active', 'Administration', 'HP', 'LaserJet Pro M404n', '2025-02-20'),
-                    ('iPhone 14 Pro', 'Mobile Device', 'Company phone for business communications', 'IP14P-2023-003', '2023-03-10', 999.00, 750.00, 'Sales Department', 'active', 'Sales', 'Apple', 'iPhone 14 Pro', '2025-03-10'),
-                    ('Office Desk Set', 'Furniture', 'Complete desk setup with chair and accessories', 'ODS-2023-004', '2023-01-05', 800.00, 600.00, 'Marketing Office', 'active', 'Marketing', 'IKEA', 'Bekant Series', '2028-01-05'),
-                    ('Canon EOS R6', 'Camera', 'Professional camera for marketing and events', 'CER6-2023-005', '2023-04-15', 2500.00, 2000.00, 'Marketing Department', 'active', 'Marketing', 'Canon', 'EOS R6', '2025-04-15')
-                `);
-                console.log('Sample assets added successfully.');
-            }
-        } catch (error) {
-            console.error('Error adding sample assets:', error);
-        }
-    } catch (error) {
-        console.error('Error creating tables:', error);
-    } finally {
-        client.release();
-    }
-};
-
-// Org chart endpoint: returns all employees with supervisor and department info
-app.get('/api/org-chart', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM employees');
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch org chart');
-    }
-});
-
-// Update an employee's supervisor
-app.post('/api/UpdateEmployeeSupervisor', async (req, res) => {
-    try {
-        const { employee_id, supervisor_id } = req.body;
-        if (!employee_id) {
-            return res.status(400).json({ error: 'employee_id is required' });
-        }
+        const { service_id, client_id, employee_id, date, time, duration, price, status } = req.body;
         const result = await pool.query(
-            'UPDATE employees SET supervisor_id = $1 WHERE id = $2 RETURNING *',
-            [supervisor_id || null, employee_id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Employee not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update employee supervisor');
-    }
-});
-
-// Generate PDF from HTML and data
-app.post('/api/generate-invoice-pdf', async (req, res) => {
-    try {
-        const { html, data } = req.body;
-        // Replace placeholders in html with data
-        let filledHtml = html;
-        for (const key in data) {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            filledHtml = filledHtml.replace(regex, data[key]);
-        }
-        // Generate PDF with puppeteer
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-        await page.setContent(filledHtml, { waitUntil: 'networkidle0' });
-        const pdfBuffer = await page.pdf({ format: 'A4' });
-        await browser.close();
-        res.set({ 'Content-Type': 'application/pdf' });
-        res.send(pdfBuffer);
-    } catch (error) {
-        handleError(res, error, 'Failed to generate invoice PDF');
-    }
-});
-
-// Email PDF invoice
-app.post('/api/email-invoice', async (req, res) => {
-    try {
-        const { email, pdfBuffer, subject, body } = req.body;
-        // Configure nodemailer (use your SMTP settings)
-        let transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: process.env.SMTP_PORT,
-            secure: false,
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            }
-        });
-        let info = await transporter.sendMail({
-            from: process.env.SMTP_FROM || 'no-reply@shopy.com',
-            to: email,
-            subject: subject || 'Your Invoice',
-            text: body || 'Please find your invoice attached.',
-            attachments: [{ filename: 'invoice.pdf', content: Buffer.from(pdfBuffer, 'base64') }]
-        });
-        res.json({ success: true, info });
-    } catch (error) {
-        handleError(res, error, 'Failed to email invoice');
-    }
-});
-
-// Invoice Templates CRUD
-app.get('/api/invoice-templates', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM invoice_templates WHERE is_active = TRUE ORDER BY updated_at DESC');
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch invoice templates');
-    }
-});
-
-app.get('/api/invoice-templates/:id', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM invoice_templates WHERE id = $1 AND is_active = TRUE', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch invoice template');
-    }
-});
-
-app.post('/api/invoice-templates', async (req, res) => {
-    try {
-        const { name, html } = req.body;
-        const result = await pool.query(
-            'INSERT INTO invoice_templates (name, html) VALUES ($1, $2) RETURNING *',
-            [name, html]
+            'INSERT INTO appointments (service_id, client_id, employee_id, date, time, duration, price, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [service_id, client_id, employee_id, date, time, duration, price, status]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to create invoice template');
+        handleError(res, error, 'Check console');
     }
 });
 
-app.put('/api/invoice-templates/:id', async (req, res) => {
+app.put('/api/appointments/:id', async (req, res) => {
     try {
-        const { name, html } = req.body;
+        const { service_id, client_id, employee_id, date, time, duration, price, status } = req.body;
         const result = await pool.query(
-            'UPDATE invoice_templates SET name = $1, html = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
-            [name, html, req.params.id]
+            'UPDATE appointments SET service_id = $1, client_id = $2, employee_id = $3, date = $4, time = $5, duration = $6, price = $7, status = $8 WHERE id = $9 RETURNING *',
+            [service_id, client_id, employee_id, date, time, duration, price, status, req.params.id]
         );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
         res.json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to update invoice template');
+        handleError(res, error, 'Check console');
     }
 });
 
-app.delete('/api/invoice-templates/:id', async (req, res) => {
+app.delete('/api/appointments/:id', async (req, res) => {
     try {
-        const result = await pool.query(
-            'UPDATE invoice_templates SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        res.json({ success: true });
+        await pool.query('DELETE FROM appointments WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Appointment deleted successfully' });
     } catch (error) {
-        handleError(res, error, 'Failed to delete invoice template');
+        handleError(res, error, 'Check console');
     }
 });
 
-// Recruitment Endpoints
-app.get('/api/recruits', async (req, res) => {
+// --- Task Comments ---
+// Get all comments for a task
+app.get('/api/tasks/:taskId/comments', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM recruits ORDER BY created_at DESC');
+        const { taskId } = req.params;
+        const result = await pool.query(
+            `SELECT tc.*, e.name AS author_name FROM task_comments tc
+             LEFT JOIN employees e ON tc.author_id = e.id
+             WHERE tc.task_id = $1 ORDER BY tc.created_at`, [taskId]);
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch recruits');
+        handleError(res, error, 'Failed to fetch comments');
     }
 });
 
-app.post('/api/recruits', async (req, res) => {
+// Add a comment to a task
+app.post('/api/tasks/:taskId/comments', async (req, res) => {
     try {
-        const { name, qualifications } = req.body;
+        const { taskId } = req.params;
+        const { author_id, comment } = req.body;
         const result = await pool.query(
-            'INSERT INTO recruits (name, qualifications) VALUES ($1, $2) RETURNING *',
-            [name, qualifications]
+            'INSERT INTO task_comments (task_id, author_id, comment) VALUES ($1, $2, $3) RETURNING *',
+            [taskId, author_id, comment]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to add recruit');
+        handleError(res, error, 'Failed to add comment');
     }
 });
 
-app.post('/api/recruits/:id/hire', async (req, res) => {
+// --- Resources CRUD ---
+app.get('/api/resources', async (req, res) => {
     try {
-        const recruitRes = await pool.query('SELECT * FROM recruits WHERE id = $1', [req.params.id]);
-        if (recruitRes.rows.length === 0) return res.status(404).json({ error: 'Recruit not found' });
-        const recruit = recruitRes.rows[0];
-        // Insert into employees (add more fields as needed)
-        const empRes = await pool.query(
-            'INSERT INTO employees (name) VALUES ($1) RETURNING *',
-            [recruit.name]
-        );
-        // Update recruit status
-        await pool.query('UPDATE recruits SET status = $1 WHERE id = $2', ['hired', req.params.id]);
-        res.json({ employee: empRes.rows[0], recruit });
-    } catch (error) {
-        handleError(res, error, 'Failed to hire recruit');
-    }
-});
-
-app.delete('/api/recruits/:id', async (req, res) => {
-    try {
-        const result = await pool.query('DELETE FROM recruits WHERE id = $1 RETURNING *', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Recruit not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete recruit');
-    }
-});
-
-// Contract Management Endpoints
-app.get('/api/contracts', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT c.* 
-            FROM contracts c 
-            WHERE c.is_active = TRUE 
-            ORDER BY c.updated_at DESC
-        `);
+        const result = await pool.query('SELECT * FROM resources ORDER BY name');
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch contracts');
+        handleError(res, error, 'Failed to fetch resources');
     }
 });
 
-app.get('/api/contracts/:id', async (req, res) => {
+app.post('/api/resources', async (req, res) => {
     try {
-        const result = await pool.query(`
-            SELECT c.* 
-            FROM contracts c 
-            WHERE c.id = $1 AND c.is_active = TRUE
-        `, [req.params.id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Contract not found' });
-        }
-        
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch contract');
-    }
-});
-
-app.post('/api/contracts', async (req, res) => {
-    try {
-        const { title, contract_type, status, department, description, expires_at } = req.body;
-        const result = await pool.query(`
-            INSERT INTO contracts (title, contract_type, status, department, description, expires_at, created_by) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
-        `, [title, contract_type, status, department, description, expires_at, 1]); // created_by = 1 for demo
-        
-        // Add to history
-        await pool.query(`
-            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-            VALUES ($1, $2, $3, $4)
-        `, [result.rows[0].id, 'created', 'Contract created', 1]);
-        
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create contract');
-    }
-});
-
-app.put('/api/contracts/:id', async (req, res) => {
-    try {
-        const { title, contract_type, status, department, description, expires_at, comment } = req.body;
-        
-        // Convert empty string to null for optional date field
-        const expiryDate = expires_at === '' ? null : expires_at;
-        
-        // Get current contract for comparison
-        const currentContract = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
-        if (currentContract.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
-        
-        const result = await pool.query(`
-            UPDATE contracts 
-            SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
-                expires_at = $6, updated_at = CURRENT_TIMESTAMP 
-            WHERE id = $7 RETURNING *
-        `, [title, contract_type, status, department, description, expiryDate, req.params.id]);
-        
-        // Add to history
-        const historyActions = [];
-        if (currentContract.rows[0].status !== status) {
-            historyActions.push(`Status changed from ${currentContract.rows[0].status} to ${status}`);
-        }
-        if (comment) {
-            historyActions.push(`Comment: ${comment}`);
-        }
-        
-        if (historyActions.length > 0) {
-            await pool.query(`
-                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-                VALUES ($1, $2, $3, $4)
-            `, [req.params.id, 'updated', historyActions.join('; '), 1]);
-        }
-        
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update contract');
-    }
-});
-
-app.delete('/api/contracts/:id', async (req, res) => {
-    try {
+        const { name, type, description } = req.body;
         const result = await pool.query(
-            'UPDATE contracts SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
-        
-        // Add to history
-        await pool.query(`
-            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-            VALUES ($1, $2, $3, $4)
-        `, [req.params.id, 'deleted', 'Contract deleted', 1]);
-        
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete contract');
-    }
-});
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, '..', 'uploads', 'contracts');
-        // Create directory if it doesn't exist
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        // Generate unique filename with timestamp
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
-
-const fileFilter = (req, file, cb) => {
-    // Only allow PDF files
-    if (file.mimetype === 'application/pdf') {
-        cb(null, true);
-    } else {
-        cb(new Error('Only PDF files are allowed'), false);
-    }
-};
-
-const upload = multer({ 
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB limit
-    }
-});
-
-// Contract upload endpoint
-app.post('/api/contracts/upload', upload.single('contract'), async (req, res) => {
-    try {
-        const { title, contract_type, department, description, status, expires_at, comment, contract_id } = req.body;
-        
-        // Convert empty string to null for optional date field
-        const expiryDate = expires_at === '' ? null : expires_at;
-        
-        if (!req.file) {
-            return res.status(400).json({ error: 'No file uploaded' });
-        }
-
-        // If contract_id is provided, update existing contract
-        if (contract_id) {
-            // Check if contract exists
-            const existingContract = await pool.query('SELECT * FROM contracts WHERE id = $1', [contract_id]);
-            if (existingContract.rows.length === 0) {
-                return res.status(404).json({ error: 'Contract not found' });
-            }
-
-            // Update existing contract with new file
-            const result = await pool.query(`
-                UPDATE contracts 
-                SET title = $1, contract_type = $2, status = $3, department = $4, description = $5, 
-                    expires_at = $6, contract_document = $7, file_name = $8, 
-                    file_size = $9, mime_type = $10, updated_at = CURRENT_TIMESTAMP 
-                WHERE id = $11 RETURNING *
-            `, [
-                title || existingContract.rows[0].title,
-                contract_type || existingContract.rows[0].contract_type,
-                status || existingContract.rows[0].status,
-                department || existingContract.rows[0].department,
-                description || existingContract.rows[0].description,
-                expiryDate || existingContract.rows[0].expires_at,
-                fs.readFileSync(req.file.path), // Read file as buffer
-                req.file.originalname,
-                req.file.size,
-                req.file.mimetype,
-                contract_id
-            ]);
-
-            // Clean up the temporary file
-            fs.unlinkSync(req.file.path);
-
-            // Add to history
-            await pool.query(`
-                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-                VALUES ($1, $2, $3, $4)
-            `, [contract_id, 'updated', `Contract updated with new file${comment ? ': ' + comment : ''}`, 1]);
-
-            res.json({ success: true, contract: result.rows[0] });
-        } else {
-            // Create new contract
-            const result = await pool.query(`
-                INSERT INTO contracts (title, contract_type, status, department, description, created_by, 
-                                     contract_document, file_name, file_size, mime_type) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *
-            `, [
-                title || 'Uploaded Contract', 
-                contract_type || 'Service Agreement', 
-                'draft', 
-                department, 
-                description, 
-                1, // created_by
-                fs.readFileSync(req.file.path), // Read file as buffer
-                req.file.originalname,
-                req.file.size,
-                req.file.mimetype
-            ]);
-            
-            // Clean up the temporary file
-            fs.unlinkSync(req.file.path);
-            
-            // Add to history
-            await pool.query(`
-                INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-                VALUES ($1, $2, $3, $4)
-            `, [result.rows[0].id, 'uploaded', 'Contract uploaded', 1]);
-            
-            res.status(201).json({ success: true, contract: result.rows[0] });
-        }
-    } catch (error) {
-        // Clean up file if it exists
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-        handleError(res, error, 'Failed to upload contract');
-    }
-});
-
-// Contract export endpoint
-app.get('/api/contracts/:id/export', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM contracts WHERE id = $1', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract not found' });
-        
-        const contract = result.rows[0];
-        
-        if (!contract.contract_document) {
-            return res.status(404).json({ error: 'No PDF file found for this contract' });
-        }
-        
-        // Add to history
-        await pool.query(`
-            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-            VALUES ($1, $2, $3, $4)
-        `, [req.params.id, 'exported', 'Contract exported', 1]);
-        
-        // Set headers for PDF download
-        res.setHeader('Content-Type', contract.mime_type || 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="${contract.file_name || `contract_${contract.id}.pdf`}"`);
-        res.setHeader('Content-Length', contract.contract_document.length);
-        
-        // Send the PDF buffer
-        res.send(contract.contract_document);
-    } catch (error) {
-        handleError(res, error, 'Failed to export contract');
-    }
-});
-
-// Contract history endpoint
-app.get('/api/contracts/:id/history', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT ch.*, e.name as performed_by_name 
-            FROM contract_history ch 
-            LEFT JOIN employees e ON ch.performed_by = e.id 
-            WHERE ch.contract_id = $1 
-            ORDER BY ch.performed_at DESC
-        `, [req.params.id]);
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch contract history');
-    }
-});
-
-// Serve PDF file from database
-app.get('/api/contracts/:id/pdf', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT contract_document, file_name, mime_type FROM contracts WHERE id = $1', [req.params.id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Contract not found' });
-        }
-        
-        const contract = result.rows[0];
-        
-        if (!contract.contract_document) {
-            return res.status(404).json({ error: 'No PDF file found for this contract' });
-        }
-        
-        // Set headers for PDF download/view
-        res.setHeader('Content-Type', contract.mime_type || 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="${contract.file_name || 'contract.pdf'}"`);
-        res.setHeader('Content-Length', contract.contract_document.length);
-        
-        // Send the PDF buffer
-        res.send(contract.contract_document);
-    } catch (error) {
-        handleError(res, error, 'Failed to serve PDF file');
-    }
-});
-
-// Signature Management Endpoints
-app.get('/api/signatures', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT s.*, e.name as employee_name 
-            FROM signatures s 
-            LEFT JOIN employees e ON s.employee_id = e.id 
-            ORDER BY s.created_at DESC
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch signatures');
-    }
-});
-
-app.post('/api/signatures', async (req, res) => {
-    try {
-        const { signature_name, signature_data } = req.body;
-        if (!signature_name || !signature_data) {
-            return res.status(400).json({ success: false, error: 'Missing signature_name or signature_data' });
-        }
-        // Check if signature_data is too large (e.g., > 800KB)
-        const base64Length = Buffer.byteLength(signature_data, 'utf8');
-        if (base64Length > 800 * 1024) {
-            return res.status(413).json({ success: false, error: 'Signature image is too large. Please use a smaller signature.' });
-        }
-        const result = await pool.query(`
-            INSERT INTO signatures (employee_id, signature_name, signature_data) 
-            VALUES ($1, $2, $3) RETURNING *
-        `, [1, signature_name, signature_data]); // employee_id = 1 for demo
-        res.status(201).json({ success: true, signature: result.rows[0] });
-    } catch (error) {
-        console.error('Error saving signature:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to create signature' });
-    }
-});
-
-app.delete('/api/signatures/:id', async (req, res) => {
-    try {
-        const result = await pool.query('DELETE FROM signatures WHERE id = $1 RETURNING *', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Signature not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete signature');
-    }
-});
-
-// Contract signature endpoint
-app.post('/api/contracts/:id/sign', async (req, res) => {
-    try {
-        const { signature_id, signature_comment } = req.body;
-        const result = await pool.query(`
-            INSERT INTO contract_signatures (contract_id, signature_id, signed_by, signature_comment) 
-            VALUES ($1, $2, $3, $4) RETURNING *
-        `, [req.params.id, signature_id, 1, signature_comment]); // signed_by = 1 for demo
-        
-        // Add to history
-        await pool.query(`
-            INSERT INTO contract_history (contract_id, action_type, action_description, performed_by) 
-            VALUES ($1, $2, $3, $4)
-        `, [req.params.id, 'signed', `Contract signed${signature_comment ? ': ' + signature_comment : ''}`, 1]);
-        
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to sign contract');
-    }
-});
-
-// Update contract PDF endpoint
-const multerPDF = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype !== 'application/pdf') {
-            return cb(new Error('Only PDF files are allowed'));
-        }
-        cb(null, true);
-    }
-});
-
-app.put('/api/contracts/:id/pdf', multerPDF.single('pdf'), async (req, res) => {
-    try {
-        const contractId = req.params.id;
-        if (!req.file) {
-            return res.status(400).json({ success: false, error: 'No PDF file uploaded' });
-        }
-        const { originalname, buffer, size, mimetype } = req.file;
-        // Update the contract_document in the database
-        const result = await pool.query(
-            `UPDATE contracts SET contract_document = $1, file_name = $2, file_size = $3, mime_type = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING *`,
-            [buffer, originalname, size, mimetype, contractId]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, error: 'Contract not found' });
-        }
-        res.json({ success: true, contract: result.rows[0] });
-    } catch (error) {
-        console.error('Error updating contract PDF:', error);
-        res.status(500).json({ success: false, error: error.message || 'Failed to update contract PDF' });
-    }
-});
-
-// Contract Participants Endpoints
-app.get('/api/contracts/:id/participants', async (req, res) => {
-    try {
-        const result = await pool.query(
-            `SELECT cp.*, 
-                    CASE 
-                        WHEN cp.participant_type = 'employee' THEN e.name
-                        WHEN cp.participant_type = 'client' THEN c.name
-                        ELSE cp.participant_name
-                    END as display_name
-             FROM contract_participants cp
-             LEFT JOIN employees e ON cp.participant_type = 'employee' AND cp.participant_id = e.id
-             LEFT JOIN clients c ON cp.participant_type = 'client' AND cp.participant_id = c.id
-             WHERE cp.contract_id = $1 
-             ORDER BY cp.added_at ASC`,
-            [req.params.id]
-        );
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch contract participants');
-    }
-});
-
-app.post('/api/contracts/:id/participants', async (req, res) => {
-    try {
-        const { participant_type, participant_id, participant_name, role, email } = req.body;
-        if (!participant_type || (!participant_id && !participant_name)) {
-            return res.status(400).json({ error: 'Missing participant_type or participant_id/participant_name' });
-        }
-        const result = await pool.query(
-            `INSERT INTO contract_participants (contract_id, participant_type, participant_id, participant_name, role, email) \
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-            [req.params.id, participant_type, participant_id || null, participant_name || null, role || null, email || null]
+            'INSERT INTO resources (name, type, description) VALUES ($1, $2, $3) RETURNING *',
+            [name, type, description]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to add contract participant');
+        handleError(res, error, 'Failed to create resource');
     }
 });
 
-app.delete('/api/contracts/:id/participants/:participantId', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM contract_participants WHERE id = $1 AND contract_id = $2 RETURNING *',
-            [req.params.participantId, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Participant not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to remove contract participant');
-    }
-});
-
-// Recurring Payments Endpoints
-app.get('/api/contracts/:id/recurring-payments', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM recurring_payments WHERE contract_id = $1 ORDER BY start_date ASC',
-            [req.params.id]
-        );
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch recurring payments');
-    }
-});
-
-app.post('/api/contracts/:id/recurring-payments', async (req, res) => {
-    try {
-        const { amount, currency, frequency, start_date, end_date, description, status, transaction_id, link_existing } = req.body;
-        
-        if (link_existing && transaction_id) {
-            // Link existing transaction to this contract
-            const result = await pool.query(
-                'UPDATE recurring_payments SET contract_id = $1 WHERE id = $2 RETURNING *',
-                [req.params.id, transaction_id]
-            );
-            if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'Recurring payment not found' });
-            }
-            res.status(200).json(result.rows[0]);
-        } else {
-            // Create new recurring payment
-            if (!amount || !frequency || !start_date) {
-                return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
-            }
-            const result = await pool.query(
-                `INSERT INTO recurring_payments (contract_id, amount, currency, frequency, start_date, end_date, description, status) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-                [req.params.id, amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active']
-            );
-            res.status(201).json(result.rows[0]);
-        }
-    } catch (error) {
-        handleError(res, error, 'Failed to add contract recurring payment');
-    }
-});
-
-app.delete('/api/contracts/:id/recurring-payments/:paymentId', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM recurring_payments WHERE id = $1 AND contract_id = $2 RETURNING *',
-            [req.params.paymentId, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Recurring payment not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to remove recurring payment');
-    }
-});
-
-// One-Time Payments Endpoints
-app.get('/api/one-time-payments', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM one_time_payments ORDER BY created_at DESC'
-        );
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch one-time payments');
-    }
-});
-
-app.post('/api/one-time-payments', async (req, res) => {
-    try {
-        const { amount, currency, customer, contract_id, description, start_date, status } = req.body;
-        if (!amount || !start_date) {
-            return res.status(400).json({ error: 'Missing required fields (amount, start_date)' });
-        }
-        const result = await pool.query(
-            `INSERT INTO one_time_payments (amount, currency, customer, contract_id, description, start_date, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [amount, currency || 'USD', customer, contract_id || null, description, start_date, status || 'completed']
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create one-time payment');
-    }
-});
-
-app.delete('/api/one-time-payments/:id', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM one_time_payments WHERE id = $1 RETURNING *',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Payment not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete one-time payment');
-    }
-});
-
-// Global Recurring Payments Endpoints (not tied to a contract)
-app.get('/api/recurring-payments', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM recurring_payments ORDER BY created_at DESC'
-        );
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch recurring payments');
-    }
-});
-
-app.post('/api/recurring-payments', async (req, res) => {
-    try {
-        const { amount, currency, frequency, start_date, end_date, description, status, customer } = req.body;
-        if (!amount || !frequency || !start_date) {
-            return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
-        }
-        const result = await pool.query(
-            `INSERT INTO recurring_payments (amount, currency, frequency, start_date, end_date, description, status, customer)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active', customer]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create recurring payment');
-    }
-});
-
-// Get individual recurring payment by ID
-app.get('/api/recurring-payments/:id', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM recurring_payments WHERE id = $1',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Recurring payment not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch recurring payment');
-    }
-});
-
-// Update individual recurring payment by ID
-app.put('/api/recurring-payments/:id', async (req, res) => {
-    try {
-        const { amount, currency, frequency, start_date, end_date, description, status, customer } = req.body;
-        if (!amount || !frequency || !start_date) {
-            return res.status(400).json({ error: 'Missing required fields (amount, frequency, start_date)' });
-        }
-        
-        const result = await pool.query(
-            `UPDATE recurring_payments 
-             SET amount = $1, currency = $2, frequency = $3, start_date = $4, end_date = $5, 
-                 description = $6, status = $7, customer = $8
-             WHERE id = $9 RETURNING *`,
-            [amount, currency || 'USD', frequency, start_date, end_date, description, status || 'active', customer || null, req.params.id]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Recurring payment not found' });
-        }
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update recurring payment');
-    }
-});
-
-// Delete individual recurring payment by ID
-app.delete('/api/recurring-payments/:id', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM recurring_payments WHERE id = $1 RETURNING *',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Recurring payment not found' });
-        }
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete recurring payment');
-    }
-});
-
-// Delete individual recurring payment by ID
-app.delete('/api/recurring-payments/:id', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM recurring_payments WHERE id = $1 RETURNING *',
-            [req.params.id]
-        );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Recurring payment not found' });
-        }
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete recurring payment');
-    }
-});
-
-// Contract Assets Endpoints
-app.get('/api/contracts/:id/assets', async (req, res) => {
+app.put('/api/resources/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(`
-            SELECT ca.id, ca.contract_id, ca.asset_id, ca.role, ca.assigned_at,
-                   a.name, a.asset_type, a.description, a.location, a.current_value, a.status
-            FROM contract_assets ca
-            JOIN assets a ON ca.asset_id = a.id
-            WHERE ca.contract_id = $1
-            ORDER BY a.name
-        `, [id]);
-        res.json(result.rows);
+        const { name, type, description } = req.body;
+        const result = await pool.query(
+            'UPDATE resources SET name=$1, type=$2, description=$3 WHERE resource_id=$4 RETURNING *',
+            [name, type, description, id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found' });
+        res.json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch contract assets');
+        handleError(res, error, 'Failed to update resource');
     }
 });
 
-app.post('/api/contracts/:id/assets', async (req, res) => {
+app.delete('/api/resources/:id', async (req, res) => {
     try {
-        const { asset_id, role } = req.body;
-        if (!asset_id) {
-            return res.status(400).json({ error: 'Missing asset_id' });
-        }
-        const result = await pool.query(
-            `INSERT INTO contract_assets (contract_id, asset_id, role) \
-             VALUES ($1, $2, $3) RETURNING *`,
-            [req.params.id, asset_id, role || null]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to add contract asset');
-    }
-});
-
-app.delete('/api/contracts/:id/assets/:assetId', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'DELETE FROM contract_assets WHERE id = $1 AND contract_id = $2 RETURNING *',
-            [req.params.assetId, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract asset not found' });
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM resources WHERE resource_id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found' });
         res.json({ success: true });
     } catch (error) {
-        handleError(res, error, 'Failed to remove contract asset');
+        handleError(res, error, 'Failed to delete resource');
     }
 });
 
-// Assets Endpoint (for dropdown)
-app.get('/api/assets/types', async (req, res) => {
+// --- Project-Team Assignment ---
+// Get all teams assigned to a project (with members)
+app.get('/api/projects/:projectId/teams', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT DISTINCT asset_type FROM assets WHERE asset_type IS NOT NULL ORDER BY asset_type'
+        const { projectId } = req.params;
+        const teamsResult = await pool.query(
+            `SELECT t.* FROM project_teams pt JOIN teams t ON pt.team_id = t.team_id WHERE pt.project_id = $1`,
+            [projectId]
         );
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching asset types:', error);
-        res.status(500).json({ error: 'Failed to fetch asset types' });
-    }
-});
-
-app.get('/api/assets', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT a.id, a.name, a.asset_type, a.description, a.location, a.current_value, a.status, 
-                   a.serial_number, a.purchase_date, a.purchase_price, a.current_value, a.department, 
-                   a.manufacturer, a.model, a.warranty_expiry, a.created_at, a.updated_at,
-                   c.title AS contract_title
-            FROM assets a
-            LEFT JOIN contract_assets ca ON ca.asset_id = a.id
-            LEFT JOIN contracts c ON ca.contract_id = c.id
-            ORDER BY a.name ASC
-        `);
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch assets');
-    }
-});
-
-app.get('/api/assets/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query(`
-            SELECT id, name, asset_type, description, location, current_value, status, 
-                   serial_number, purchase_date, purchase_price, current_value, department, 
-                   manufacturer, model, warranty_expiry, created_at, updated_at
-            FROM assets 
-            WHERE id = $1
-        `, [id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
-        }
-        
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch asset');
-    }
-});
-
-app.post('/api/assets', async (req, res) => {
-    try {
-        const { name, asset_type, description, location, current_value, status, serial_number, 
-                purchase_date, purchase_price, department, manufacturer, model, warranty_expiry } = req.body;
-        
-        // Validate required fields
-        if (!name || !asset_type || !status) {
-            return res.status(400).json({ error: 'Name, asset type, and status are required' });
-        }
-        
-        const result = await pool.query(`
-            INSERT INTO assets (name, asset_type, description, location, current_value, status, 
-                               serial_number, purchase_date, purchase_price, current_value, 
-                               department, manufacturer, model, warranty_expiry, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-            RETURNING id, name, asset_type, description, location, current_value, status, 
-                      serial_number, purchase_date, purchase_price, current_value, department, 
-                      manufacturer, model, warranty_expiry, created_at, updated_at
-        `, [name, asset_type, description, location, current_value, status, serial_number, 
-            purchase_date, purchase_price, current_value, department, manufacturer, model, warranty_expiry]);
-        
-        
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create asset');
-    }
-});
-
-app.put('/api/assets/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, asset_type, description, location, current_value, status, serial_number, 
-                purchase_date, purchase_price, department, manufacturer, model, warranty_expiry } = req.body;
-        
-        // Validate required fields
-        if (!name || !asset_type || !status) {
-            return res.status(400).json({ error: 'Name, asset type, and status are required' });
-        }
-        
-        const result = await pool.query(`
-            UPDATE assets 
-            SET name = $1, asset_type = $2, description = $3, location = $4, current_value = $5, status = $6,
-                serial_number = $7, purchase_date = $8, purchase_price = $9, current_value = $10,
-                department = $11, manufacturer = $12, model = $13, warranty_expiry = $14, updated_at = NOW()
-            WHERE id = $15
-            RETURNING id, name, asset_type, description, location, current_value, status, 
-                      serial_number, purchase_date, purchase_price, current_value, department, 
-                      manufacturer, model, warranty_expiry, created_at, updated_at
-        `, [name, asset_type, description, location, current_value, status, serial_number, 
-            purchase_date, purchase_price, current_value, department, manufacturer, model, warranty_expiry, id]);
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
-        }
-        
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update asset');
-    }
-});
-
-app.delete('/api/assets/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // First check if asset exists
-        const checkResult = await pool.query('SELECT id FROM assets WHERE id = $1', [id]);
-        if (checkResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
-        }
-        
-        // Delete from contract_assets first (if any)
-        await pool.query('DELETE FROM contract_assets WHERE asset_id = $1', [id]);
-        
-        // Delete the asset
-        const result = await pool.query('DELETE FROM assets WHERE id = $1 RETURNING id', [id]);
-        
-        res.json({ message: 'Asset deleted successfully', id: result.rows[0].id });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete asset');
-    }
-});
-
-// Contract One-Time Payments Endpoints
-app.get('/api/contracts/:id/one-time-payments', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM one_time_payments WHERE contract_id = $1 ORDER BY start_date ASC',
-            [req.params.id]
-        );
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch contract one-time payments');
-    }
-});
-
-app.post('/api/contracts/:id/one-time-payments', async (req, res) => {
-    try {
-        const { amount, currency, customer, description, start_date, status, transaction_id, link_existing } = req.body;
-        
-        if (link_existing && transaction_id) {
-            // Link existing transaction to this contract
-            const result = await pool.query(
-                'UPDATE one_time_payments SET contract_id = $1 WHERE id = $2 RETURNING *',
-                [req.params.id, transaction_id]
+        // For each team, fetch members
+        const teams = await Promise.all(teamsResult.rows.map(async team => {
+            const membersResult = await pool.query(
+                `SELECT e.id, e.name, e.email, e.role, e.status FROM team_members tm JOIN employees e ON tm.employee_id = e.id WHERE tm.team_id = $1`,
+                [team.team_id]
             );
-            if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'One-time payment not found' });
-            }
-            res.status(200).json(result.rows[0]);
-        } else {
-            // Create new one-time payment
-            if (!amount || !start_date) {
-                return res.status(400).json({ error: 'Missing required fields (amount, start_date)' });
-            }
-            const result = await pool.query(
-                `INSERT INTO one_time_payments (contract_id, amount, currency, customer, description, start_date, status)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-                [req.params.id, amount, currency || 'USD', customer, description, start_date, status || 'completed']
-            );
-            res.status(201).json(result.rows[0]);
-        }
+            return { ...team, members: membersResult.rows };
+        }));
+        res.json(teams);
     } catch (error) {
-        handleError(res, error, 'Failed to add contract one-time payment');
+        handleError(res, error, 'Failed to fetch project teams');
     }
 });
-
-app.delete('/api/contracts/:id/one-time-payments/:paymentId', async (req, res) => {
+// Assign a team to a project
+app.post('/api/projects/:projectId/teams', async (req, res) => {
     try {
-        const result = await pool.query(
-            'DELETE FROM one_time_payments WHERE id = $1 AND contract_id = $2 RETURNING *',
-            [req.params.paymentId, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'One-time payment not found' });
+        const { projectId } = req.params;
+        const { team_id } = req.body;
+        await pool.query('INSERT INTO project_teams (project_id, team_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [projectId, team_id]);
         res.json({ success: true });
     } catch (error) {
-        handleError(res, error, 'Failed to remove contract one-time payment');
+        handleError(res, error, 'Failed to assign team to project');
+    }
+});
+// Remove a team from a project
+app.delete('/api/projects/:projectId/teams/:teamId', async (req, res) => {
+    try {
+        const { projectId, teamId } = req.params;
+        const result = await pool.query('DELETE FROM project_teams WHERE project_id = $1 AND team_id = $2 RETURNING *', [projectId, teamId]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Team not assigned to project' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove team from project');
     }
 });
 
-// Contract Transactions Endpoints (for linking existing transactions to contracts)
-app.get('/api/contracts/:id/transactions', async (req, res) => {
+// --- Project Review Comments ---
+// Get all comments for a project
+app.get('/api/projects/:projectId/comments', async (req, res) => {
     try {
+        const { projectId } = req.params;
         const result = await pool.query(
-            `SELECT ct.*, 
-                    CASE 
-                        WHEN ct.transaction_type = 'recurring' THEN rp.amount || ' ' || rp.currency || ' - ' || rp.frequency
-                        WHEN ct.transaction_type = 'one-time' THEN otp.amount || ' ' || otp.currency || ' - One-time'
-                    END as display_info,
-                    CASE 
-                        WHEN ct.transaction_type = 'recurring' THEN rp.amount
-                        WHEN ct.transaction_type = 'one-time' THEN otp.amount
-                    END as amount,
-                    CASE 
-                        WHEN ct.transaction_type = 'recurring' THEN rp.currency
-                        WHEN ct.transaction_type = 'one-time' THEN otp.currency
-                    END as currency,
-                    CASE 
-                        WHEN ct.transaction_type = 'recurring' THEN rp.frequency
-                        ELSE NULL
-                    END as frequency
-             FROM contract_transactions ct
-             LEFT JOIN recurring_payments rp ON ct.transaction_type = 'recurring' AND ct.transaction_id = rp.id
-             LEFT JOIN one_time_payments otp ON ct.transaction_type = 'one-time' AND ct.transaction_id = otp.id
-             WHERE ct.contract_id = $1 
-             ORDER BY ct.linked_at ASC`,
-            [req.params.id]
-        );
+            `SELECT pc.*, e.name AS author_name FROM project_comments pc
+             LEFT JOIN employees e ON pc.author_id = e.id
+             WHERE pc.project_id = $1 ORDER BY pc.created_at`, [projectId]);
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch contract transactions');
+        handleError(res, error, 'Failed to fetch project comments');
     }
 });
-
-app.post('/api/contracts/:id/transactions', async (req, res) => {
+// Add a comment to a project
+app.post('/api/projects/:projectId/comments', async (req, res) => {
     try {
-        const { transaction_type, transaction_id } = req.body;
-        if (!transaction_type || !transaction_id) {
-            return res.status(400).json({ error: 'Missing transaction_type or transaction_id' });
-        }
-        
-        // Check if transaction exists
-        const tableName = transaction_type === 'recurring' ? 'recurring_payments' : 'one_time_payments';
-        const transactionCheck = await pool.query(
-            `SELECT id FROM ${tableName} WHERE id = $1`,
-            [transaction_id]
-        );
-        
-        if (transactionCheck.rows.length === 0) {
-            return res.status(404).json({ error: `${transaction_type} transaction not found` });
-        }
-        
-        // Check if already linked
-        const existingLink = await pool.query(
-            'SELECT id FROM contract_transactions WHERE contract_id = $1 AND transaction_type = $2 AND transaction_id = $3',
-            [req.params.id, transaction_type, transaction_id]
-        );
-        
-        if (existingLink.rows.length > 0) {
-            return res.status(400).json({ error: 'Transaction already linked to this contract' });
-        }
-        
-        // Link transaction to contract
+        const { projectId } = req.params;
+        const { author_id, comment } = req.body;
         const result = await pool.query(
-            `INSERT INTO contract_transactions (contract_id, transaction_type, transaction_id) \
-             VALUES ($1, $2, $3) RETURNING *`,
-            [req.params.id, transaction_type, transaction_id]
+            'INSERT INTO project_comments (project_id, author_id, comment) VALUES ($1, $2, $3) RETURNING *',
+            [projectId, author_id, comment]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to link transaction to contract');
+        handleError(res, error, 'Failed to add project comment');
     }
 });
 
-app.delete('/api/contracts/:id/transactions/:transactionId', async (req, res) => {
+// Teams API
+// Get all teams
+app.get('/api/teams', async (req, res) => {
     try {
-        const result = await pool.query(
-            'DELETE FROM contract_transactions WHERE id = $1 AND contract_id = $2 RETURNING *',
-            [req.params.transactionId, req.params.id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Contract transaction not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to remove contract transaction');
-    }
-});
-
-// Vendor Management Endpoints
-app.get('/api/vendors', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM vendors ORDER BY name ASC');
+        const result = await pool.query('SELECT * FROM teams ORDER BY name');
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch vendors');
+        handleError(res, error, 'Failed to fetch teams');
     }
 });
 
-app.post('/api/vendors', async (req, res) => {
+// Get a single team by ID
+app.get('/api/teams/:id', async (req, res) => {
     try {
-        const { name, contact_name, email, phone, address, notes } = req.body;
-        const result = await pool.query(
-            'INSERT INTO vendors (name, contact_name, email, phone, address, notes) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [name, contact_name, email, phone, address, notes]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create vendor');
-    }
-});
-
-app.put('/api/vendors/:id', async (req, res) => {
-    try {
-        const { name, contact_name, email, phone, address, notes } = req.body;
-        const result = await pool.query(
-            'UPDATE vendors SET name = $1, contact_name = $2, email = $3, phone = $4, address = $5, notes = $6, updated_at = CURRENT_TIMESTAMP WHERE id = $7 RETURNING *',
-            [name, contact_name, email, phone, address, notes, req.params.id]
-        );
+        const { id } = req.params;
+        const result = await pool.query('SELECT * FROM teams WHERE team_id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Team not found' });
         res.json(result.rows[0]);
     } catch (error) {
-        handleError(res, error, 'Failed to update vendor');
+        handleError(res, error, 'Failed to fetch team');
     }
 });
 
-app.delete('/api/vendors/:id', async (req, res) => {
+// Create a new team
+app.post('/api/teams', async (req, res) => {
     try {
-        await pool.query('DELETE FROM vendors WHERE id = $1', [req.params.id]);
+        const { name, description } = req.body;
+        const result = await pool.query(
+            'INSERT INTO teams (name, description) VALUES ($1, $2) RETURNING *',
+            [name, description]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to create team');
+    }
+});
+
+// Update a team
+app.put('/api/teams/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description } = req.body;
+        const result = await pool.query(
+            'UPDATE teams SET name = $1, description = $2 WHERE team_id = $3 RETURNING *',
+            [name, description, id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Team not found' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        handleError(res, error, 'Failed to update team');
+    }
+});
+
+// Delete a team
+app.delete('/api/teams/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM teams WHERE team_id = $1 RETURNING *', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Team not found' });
         res.json({ success: true });
     } catch (error) {
-        handleError(res, error, 'Failed to delete vendor');
+        handleError(res, error, 'Failed to delete team');
     }
 });
 
-// Get all assigned benefits for an employee
-app.get('/api/employees/:id/benefits', async (req, res) => {
+// Get all members of a team
+app.get('/api/teams/:id/members', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(`
-            SELECT b.name, b.type, eb.benefit_level, 
-                   CASE eb.benefit_level
-                       WHEN 1 THEN b.level_1_value
-                       WHEN 2 THEN b.level_2_value
-                       WHEN 3 THEN b.level_3_value
-                       WHEN 4 THEN b.level_4_value
-                       WHEN 5 THEN b.level_5_value
-                   END AS value,
-                   b.unit, b.description
-            FROM employee_benefits eb
-            JOIN benefits b ON eb.benefit_id = b.id
-            WHERE eb.employee_id = $1
-            ORDER BY b.type, b.name
-        `, [id]);
+        const result = await pool.query(
+            `SELECT e.* FROM team_members tm
+             JOIN employees e ON tm.employee_id = e.id
+             WHERE tm.team_id = $1`, [id]);
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch employee benefits');
+        handleError(res, error, 'Failed to fetch team members');
     }
 });
 
-// Get all assigned deductions for an employee
-app.get('/api/employees/:id/deductions', async (req, res) => {
+// Add a member to a team
+app.post('/api/teams/:id/members', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(`
-            SELECT d.name, d.type, d.value, d.value_type, d.description
-            FROM employee_deductions ed
-            JOIN deductions d ON ed.deduction_id = d.id
-            WHERE ed.employee_id = $1
-            ORDER BY d.type, d.name
-        `, [id]);
-        res.json(result.rows);
+        const { employee_id } = req.body;
+        await pool.query(
+            'INSERT INTO team_members (team_id, employee_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [id, employee_id]
+        );
+        res.json({ success: true });
     } catch (error) {
-        handleError(res, error, 'Failed to fetch employee deductions');
+        handleError(res, error, 'Failed to add member to team');
     }
 });
 
-// Get payroll history for an employee
-app.get('/api/employees/:id/payroll', async (req, res) => {
+// Remove a member from a team
+app.delete('/api/teams/:id/members/:employee_id', async (req, res) => {
+    try {
+        const { id, employee_id } = req.params;
+        const result = await pool.query(
+            'DELETE FROM team_members WHERE team_id = $1 AND employee_id = $2 RETURNING *',
+            [id, employee_id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Member not found in team' });
+        res.json({ success: true });
+    } catch (error) {
+        handleError(res, error, 'Failed to remove member from team');
+    }
+});
+
+// Get all tasks for a specific project
+app.get('/api/projects/:id/tasks', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(`
-            SELECT payroll_id, pay_date, gross_salary, net_salary
-            FROM payroll
-            WHERE employee_id = $1
-            ORDER BY pay_date DESC
-        `, [id]);
+        const result = await pool.query('SELECT * FROM tasks WHERE project_id = $1 ORDER BY created_at', [id]);
         res.json(result.rows);
     } catch (error) {
-        handleError(res, error, 'Failed to fetch payroll records');
+        handleError(res, error, 'Failed to fetch tasks for project');
     }
 });
 
-// Get payroll details for a payroll record
-app.get('/api/payroll/:payrollId/details', async (req, res) => {
+// Get all resources assigned to a specific task
+app.get('/api/tasks/:taskId/resources', async (req, res) => {
     try {
-        const { payrollId } = req.params;
-        const result = await pool.query(`
+        const { taskId } = req.params;
+        const result = await pool.query(
+            `SELECT r.* FROM task_resources tr
+             JOIN resources r ON tr.resource_id = r.resource_id
+             WHERE tr.task_id = $1`, [taskId]);
+        res.json(result.rows);
+    } catch (error) {
+        handleError(res, error, 'Failed to fetch resources for task');
+    }
+});
+
+// Facilities endpoints
+app.get('/api/facilities', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM facilities ORDER BY name');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching facilities:', err);
+        res.status(500).json({ error: 'Failed to fetch facilities' });
+    }
+});
+
+app.get('/api/facilities/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('SELECT * FROM facilities WHERE facility_id = $1', [id]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Facility not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error fetching facility:', err);
+        res.status(500).json({ error: 'Failed to fetch facility' });
+    }
+});
+
+// Project resources endpoints
+app.get('/api/project-resources', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM project_resources ORDER BY name');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error fetching project resources:', err);
+        res.status(500).json({ error: 'Failed to fetch project resources' });
+    }
+});
+
+// Enhanced project resource assignments
+app.get('/api/projects/:projectId/resource-assignments', async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const query = `
             SELECT 
-                pd.benefit_value, pd.deduction_value,
-                b.name AS benefit_name, d.name AS deduction_name,
-                pr.score AS performance_score
-            FROM payroll_details pd
-            LEFT JOIN benefits b ON pd.benefit_id = b.id
-            LEFT JOIN deductions d ON pd.deduction_id = d.id
-            LEFT JOIN performance_reviews pr ON pd.performance_review_id = pr.id
-            WHERE pd.payroll_id = $1
-        `, [payrollId]);
+                pra.assignment_id,
+                pra.project_id,
+                pra.resource_type,
+                pra.resource_id,
+                pra.assigned_quantity,
+                pra.start_date,
+                pra.end_date,
+                pra.daily_rate,
+                pra.total_cost,
+                pra.status,
+                pra.notes,
+                pra.assigned_at,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.name
+                    WHEN pra.resource_type = 'facility' THEN f.name
+                    WHEN pra.resource_type = 'equipment' THEN pr.name
+                    WHEN pra.resource_type = 'service' THEN pr.name
+                    ELSE 'Unknown'
+                END as resource_name,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.asset_type
+                    WHEN pra.resource_type = 'facility' THEN f.facility_type
+                    WHEN pra.resource_type = 'equipment' THEN pr.category
+                    WHEN pra.resource_type = 'service' THEN pr.category
+                    ELSE 'Unknown'
+                END as resource_category,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.description
+                    WHEN pra.resource_type = 'facility' THEN f.description
+                    WHEN pra.resource_type = 'equipment' THEN pr.description
+                    WHEN pra.resource_type = 'service' THEN pr.description
+                    ELSE 'Unknown'
+                END as resource_description
+            FROM project_resource_assignments pra
+            LEFT JOIN assets a ON pra.resource_type = 'asset' AND pra.resource_id = a.id
+            LEFT JOIN facilities f ON pra.resource_type = 'facility' AND pra.resource_id = f.facility_id
+            LEFT JOIN project_resources pr ON pra.resource_type IN ('equipment', 'service') AND pra.resource_id = pr.resource_id
+            WHERE pra.project_id = $1
+            ORDER BY pra.assigned_at DESC
+        `;
+        const result = await pool.query(query, [projectId]);
         res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch payroll details');
+    } catch (err) {
+        console.error('Error fetching project resource assignments:', err);
+        res.status(500).json({ error: 'Failed to fetch project resource assignments' });
     }
 });
 
-// Get all performance reviews for an employee
-app.get('/api/employees/:id/performance_reviews', async (req, res) => {
+app.post('/api/projects/:projectId/resource-assignments', async (req, res) => {
     try {
-        const { id } = req.params;
-        const result = await pool.query(`
-            SELECT review_date, score, comments
-            FROM performance_reviews
-            WHERE employee_id = $1
-            ORDER BY review_date DESC
-        `, [id]);
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch performance reviews');
+        const { projectId } = req.params;
+        const { resourceType, resourceId, assignedQuantity, startDate, endDate, dailyRate, notes } = req.body;
+        
+        // Calculate total cost
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const totalCost = dailyRate * days * assignedQuantity;
+        
+        const query = `
+            INSERT INTO project_resource_assignments 
+            (project_id, resource_type, resource_id, assigned_quantity, start_date, end_date, daily_rate, total_cost, notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        `;
+        const result = await pool.query(query, [
+            projectId, resourceType, resourceId, assignedQuantity, startDate, endDate, dailyRate, totalCost, notes
+        ]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error creating project resource assignment:', err);
+        res.status(500).json({ error: 'Failed to create project resource assignment' });
     }
 });
 
-// --- Benefits CRUD ---
-app.get('/api/benefits', async (req, res) => {
+app.delete('/api/projects/:projectId/resource-assignments/:assignmentId', async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM benefits ORDER BY name');
+        const { assignmentId } = req.params;
+        await pool.query('DELETE FROM project_resource_assignments WHERE assignment_id = $1', [assignmentId]);
+        res.json({ message: 'Resource assignment deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting project resource assignment:', err);
+        res.status(500).json({ error: 'Failed to delete project resource assignment' });
+    }
+});
+
+// Enhanced task resources endpoint
+app.get('/api/tasks/:taskId/resources', async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const query = `
+            SELECT 
+                tra.assignment_id,
+                tra.task_id,
+                tra.project_assignment_id,
+                tra.quantity,
+                tra.start_time,
+                tra.end_time,
+                tra.checked_out_at,
+                tra.checked_in_at,
+                tra.return_date,
+                tra.notes,
+                pra.resource_type,
+                pra.resource_id,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.name
+                    WHEN pra.resource_type = 'facility' THEN f.name
+                    WHEN pra.resource_type = 'equipment' THEN pr.name
+                    WHEN pra.resource_type = 'service' THEN pr.name
+                    ELSE 'Unknown'
+                END as resource_name,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.asset_type
+                    WHEN pra.resource_type = 'facility' THEN f.facility_type
+                    WHEN pra.resource_type = 'equipment' THEN pr.category
+                    WHEN pra.resource_type = 'service' THEN pr.category
+                    ELSE 'Unknown'
+                END as resource_category,
+                CASE 
+                    WHEN pra.resource_type = 'asset' THEN a.description
+                    WHEN pra.resource_type = 'facility' THEN f.description
+                    WHEN pra.resource_type = 'equipment' THEN pr.description
+                    WHEN pra.resource_type = 'service' THEN pr.description
+                    ELSE 'Unknown'
+                END as resource_description
+            FROM task_resource_assignments tra
+            JOIN project_resource_assignments pra ON tra.project_assignment_id = pra.assignment_id
+            LEFT JOIN assets a ON pra.resource_type = 'asset' AND pra.resource_id = a.id
+            LEFT JOIN facilities f ON pra.resource_type = 'facility' AND pra.resource_id = f.facility_id
+            LEFT JOIN project_resources pr ON pra.resource_type IN ('equipment', 'service') AND pra.resource_id = pr.resource_id
+            WHERE tra.task_id = $1
+            ORDER BY tra.created_at DESC
+        `;
+        const result = await pool.query(query, [taskId]);
         res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch benefits');
+    } catch (err) {
+        console.error('Error fetching task resources:', err);
+        res.status(500).json({ error: 'Failed to fetch task resources' });
     }
 });
-app.post('/api/benefits', async (req, res) => {
-    try {
-        const { name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description } = req.body;
-        const result = await pool.query(
-            `INSERT INTO benefits (name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create benefit');
-    }
+
+// Start HTTP server for development
+const server = http.createServer(app);
+server.listen(PORT, HOST, () => {
+  console.log(`HTTP server running at http://${DISPLAY_HOST}:${PORT}/`);
 });
-app.put('/api/benefits/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description } = req.body;
-        const result = await pool.query(
-            `UPDATE benefits SET name=$1, type=$2, unit=$3, level_1_value=$4, level_2_value=$5, level_3_value=$6, level_4_value=$7, level_5_value=$8, description=$9 WHERE id=$10 RETURNING *`,
-            [name, type, unit, level_1_value, level_2_value, level_3_value, level_4_value, level_5_value, description, id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Benefit not found' });
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update benefit');
-    }
-});
-// --- Deductions CRUD ---
-app.get('/api/deductions', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM deductions ORDER BY name');
-        res.json(result.rows);
-    } catch (error) {
-        handleError(res, error, 'Failed to fetch deductions');
-    }
-});
-app.post('/api/deductions', async (req, res) => {
-    try {
-        const { name, type, value, value_type, description } = req.body;
-        const result = await pool.query(
-            `INSERT INTO deductions (name, type, value, value_type, description)
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [name, type, value, value_type, description]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to create deduction');
-    }
-});
-app.put('/api/deductions/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { name, type, value, value_type, description } = req.body;
-        const result = await pool.query(
-            `UPDATE deductions SET name=$1, type=$2, value=$3, value_type=$4, description=$5 WHERE id=$6 RETURNING *`,
-            [name, type, value, value_type, description, id]
-        );
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Deduction not found' });
-        res.json(result.rows[0]);
-    } catch (error) {
-        handleError(res, error, 'Failed to update deduction');
-    }
-});
-app.delete('/api/benefits/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query('DELETE FROM benefits WHERE id = $1 RETURNING *', [id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Benefit not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete benefit');
-    }
-});
-app.delete('/api/deductions/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const result = await pool.query('DELETE FROM deductions WHERE id = $1 RETURNING *', [id]);
-        if (result.rows.length === 0) return res.status(404).json({ error: 'Deduction not found' });
-        res.json({ success: true });
-    } catch (error) {
-        handleError(res, error, 'Failed to delete deduction');
-    }
-});
+
+// Check if SSL certificates exist and start HTTPS server
+const sslDir = path.join(__dirname, 'ssl');
+const certPath = path.join(sslDir, 'cert.pem');
+const keyPath = path.join(sslDir, 'key.pem');
+
+if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    const httpsOptions = {
+        cert: fs.readFileSync(certPath),
+        key: fs.readFileSync(keyPath)
+    };
+    
+    const httpsServer = https.createServer(httpsOptions, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+        console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+    });
+} else {
+    console.log('SSL certificates not found. HTTPS server not started.');
+    console.log('Run "npm run generate-cert" to generate SSL certificates.');
+}
+
+module.exports = app;

@@ -1,0 +1,106 @@
+<div class="row">
+    <div class="col-md-8">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Project Timeline</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Start Date:</strong> <span id="projectStartDate">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>End Date:</strong> <span id="projectEndDate">-</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <strong>Progress:</strong> <span id="projectProgress">-</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Budget:</strong> <span id="projectBudget">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">SWOT Analysis</h5>
+                <div id="swotContent" class="text-muted">Loading SWOT analysis...</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Recent Activity</h5>
+                <div id="activityContent" class="text-muted">Loading activity...</div>
+            </div>
+        </div>
+        
+        <div class="card bg-dark border-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Quick Actions</h5>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="addTask()">
+                        <i class="bi bi-plus-circle"></i> Add Task
+                    </button>
+                    <button class="btn btn-outline-success" onclick="assignTeam()">
+                        <i class="bi bi-people"></i> Assign Team
+                    </button>
+                    <button class="btn btn-outline-info" onclick="addResource()">
+                        <i class="bi bi-box-seam"></i> Add Resource
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function initOverviewTab(projectId) {
+    loadOverviewData(projectId);
+}
+
+async function loadOverviewData(projectId) {
+    try {
+        const response = await fetch(`http://localhost:3030/api/projects/${projectId}`);
+        const project = await response.json();
+        
+        // Update project details
+        document.getElementById('projectStartDate').textContent = project.created_at ? new Date(project.created_at).toLocaleDateString() : 'Not set';
+        document.getElementById('projectEndDate').textContent = 'Not set';
+        document.getElementById('projectProgress').textContent = '0%';
+        document.getElementById('projectBudget').textContent = project.roi ? `$${project.roi}` : 'Not set';
+        
+        // Load SWOT analysis
+        document.getElementById('swotContent').innerHTML = project.swot ? 
+            `<pre class="text-light">${project.swot}</pre>` : 
+            '<p class="text-muted">No SWOT analysis available</p>';
+        
+        // Load recent activity (placeholder)
+        document.getElementById('activityContent').innerHTML = '<p class="text-muted">No recent activity</p>';
+        
+    } catch (error) {
+        console.error('Error loading overview data:', error);
+        document.getElementById('swotContent').innerHTML = '<div class="alert alert-danger">Failed to load project data</div>';
+    }
+}
+
+function addTask() {
+    // Switch to tasks tab
+    document.getElementById('tasks-tab').click();
+}
+
+function assignTeam() {
+    // Switch to teams tab
+    document.getElementById('teams-tab').click();
+}
+
+function addResource() {
+    // Switch to resources tab
+    document.getElementById('resources-tab').click();
+}
+</script> 

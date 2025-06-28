@@ -198,6 +198,17 @@ function renderOrgChart() {
                 parent = parent.closest('.hierarchy').parent().siblings('.node');
             }
             return true;
+        },
+        'nodeTemplate': function(data) {
+            if (data.isTeam) {
+                return `<div class="team-group"><div class="team-title">${data.name}</div></div>`;
+            } else {
+                return `<div class="employee-card">
+                    <strong>${data.name}</strong><br>
+                    <span>${data.title || ''}</span><br>
+                    <span style=\"color:#0dcaf0;font-size:0.95em;\">${data.department || ''}</span>
+                </div>`;
+            }
         }
     });
     // Listen for nodedrop event to update supervisor in DB

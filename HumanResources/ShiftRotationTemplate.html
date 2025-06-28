@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Rotation Templates</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+    <div class="container-fluid p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-sync-alt mr-2"></i>Shift Rotation Templates</h2>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Active Shift Rotations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="rotationsList">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <div class="text-center p-3" id="loadingSpinner" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Rotation Statistics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h4 class="text-primary" id="totalRotations">0</h4>
+                                <small class="text-muted">Total Rotations</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success" id="activeRotations">0</h4>
+                                <small class="text-muted">Active Rotations</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Available Shift Templates</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="availableTemplates">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed-bottom w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
+        <div class="w-100 d-flex justify-content-between align-items-center">
+            <div class="d-flex">
+                <a href="shift_scheduling.html" class="btn btn-outline-secondary m-1">
+                    <i class="bi bi-arrow-left"></i>Back
+                </a>
+                <a href="ShiftTemplate.html" class="btn btn-outline-primary m-1">
+                    <i class="bi bi-gear"></i>Shifts
+                </a>
+            </div>
+            <button class="btn btn-outline-info m-1" data-toggle="modal" data-target="#shiftRotationModal">
+                <i class="fas fa-plus"></i>Create Rotation
+            </button>
+        </div>
+    </nav>
+
+    <!-- Shift Rotation Modal -->
+    <div class="modal fade" id="shiftRotationModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Shift Rotation</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        <strong>Shift Rotation:</strong> Create a sequence of shift templates. Assign specific employees to each shift position. Employees will automatically progress through the rotation when each shift ends.
+                    </div>
+                    
+                    <form id="rotationForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Rotation Name</label>
+                                    <input type="text" class="form-control" id="rotationName" placeholder="e.g., Morning-Evening-Night Rotation" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" class="form-control" id="rotationStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea class="form-control" id="rotationDescription" rows="3" placeholder="Optional description of this rotation"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Select Shift Templates for Rotation</label>
+                                    <div id="rotationTemplates">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Assign Employees to Each Shift Position</label>
+                            <div id="rotationShiftAssignments">
+                                <!-- Will be populated dynamically based on selected templates -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveRotation">Create Rotation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Rotation Modal -->
+    <div class="modal fade" id="editRotationModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Shift Rotation</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editRotationForm">
+                        <input type="hidden" id="editRotationId">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Rotation Name</label>
+                                    <input type="text" class="form-control" id="editRotationName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Start Date</label>
+                                    <input type="date" class="form-control" id="editRotationStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Description</label>
+                                    <textarea class="form-control" id="editRotationDescription" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Current Status</label>
+                                    <div class="form-control-plaintext" id="editRotationStatus"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Position</label>
+                                    <div class="form-control-plaintext" id="editRotationPosition"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Rotation Sequence</label>
+                            <div id="editRotationSequence">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger mr-auto" id="deleteRotation">Delete Rotation</button>
+                    <button type="button" class="btn btn-warning mr-2" id="pauseRotation">Pause</button>
+                    <button type="button" class="btn btn-success mr-2" id="resumeRotation">Resume</button>
+                    <button type="button" class="btn btn-primary" id="updateRotation">Update Rotation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="../js/shift-scheduling-client.js"></script>
+    
+    <script>
+        let shiftRotations = [];
+        let shiftTemplates = [];
+        let employees = [];
+        
+        // Load all data
+        async function loadData() {
+            try {
+                $('#loadingSpinner').show();
+                
+                // Load all data in parallel
+                const [rotations, templates, employeesData] = await Promise.all([
+                    shiftSchedulingAPI.getRotations(),
+                    shiftSchedulingAPI.getTemplates(),
+                    shiftSchedulingAPI.getEmployees()
+                ]);
+                
+                shiftRotations = rotations;
+                shiftTemplates = templates;
+                employees = employeesData;
+                
+                displayRotations();
+                displayAvailableTemplates();
+                updateStatistics();
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+            } finally {
+                $('#loadingSpinner').hide();
+            }
+        }
+
+        // Display rotations
+        function displayRotations() {
+            const container = $('#rotationsList');
+            container.empty();
+            
+            if (shiftRotations.length === 0) {
+                container.append(`
+                    <div class="text-center p-4">
+                        <i class="fas fa-sync-alt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No rotations created yet</h5>
+                        <p class="text-muted">Create your first shift rotation to get started.</p>
+                    </div>
+                `);
+                return;
+            }
+            
+            shiftRotations.forEach(rotation => {
+                const rotationCard = $(`
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">${rotation.name}</h5>
+                                    <p class="card-text text-muted mb-2">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        Started: ${new Date(rotation.start_date).toLocaleDateString()}
+                                    </p>
+                                    ${rotation.description ? `<p class="card-text small">${rotation.description}</p>` : ''}
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge badge-${rotation.is_active ? 'success' : 'secondary'} mr-2">
+                                            ${rotation.is_active ? 'Active' : 'Paused'}
+                                        </span>
+                                        <span class="badge badge-info mr-2">
+                                            Position: ${rotation.current_position || 1}
+                                        </span>
+                                        <small class="text-muted">
+                                            ${rotation.shift_count || 0} shifts in rotation
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <button class="btn btn-sm btn-outline-primary mr-1" onclick="editRotation(${rotation.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRotation(${rotation.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                container.append(rotationCard);
+            });
+        }
+
+        // Display available templates
+        function displayAvailableTemplates() {
+            const container = $('#availableTemplates');
+            container.empty();
+            
+            if (shiftTemplates.length === 0) {
+                container.append('<p class="text-muted small">No templates available</p>');
+                return;
+            }
+            
+            shiftTemplates.forEach(template => {
+                const templateItem = $(`
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="rounded-circle mr-2" style="width: 12px; height: 12px; background-color: ${template.color};"></div>
+                        <div class="flex-grow-1">
+                            <small class="font-weight-bold">${template.name}</small><br>
+                            <small class="text-muted">${template.start_time} - ${template.end_time}</small>
+                        </div>
+                    </div>
+                `);
+                container.append(templateItem);
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            $('#totalRotations').text(shiftRotations.length);
+            $('#activeRotations').text(shiftRotations.filter(r => r.is_active).length);
+        }
+
+        // Edit rotation
+        function editRotation(rotationId) {
+            const rotation = shiftRotations.find(r => r.id === rotationId);
+            if (!rotation) return;
+            
+            $('#editRotationId').val(rotation.id);
+            $('#editRotationName').val(rotation.name);
+            $('#editRotationStartDate').val(rotation.start_date);
+            $('#editRotationDescription').val(rotation.description || '');
+            $('#editRotationStatus').text(rotation.is_active ? 'Active' : 'Paused');
+            $('#editRotationPosition').text(rotation.current_position || 1);
+            
+            // Load rotation sequence
+            loadRotationSequence(rotationId);
+            
+            $('#editRotationModal').modal('show');
+        }
+
+        // Load rotation sequence
+        async function loadRotationSequence(rotationId) {
+            try {
+                const sequence = await shiftSchedulingAPI.getRotationSequence(rotationId);
+                const container = $('#editRotationSequence');
+                container.empty();
+                
+                sequence.forEach((item, index) => {
+                    const template = shiftTemplates.find(t => t.id === item.template_id);
+                    const employee = employees.find(e => e.id === item.employee_id);
+                    
+                    const sequenceItem = $(`
+                        <div class="border rounded p-3 mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Position ${index + 1}:</strong> ${template ? template.name : 'Unknown Template'}
+                                    ${employee ? ` - ${employee.name}` : ' - No employee assigned'}
+                                </div>
+                                <span class="badge badge-${index + 1 === (rotation.current_position || 1) ? 'primary' : 'secondary'}">
+                                    ${index + 1 === (rotation.current_position || 1) ? 'Current' : 'Pending'}
+                                </span>
+                            </div>
+                        </div>
+                    `);
+                    container.append(sequenceItem);
+                });
+            } catch (error) {
+                console.error('Error loading rotation sequence:', error);
+            }
+        }
+
+        // Delete rotation
+        async function deleteRotation(rotationId) {
+            if (!confirm('Are you sure you want to delete this rotation? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                await shiftSchedulingAPI.deleteRotation(rotationId);
+                loadData();
+            } catch (error) {
+                console.error('Error deleting rotation:', error);
+                alert('Failed to delete rotation. Please try again.');
+            }
+        }
+
+        // Save new rotation
+        $('#saveRotation').click(async () => {
+            const form = $('#rotationForm');
+            if (!form[0].checkValidity()) {
+                form[0].reportValidity();
+                return;
+            }
+            
+            // Get selected templates
+            const selectedTemplates = [];
+            $('#rotationTemplates input[type="checkbox"]:checked').each(function() {
+                selectedTemplates.push(parseInt($(this).val()));
+            });
+            
+            if (selectedTemplates.length === 0) {
+                alert('Please select at least one shift template for the rotation.');
+                return;
+            }
+            
+            // Get employee assignments
+            const employeeAssignments = [];
+            $('#rotationShiftAssignments .employee-assignment').each(function() {
+                const templateId = parseInt($(this).data('template-id'));
+                const employeeId = parseInt($(this).find('select').val());
+                if (employeeId) {
+                    employeeAssignments.push({
+                        template_id: templateId,
+                        employee_id: employeeId
+                    });
+                }
+            });
+            
+            const rotationData = {
+                name: $('#rotationName').val(),
+                start_date: $('#rotationStartDate').val(),
+                description: $('#rotationDescription').val(),
+                templates: selectedTemplates,
+                employee_assignments: employeeAssignments
+            };
+            
+            try {
+                await shiftSchedulingAPI.createRotation(rotationData);
+                $('#shiftRotationModal').modal('hide');
+                form[0].reset();
+                loadData();
+            } catch (error) {
+                console.error('Error saving rotation:', error);
+                alert('Failed to create rotation. Please try again.');
+            }
+        });
+
+        // Update rotation
+        $('#updateRotation').click(async () => {
+            const rotationId = $('#editRotationId').val();
+            const rotationData = {
+                name: $('#editRotationName').val(),
+                start_date: $('#editRotationStartDate').val(),
+                description: $('#editRotationDescription').val()
+            };
+            
+            try {
+                await shiftSchedulingAPI.updateRotation(rotationId, rotationData);
+                $('#editRotationModal').modal('hide');
+                loadData();
+            } catch (error) {
+                console.error('Error updating rotation:', error);
+                alert('Failed to update rotation. Please try again.');
+            }
+        });
+
+        // Pause rotation
+        $('#pauseRotation').click(async () => {
+            const rotationId = $('#editRotationId').val();
+            try {
+                await shiftSchedulingAPI.pauseRotation(rotationId);
+                $('#editRotationModal').modal('hide');
+                loadData();
+            } catch (error) {
+                console.error('Error pausing rotation:', error);
+                alert('Failed to pause rotation. Please try again.');
+            }
+        });
+
+        // Resume rotation
+        $('#resumeRotation').click(async () => {
+            const rotationId = $('#editRotationId').val();
+            try {
+                await shiftSchedulingAPI.resumeRotation(rotationId);
+                $('#editRotationModal').modal('hide');
+                loadData();
+            } catch (error) {
+                console.error('Error resuming rotation:', error);
+                alert('Failed to resume rotation. Please try again.');
+            }
+        });
+
+        // Delete rotation from edit modal
+        $('#deleteRotation').click(async () => {
+            const rotationId = $('#editRotationId').val();
+            await deleteRotation(rotationId);
+            $('#editRotationModal').modal('hide');
+        });
+
+        // Populate rotation templates when modal opens
+        $('#shiftRotationModal').on('show.bs.modal', function() {
+            const container = $('#rotationTemplates');
+            container.empty();
+            
+            shiftTemplates.forEach(template => {
+                const templateItem = $(`
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" value="${template.id}" id="template_${template.id}">
+                        <label class="form-check-label" for="template_${template.id}">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle mr-2" style="width: 12px; height: 12px; background-color: ${template.color};"></div>
+                                <span>${template.name} (${template.start_time} - ${template.end_time})</span>
+                            </div>
+                        </label>
+                    </div>
+                `);
+                container.append(templateItem);
+            });
+        });
+
+        // Update employee assignments when templates are selected
+        $('#rotationTemplates').on('change', 'input[type="checkbox"]', function() {
+            updateEmployeeAssignments();
+        });
+
+        // Update employee assignments
+        function updateEmployeeAssignments() {
+            const container = $('#rotationShiftAssignments');
+            container.empty();
+            
+            const selectedTemplates = [];
+            $('#rotationTemplates input[type="checkbox"]:checked').each(function() {
+                const templateId = parseInt($(this).val());
+                const template = shiftTemplates.find(t => t.id === templateId);
+                if (template) {
+                    selectedTemplates.push(template);
+                }
+            });
+            
+            selectedTemplates.forEach((template, index) => {
+                const assignmentDiv = $(`
+                    <div class="border rounded p-3 mb-3 employee-assignment" data-template-id="${template.id}">
+                        <h6 class="mb-2">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-circle mr-2" style="width: 12px; height: 12px; background-color: ${template.color};"></div>
+                                Position ${index + 1}: ${template.name}
+                            </div>
+                        </h6>
+                        <div class="form-group mb-0">
+                            <label class="small">Assign Employee:</label>
+                            <select class="form-control form-control-sm">
+                                <option value="">Select Employee</option>
+                                ${employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                `);
+                container.append(assignmentDiv);
+            });
+        }
+
+        // Initialize
+        $(document).ready(() => {
+            loadData();
+            
+            // Set default start date to today
+            const today = new Date().toISOString().split('T')[0];
+            $('#rotationStartDate').val(today);
+        });
+    </script>
+</body>
+</html> 
