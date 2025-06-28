@@ -161,7 +161,9 @@
         // Load shift templates
         async function loadShiftTemplates() {
             try {
+                console.log('Debug - Loading shift templates...');
                 shiftTemplates = await shiftSchedulingAPI.getActiveTemplates();
+                console.log('Debug - Loaded shift templates:', shiftTemplates);
                 populateTemplateSelection();
             } catch (error) {
                 console.error('Error loading shift templates:', error);
@@ -230,12 +232,18 @@
 
         // Populate template selection
         function populateTemplateSelection() {
+            console.log('Debug - Populating template selection with:', shiftTemplates);
             const select = $('#selectedTemplate');
             select.empty().append('<option value="">Choose a shift template</option>');
             
             shiftTemplates.forEach(template => {
+                console.log('Debug - Adding template option:', template);
                 select.append(`<option value="${template.id}">${template.name} (${template.start_time} - ${template.end_time})</option>`);
             });
+            
+            console.log('Debug - Final select options:', select.find('option').map(function() { 
+                return {value: this.value, text: this.text}; 
+            }).get());
         }
 
         // Populate employee selection
@@ -295,20 +303,39 @@
                 return;
             }
             
-            const templateId = $('#selectedTemplate').val();
-            const template = shiftTemplates.find(t => t.id == templateId);
+            const templateId = parseInt($('#selectedTemplate').val());
+            console.log('Debug - Template ID:', templateId);
+            console.log('Debug - Template ID type:', typeof templateId);
+            console.log('Debug - Selected template element:', $('#selectedTemplate')[0]);
+            console.log('Debug - All template options:', $('#selectedTemplate option').map(function() { return {value: this.value, text: this.text}; }).get());
+            
+            if (!templateId || isNaN(templateId)) {
+                alert('Please select a valid shift template.');
+                return;
+            }
+            
+            const template = shiftTemplates.find(t => t.id === templateId);
+            console.log('Debug - Found template:', template);
+            console.log('Debug - Available templates:', shiftTemplates);
+            
+            if (!template) {
+                alert('Please select a valid shift template.');
+                return;
+            }
             
             try {
                 // Create assignments for each selected employee
                 for (const employeeId of selectedEmployees) {
                     const assignmentData = {
                         template_id: templateId,
-                        employee_id: employeeId,
+                        employee_id: parseInt(employeeId),
                         date: $('#assignmentDate').val(),
                         start_time: template.start_time,
                         end_time: template.end_time,
-                        notes: $('#assignmentNotes').val()
+                        notes: $('#assignmentNotes').val() || null
                     };
+                    
+                    console.log('Debug - Assignment data being sent:', assignmentData);
                     
                     await shiftSchedulingAPI.createAssignment(assignmentData);
                 }
