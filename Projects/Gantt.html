@@ -6,96 +6,439 @@
     <title>Project Gantt Chart</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.2/dist/frappe-gantt.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.2/dist/frappe-gantt.css">
+    
+    <!-- DHTMLX Gantt Chart Library -->
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    
+    <style>
+        /* Minimal required styles for Gantt functionality */
+        .gantt-container {
+            height: 600px;
+            width: 100%;
+        }
+        
+        /* Override Gantt library styles to use Bootstrap dark theme */
+        .gantt_task_line {
+            border-radius: 4px;
+        }
+        
+        /* Ensure bright Bootstrap colors are preserved */
+        .gantt_task_line.bg-primary {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+        
+        .gantt_task_line.bg-success {
+            background-color: #198754 !important;
+            border-color: #198754 !important;
+        }
+        
+        .gantt_task_line.bg-warning {
+            background-color: #ffc107 !important;
+            border-color: #ffc107 !important;
+        }
+        
+        .gantt_task_line.bg-info {
+            background-color: #0dcaf0 !important;
+            border-color: #0dcaf0 !important;
+        }
+        
+        .gantt_task_line.bg-danger {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+        
+        .gantt_task_line.bg-secondary {
+            background-color: #6c757d !important;
+            border-color: #6c757d !important;
+        }
+        
+        .gantt_task_line.bg-dark {
+            background-color: #212529 !important;
+            border-color: #212529 !important;
+        }
+        
+        .gantt_task_line.bg-light {
+            background-color: #f8f9fa !important;
+            border-color: #f8f9fa !important;
+        }
+        
+        /* Border styling for status indicators */
+        .gantt_task_line.border-success {
+            border: 2px solid #198754 !important;
+        }
+        
+        .gantt_task_line.border-warning {
+            border: 2px solid #ffc107 !important;
+        }
+        
+        .gantt_task_line.border-secondary {
+            border: 2px solid #6c757d !important;
+        }
+        
+        .gantt_task_line.border-danger {
+            border: 2px solid #dc3545 !important;
+        }
+        
+        .gantt_task_line.border-primary {
+            border: 2px solid #0d6efd !important;
+        }
+
+        /* Dark Mode Gantt Chart Styling */
+        .gantt_container {
+            background-color: #212529 !important;
+            color: #f8f9fa !important;
+        }
+
+        /* Header styling */
+        .gantt_grid_head_cell,
+        .gantt_task_head_cell {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        /* Grid styling */
+        .gantt_grid_data {
+            background-color: #212529 !important;
+            color: #f8f9fa !important;
+        }
+
+        .gantt_row {
+            background-color: #212529 !important;
+            border-color: #495057 !important;
+        }
+
+        .gantt_row:hover {
+            background-color: #343a40 !important;
+        }
+
+        .gantt_row.gantt_selected {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+
+        /* Task area styling */
+        .gantt_task_bg {
+            background-color: #212529 !important;
+        }
+
+        .gantt_task_scale {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        .gantt_scale_cell {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        /* Task bars styling */
+        .gantt_task_line {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+
+        .gantt_task_line.gantt_project {
+            background-color: #6f42c1 !important;
+            border-color: #6f42c1 !important;
+        }
+
+        .gantt_task_line.gantt_milestone {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+
+        /* Progress bars */
+        .gantt_task_progress {
+            background-color: #198754 !important;
+        }
+
+        /* Links styling */
+        .gantt_link_control {
+            background-color: #ffc107 !important;
+        }
+
+        .gantt_link_arrow {
+            border-color: #ffc107 !important;
+        }
+
+        /* Today line */
+        .gantt_current_time {
+            background-color: #dc3545 !important;
+        }
+
+        /* Scrollbars */
+        .gantt_hor_scroll,
+        .gantt_ver_scroll {
+            background-color: #343a40 !important;
+        }
+
+        .gantt_hor_scroll .gantt_scroll_thumb,
+        .gantt_ver_scroll .gantt_scroll_thumb {
+            background-color: #6c757d !important;
+        }
+
+        .gantt_hor_scroll .gantt_scroll_thumb:hover,
+        .gantt_ver_scroll .gantt_scroll_thumb:hover {
+            background-color: #adb5bd !important;
+        }
+
+        /* Tooltips */
+        .gantt_tooltip {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        /* Context menu */
+        .gantt_menu_icon,
+        .gantt_menu_icon:hover {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+        }
+
+        /* Task editor */
+        .gantt_editor {
+            background-color: #343a40 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        .gantt_editor input,
+        .gantt_editor select,
+        .gantt_editor textarea {
+            background-color: #212529 !important;
+            color: #f8f9fa !important;
+            border-color: #495057 !important;
+        }
+
+        /* Weekends */
+        .gantt_weekend {
+            background-color: #2c3034 !important;
+        }
+
+        /* Today column */
+        .gantt_today {
+            background-color: #1a1d20 !important;
+        }
+
+        /* Task text */
+        .gantt_task_content {
+            color: #ffffff !important;
+        }
+
+        /* Grid text */
+        .gantt_cell {
+            color: #f8f9fa !important;
+        }
+
+        /* Selected task */
+        .gantt_task_line.gantt_selected {
+            background-color: #0d6efd !important;
+            border-color: #0d6efd !important;
+        }
+
+        /* Critical path */
+        .gantt_task_line.gantt_critical {
+            background-color: #dc3545 !important;
+            border-color: #dc3545 !important;
+        }
+
+        /* Override any light theme defaults */
+        .gantt * {
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper contrast for all text elements */
+        .gantt_grid_head_cell,
+        .gantt_task_head_cell,
+        .gantt_scale_cell,
+        .gantt_cell,
+        .gantt_task_content {
+            text-shadow: none !important;
+        }
+
+        /* Fix for any remaining light backgrounds */
+        .gantt_grid_scale,
+        .gantt_task_scale,
+        .gantt_grid_head,
+        .gantt_task_head {
+            background-color: #343a40 !important;
+        }
+
+        /* Ensure proper border colors throughout */
+        .gantt_grid_head_cell,
+        .gantt_task_head_cell,
+        .gantt_scale_cell,
+        .gantt_row,
+        .gantt_cell {
+            border-color: #495057 !important;
+        }
+    </style>
 </head>
 <body class="bg-dark text-light">
 
     <nav class="sticky-bottom position-fixed bottom-0 w-100 navbar navbar-expand-lg bg-dark d-flex flex-wrap align-items-center gap-2 p-2 border-top border-secondary shadow z-3">
-        <div class="container-fluid p-0 d-flex flex-wrap align-items-center gap-2">
-            <a href="Projects.html" class="btn btn-outline-secondary me-2">
-                <i class="bi bi-arrow-left"></i>Projects
+             <a href="Projects.html" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Projects
             </a>
-            <a href="ProjectOverview.html" class="btn btn-outline-primary" id="projectDetailsLink">
-                <i class="bi bi-gear"></i> Overview
-            </a>
-        </div>
+            <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#newTaskModal">
+            <i class="bi bi-plus-circle"></i> Add Task
+            </button>
+            <div class="dropup">
+            <button class="btn btn-outline-info btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-download"></i> Export
+            </button>
+            <ul class="dropdown-menu bg-dark border-secondary">
+                <li><a class="dropdown-item text-light" href="#" onclick="exportToPDF()"><i class="bi bi-file-pdf"></i> Export to PDF</a></li>
+                <li><a class="dropdown-item text-light" href="#" onclick="exportToPNG()"><i class="bi bi-file-image"></i> Export to PNG</a></li>
+                <li><a class="dropdown-item text-light" href="#" onclick="exportToExcel()"><i class="bi bi-file-excel"></i> Export to Excel</a></li>
+            </ul>
+            </div>
+            <button class="btn btn-outline-warning btn-sm " onclick="toggleCriticalPath()">
+            <i class="bi bi-lightning"></i> Critical Path
+            </button> 
+        <a href="ProjectOverview.html" class="btn btn-outline-primary btn-sm ms-auto" id="projectDetailsLink">
+            <i class="bi bi-gear"></i> Overview
+        </a>
+ 
     </nav>
 
-    <div class="container-fluid py-3">
+    <div class="container-fluid pb-5 mb-2">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 id="projectTitle">Project Gantt Chart</h1>
-           
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Project Tasks & Timeline</h5>
             <div>
-                <button class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#newTaskModal">
-                    <i class="bi bi-plus-circle"></i> Add Task
-                </button>
-                <button class="btn btn-outline-info" onclick="exportGantt()">
-                    <i class="bi bi-download"></i> Export
-                </button>
+                
             </div>
         </div>
 
         <!-- Task Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center">
-                    <div class="card-body">
-                        <h3 id="totalTasks">0</h3>
-                        <small class="text-muted">Total Tasks</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center">
-                    <div class="card-body">
-                        <h3 id="completedTasks">0</h3>
-                        <small class="text-muted">Completed</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center">
-                    <div class="card-body">
-                        <h3 id="inProgressTasks">0</h3>
-                        <small class="text-muted">In Progress</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card bg-dark border-secondary text-center">
-                    <div class="card-body">
-                        <h3 id="pendingTasks">0</h3>
-                        <small class="text-muted">Pending</small>
+<div class="row row-cols-4 g-2 text-center">
+  <div class="col"><div class="card bg-dark border-secondary"><div class="card-body p-2"><h5 id="totalTasks">0</h5><small class="text-muted">Total</small></div></div></div>
+  <div class="col"><div class="card bg-dark border-secondary"><div class="card-body p-2"><h5 id="completedTasks">0</h5><small class="text-muted">Completed</small></div></div></div>
+  <div class="col"><div class="card bg-dark border-secondary"><div class="card-body p-2"><h5 id="inProgressTasks">0</h5><small class="text-muted">In Progress</small></div></div></div>
+  <div class="col"><div class="card bg-dark border-secondary"><div class="card-body p-2"><h5 id="pendingTasks">0</h5><small class="text-muted">Pending</small></div></div></div>
+</div>
+
+
+
+
+
+<!-- Gantt Chart Controls + Advanced Actions -->
+<div class="bg-dark border border-secondary rounded-top p-3 border-bottom">
+  <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-outline-secondary" onclick="changeZoom('day')">Day</button>
+      <button class="btn btn-outline-secondary active" onclick="changeZoom('week')">Week</button>
+      <button class="btn btn-outline-secondary" onclick="changeZoom('month')">Month</button>
+      <button class="btn btn-outline-secondary d-none d-md-inline" onclick="changeZoom('quarter')">Quarter</button>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-outline-primary btn-sm" onclick="gantt.showDate(new Date())">
+        <i class="bi bi-calendar-check"></i> <span class="d-none d-sm-inline">Today</span>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="fitGanttContent()">
+        <i class="bi bi-arrows-angle-expand"></i> <span class="d-none d-sm-inline">Fit Content</span>
+      </button>
+      <button class="btn btn-outline-success btn-sm" onclick="enableEditing()">
+        <i class="bi bi-pencil"></i> <span class="d-none d-sm-inline">Edit Mode</span>
+      </button>
+      <button class="btn btn-outline-warning btn-sm" onclick="saveChanges()">
+        <i class="bi bi-save"></i> <span class="d-none d-sm-inline">Save</span>
+      </button>
+      <button class="btn btn-outline-info btn-sm" onclick="showResourceConflicts()">
+        <i class="bi bi-exclamation-triangle"></i> <span class="d-none d-sm-inline">Check Conflicts</span>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="autoScheduleTasks()">
+        <i class="bi bi-calendar-plus"></i> <span class="d-none d-sm-inline">Auto Schedule</span>
+      </button>
+      <button class="btn btn-outline-primary btn-sm" onclick="showProjectMetrics()">
+        <i class="bi bi-graph-up"></i> <span class="d-none d-sm-inline">Project Metrics</span>
+      </button>
+      <button class="btn btn-outline-success btn-sm" onclick="calculateCriticalPath(ganttData.tasks)">
+        <i class="bi bi-lightning"></i> <span class="d-none d-sm-inline">Critical Path</span>
+      </button>
+      <button class="btn btn-outline-warning btn-sm" onclick="expandAllTasks()">
+        <i class="bi bi-arrows-expand"></i> <span class="d-none d-sm-inline">Expand All</span>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="collapseAllTasks()">
+        <i class="bi bi-arrows-collapse"></i> <span class="d-none d-sm-inline">Collapse All</span>
+      </button>
+      <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+        <i class="bi bi-x-circle"></i> <span class="d-none d-sm-inline">Clear Filters</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Gantt Filters -->
+<div class="bg-dark border border-secondary p-3 border-bottom">
+  <div class="d-flex flex-column flex-md-row flex-wrap gap-3 align-items-start">
+    <div>
+      <label class="form-label small mb-1">Status:</label>
+      <div class="d-flex flex-wrap gap-1">
+        <span class="badge bg-success filter-badge active" data-filter="status" data-value="completed">Completed</span>
+        <span class="badge bg-primary filter-badge active" data-filter="status" data-value="in_progress">In Progress</span>
+        <span class="badge bg-warning filter-badge active" data-filter="status" data-value="pending">Pending</span>
+      </div>
+    </div>
+    <div class="d-flex flex-grow-1 gap-2">
+      <select class="form-select form-select-sm bg-dark text-light" id="assigneeFilter" onchange="filterByAssignee()">
+        <option value="">All Assignees</option>
+      </select>
+      <select class="form-select form-select-sm bg-dark text-light" id="teamFilter" onchange="filterByTeam()">
+        <option value="">All Teams</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+        <!-- Gantt Chart Container -->
+        <div class="bg-dark text-light border border-secondary rounded-bottom overflow-hidden">
+            <div class="gantt-container" id="ganttContainer">
+                <div class="d-flex align-items-center justify-content-center h-100 bg-dark">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-light">Loading Gantt Chart...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Gantt Chart -->
-        <div class="card bg-dark border-secondary mb-4">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title mb-0">Gantt Chart</h5>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeView('Day')">Day</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeView('Week')">Week</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeView('Month')">Month</button>
+        <!-- Progress and Info Panel -->
+        <div class="row mt-3">
+            <div class="col-md-8">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h6 class="card-title">Project Progress</h6>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar bg-success" id="overallProgress" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <small class="text-muted">Overall project completion</small>
                     </div>
                 </div>
-                <div id="ganttChart" style="background:#222; border-radius:8px; overflow-x:auto; min-height: 400px;"></div>
             </div>
-        </div>
-
-        <!-- Task List -->
-        <div class="card bg-dark border-secondary">
-            <div class="card-body">
-                <h5 class="card-title">Task List</h5>
-                <div id="taskListContent">Loading tasks...</div>
+            <div class="col-md-4">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body">
+                        <h6 class="card-title">Project Info</h6>
+                        <div class="small">
+                            <div class="mb-1"><strong>Start:</strong> <span id="projectStart">-</span></div>
+                            <div class="mb-1"><strong>End:</strong> <span id="projectEnd">-</span></div>
+                            <div class="mb-1"><strong>Duration:</strong> <span id="projectDuration">-</span></div>
+                            <div><strong>Critical Path:</strong> <span id="criticalPathLength">-</span></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -237,12 +580,50 @@
         </div>
     </div>
 
+    <!-- Task Context Menu -->
+    <div class="modal fade" id="taskContextModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content bg-dark text-light">
+                <div class="modal-header border-secondary">
+                    <h6 class="modal-title">Task Actions</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="list-group list-group-flush bg-dark">
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-light border-secondary" onclick="editTaskFromContext()">
+                            <i class="bi bi-pencil me-2"></i>Edit Task
+                        </button>
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-light border-secondary" onclick="duplicateTask()">
+                            <i class="bi bi-files me-2"></i>Duplicate Task
+                        </button>
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-light border-secondary" onclick="addSubtask()">
+                            <i class="bi bi-plus-circle me-2"></i>Add Subtask
+                        </button>
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-light border-secondary" onclick="markAsMilestone()">
+                            <i class="bi bi-flag me-2"></i>Mark as Milestone
+                        </button>
+                        <div class="dropdown-divider border-secondary"></div>
+                        <button type="button" class="list-group-item list-group-item-action bg-dark text-danger border-secondary" onclick="deleteTaskFromContext()">
+                            <i class="bi bi-trash me-2"></i>Delete Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = 'http://localhost:3030';
         let projectId = new URLSearchParams(window.location.search).get('project_id');
-        let ganttChart;
-        let currentView = 'Week';
+        let ganttData = { tasks: [], links: [] };
+        let employees = [];
+        let teams = [];
+        let currentProject = {};
+        let isEditingEnabled = false;
+        let criticalPathEnabled = false;
+        let activeFilters = { status: [], assignee: '', team: '' };
+        let selectedTaskId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -251,22 +632,338 @@
                 return;
             }
 
-            // Update the project details link with the correct project ID
-            document.getElementById('projectDetailsLink').href = `projectOverview.html?project_id=${projectId}`;
-
+            document.getElementById('projectDetailsLink').href = `ProjectOverview.html?project_id=${projectId}`;
+            initializeGantt();
             loadGanttData();
-            setDefaultDates();
         });
 
-        function setDefaultDates() {
-            const today = new Date();
-            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+        function initializeGantt() {
+            // Configure Gantt chart with modern API
+            gantt.config.date_format = "%Y-%m-%d %H:%i";
             
-            const todayStr = today.toISOString().slice(0, 16);
-            const nextWeekStr = nextWeek.toISOString().slice(0, 16);
+            // Modern scale configuration
+            gantt.config.scales = [
+                { unit: "week", step: 1, format: "%M %d" },
+                { unit: "day", step: 1, format: "%j" }
+            ];
             
-            document.getElementById('taskStartTime').value = todayStr;
-            document.getElementById('taskEndTime').value = nextWeekStr;
+            // Configure task list columns - remove Start Time column
+            gantt.config.columns = [
+                { name: "text", label: "Task Name", width: 200, tree: true },
+                { name: "duration", label: "Duration", width: 80, align: "center" }
+            ];
+            
+            // Disable add task button in task list
+            gantt.config.show_plus = false;
+            gantt.config.show_links = false;
+            
+            // Enable features
+            gantt.config.drag_resize = true;
+            gantt.config.drag_move = true;
+            gantt.config.drag_links = true;
+            gantt.config.drag_progress = true;
+            gantt.config.drag_plan = true;
+            
+            // Customize appearance
+            gantt.config.row_height = 40;
+            gantt.config.min_column_width = 70;
+            gantt.config.scroll_size = 20;
+            
+            // Dark mode configuration
+            gantt.config.work_time = true;
+            gantt.config.skip_off_time = true;
+            
+            // Enable current date indicator with enhanced styling
+            gantt.config.show_current_time = true;
+            gantt.config.current_date_color = "#dc3545";
+            gantt.config.current_date_line_width = 3;
+            
+            // Dark theme colors
+            gantt.config.colors = {
+                "grid_background": "#212529",
+                "grid_color": "#495057",
+                "grid_header_background": "#343a40",
+                "grid_header_color": "#f8f9fa",
+                "task_background": "#212529",
+                "task_color": "#f8f9fa",
+                "task_border": "#495057",
+                "task_progress_color": "#198754",
+                "link_color": "#ffc107",
+                "link_arrow_color": "#ffc107",
+                "weekend_background": "#2c3034",
+                "today_background": "#1a1d20"
+            };
+            
+            // Add today indicator label
+            gantt.templates.today_text = function(date) {
+                return "Today";
+            };
+            
+            // Custom task styling with bright, distinct Bootstrap colors
+            gantt.templates.task_class = function(start, end, task) {
+                let classes = ['rounded', 'shadow-sm'];
+                
+                // Assign bright, distinct colors based on task ID for better visibility
+                const colorClasses = [
+                    'bg-primary', 'bg-success', 'bg-warning', 'bg-info', 
+                    'bg-danger', 'bg-secondary', 'bg-dark', 'bg-light'
+                ];
+                
+                // Use task ID to consistently assign colors
+                const colorIndex = task.id % colorClasses.length;
+                const baseColor = colorClasses[colorIndex];
+                classes.push(baseColor);
+                
+                // Add appropriate text color based on background
+                if (baseColor === 'bg-light') {
+                    classes.push('text-dark');
+                } else if (baseColor === 'bg-warning') {
+                    classes.push('text-dark');
+                } else {
+                    classes.push('text-white');
+                }
+                
+                // Status-based styling (overlay on base color)
+                if (task.status === 'completed') {
+                    classes.push('border', 'border-success', 'border-2');
+                } else if (task.status === 'in_progress') {
+                    classes.push('border', 'border-warning', 'border-2');
+                } else if (task.status === 'pending') {
+                    classes.push('border', 'border-secondary', 'border-2');
+                }
+                
+                // Additional styling for special task types
+                if (task.is_milestone) {
+                    classes.push('border', 'border-danger', 'border-3');
+                }
+                if (task.critical) {
+                    classes.push('border', 'border-danger', 'border-2');
+                }
+                
+                // Selection state
+                if (task.selected) {
+                    classes.push('border', 'border-primary', 'border-3');
+                }
+                
+                return classes.join(' ');
+            };
+            
+            // Custom progress bar
+            gantt.templates.progress_text = function(start, end, task) {
+                return Math.round(task.progress * 100) + "%";
+            };
+            
+            // Custom column templates with Bootstrap spacing
+            gantt.templates.grid_text = function(start, end, task) {
+                if (gantt.getColumnIndex() === 0) { // Task Name column
+                    return `<span class="px-2 py-1">${task.text}</span>`;
+                } else if (gantt.getColumnIndex() === 1) { // Duration column
+                    const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                    return `<span class="px-2 py-1">${duration}d</span>`;
+                }
+                return "";
+            };
+            
+            // Task tooltip with Bootstrap styling
+            gantt.templates.tooltip_text = function(start, end, task) {
+                const startDate = gantt.templates.tooltip_date_format(start);
+                const endDate = gantt.templates.tooltip_date_format(end);
+                const progress = Math.round(task.progress * 100);
+                
+                return `
+                    <div class="bg-dark border border-secondary text-light p-3 rounded shadow">
+                        <h6 class="fw-bold mb-2">${task.text}</h6>
+                        <div class="small">
+                            <div class="mb-1"><strong>Start:</strong> ${startDate}</div>
+                            <div class="mb-1"><strong>End:</strong> ${endDate}</div>
+                            <div class="mb-1"><strong>Progress:</strong> ${progress}%</div>
+                            <div class="mb-1"><strong>Status:</strong> ${task.status || 'Not set'}</div>
+                            <div class="mb-1"><strong>Assignee:</strong> ${task.assignee || 'Not assigned'}</div>
+                            <div><strong>Team:</strong> ${task.team || 'Not assigned'}</div>
+                        </div>
+                    </div>
+                `;
+            };
+            
+            // Dark theme for weekend highlighting
+            gantt.templates.scale_cell_class = function(date) {
+                const day = date.getDay();
+                if (day === 0 || day === 6) { // Sunday = 0, Saturday = 6
+                    return "gantt_weekend";
+                }
+                return "";
+            };
+            
+            // Initialize the chart
+            gantt.init("ganttContainer");
+            
+            // Apply dark theme after initialization
+            applyDarkTheme();
+            
+            // Ensure dark theme persistence
+            ensureDarkThemePersistence();
+            
+            // Event handlers
+            gantt.attachEvent("onAfterTaskAdd", onTaskChange);
+            gantt.attachEvent("onAfterTaskUpdate", onTaskChange);
+            gantt.attachEvent("onAfterTaskDelete", onTaskChange);
+            gantt.attachEvent("onAfterLinkAdd", onLinkChange);
+            gantt.attachEvent("onAfterLinkUpdate", onLinkChange);
+            gantt.attachEvent("onAfterLinkDelete", onLinkChange);
+            
+            // Task selection and interaction events
+            gantt.attachEvent("onTaskClick", onTaskClick);
+            gantt.attachEvent("onTaskDblClick", onTaskDblClick);
+            gantt.attachEvent("onTaskRightClick", onTaskRightClick);
+            gantt.attachEvent("onMouseMove", onMouseMove);
+            
+            // Add scroll to start event
+            gantt.attachEvent("onGanttRender", function() {
+                setTimeout(() => {
+                    scrollToEarliestTask(); // Scroll to earliest task instead of today
+                    addTodayIndicator();
+                    applyDarkTheme(); // Re-apply dark theme after render
+                    ensureDarkThemePersistence(); // Ensure persistence
+                    initializeTaskInteractions(); // Initialize task interactions
+                }, 100);
+            });
+            
+            // Setup filter event listeners
+            setupFilterListeners();
+        }
+
+        // Function to apply dark theme to Gantt chart
+        function applyDarkTheme() {
+            // Prevent infinite loops by checking if we're already applying theme
+            if (window.isApplyingDarkTheme) return;
+            window.isApplyingDarkTheme = true;
+            
+            // Apply dark theme to all Gantt elements
+            const ganttContainer = document.getElementById('ganttContainer');
+            if (ganttContainer) {
+                // Force dark theme on all child elements
+                const allElements = ganttContainer.querySelectorAll('*');
+                allElements.forEach(element => {
+                    // Safely check className - it could be a string, DOMTokenList, or null
+                    const className = element.className;
+                    const classNameString = typeof className === 'string' ? className : 
+                                          (className && className.toString) ? className.toString() : '';
+                    
+                    // Apply dark theme to all Gantt-related elements
+                    if (classNameString && classNameString.includes('gantt')) {
+                        element.classList.add('bg-dark', 'text-light');
+                        element.style.backgroundColor = '#212529';
+                        element.style.color = '#f8f9fa';
+                    }
+                    
+                    // Specific styling for different Gantt components
+                    if (classNameString && classNameString.includes('gantt_grid')) {
+                        element.style.backgroundColor = '#212529';
+                        element.style.color = '#f8f9fa';
+                    }
+                    
+                    if (classNameString && classNameString.includes('gantt_task')) {
+                        element.style.backgroundColor = '#212529';
+                        element.style.color = '#f8f9fa';
+                    }
+                    
+                    if (classNameString && classNameString.includes('gantt_scale')) {
+                        element.style.backgroundColor = '#343a40';
+                        element.style.color = '#f8f9fa';
+                    }
+                    
+                    if (classNameString && classNameString.includes('gantt_row')) {
+                        element.style.backgroundColor = '#212529';
+                        element.style.borderColor = '#495057';
+                    }
+                    
+                    if (classNameString && classNameString.includes('gantt_cell')) {
+                        element.style.backgroundColor = '#212529';
+                        element.style.color = '#f8f9fa';
+                        element.style.borderColor = '#495057';
+                    }
+                    
+                    if (classNameString && classNameString.includes('gantt_head')) {
+                        element.style.backgroundColor = '#343a40';
+                        element.style.color = '#f8f9fa';
+                        element.style.borderColor = '#495057';
+                    }
+                    
+                    // Style scrollbars
+                    if (classNameString && classNameString.includes('gantt_scroll')) {
+                        element.style.backgroundColor = '#343a40';
+                    }
+                    
+                    // Ensure task bars maintain Bootstrap classes and bright colors
+                    if (classNameString && classNameString.includes('gantt_task_line')) {
+                        element.style.borderRadius = '4px';
+                        element.style.boxShadow = '0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)';
+                        
+                        // Preserve Bootstrap background colors - don't override them
+                        const hasBootstrapBg = element.classList.contains('bg-primary') || 
+                                             element.classList.contains('bg-success') || 
+                                             element.classList.contains('bg-warning') || 
+                                             element.classList.contains('bg-info') || 
+                                             element.classList.contains('bg-danger') || 
+                                             element.classList.contains('bg-secondary') || 
+                                             element.classList.contains('bg-dark') || 
+                                             element.classList.contains('bg-light');
+                        
+                        if (!hasBootstrapBg) {
+                            // Only apply dark background if no Bootstrap color is set
+                            element.style.backgroundColor = '#212529';
+                        }
+                        
+                        // Ensure proper text contrast based on Bootstrap classes
+                        if (element.classList.contains('bg-warning') || element.classList.contains('bg-light')) {
+                            element.style.color = '#000';
+                        } else if (element.classList.contains('text-white')) {
+                            element.style.color = '#fff';
+                        } else if (element.classList.contains('text-dark')) {
+                            element.style.color = '#000';
+                        } else {
+                            element.style.color = '#fff';
+                        }
+                    }
+                    
+                    // Prevent light background flashes
+                    if (classNameString && (classNameString.includes('gantt') || classNameString.includes('gantt_'))) {
+                        element.style.transition = 'background-color 0.1s ease-in-out';
+                    }
+                });
+                
+                // Apply Bootstrap classes to the container
+                ganttContainer.classList.add('bg-dark', 'text-light');
+                
+                // Force dark theme on the Gantt chart itself
+                if (window.gantt && gantt.getTaskByTime) {
+                    // Re-apply dark theme configuration
+                    gantt.config.colors = {
+                        "grid_background": "#212529",
+                        "grid_color": "#495057",
+                        "grid_header_background": "#343a40",
+                        "grid_header_color": "#f8f9fa",
+                        "task_background": "#212529",
+                        "task_color": "#f8f9fa",
+                        "task_border": "#495057",
+                        "task_progress_color": "#198754",
+                        "link_color": "#ffc107",
+                        "link_arrow_color": "#ffc107",
+                        "weekend_background": "#2c3034",
+                        "today_background": "#1a1d20"
+                    };
+                }
+                
+                // Re-initialize task interactions after theme application
+                setTimeout(() => {
+                    initializeTaskInteractions();
+                }, 50);
+            }
+            
+            // Reset the flag after a short delay
+            setTimeout(() => {
+                window.isApplyingDarkTheme = false;
+            }, 100);
         }
 
         async function loadGanttData() {
@@ -278,34 +975,216 @@
                     fetch(`${API_URL}/api/teams`)
                 ]);
                 
-                const project = projectRes.ok ? await projectRes.json() : {};
-                const tasks = tasksRes.ok ? await tasksRes.json() : [];
-                const employees = employeesRes.ok ? await employeesRes.json() : [];
-                const teams = teamsRes.ok ? await teamsRes.json() : [];
+                // Handle project data
+                if (projectRes.ok) {
+                    const projectData = await projectRes.json();
+                    currentProject = Array.isArray(projectData) ? projectData[0] || {} : 
+                                   (projectData && projectData.success && projectData.data) ? projectData.data[0] || {} : 
+                                   projectData || {};
+                }
                 
-                // Update project title
-                document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Gantt Chart`;
+                // Handle tasks data
+                if (tasksRes.ok) {
+                    const tasksData = await tasksRes.json();
+                    const tasks = Array.isArray(tasksData) ? tasksData : 
+                                (tasksData && tasksData.success && Array.isArray(tasksData.data)) ? tasksData.data : [];
+                    ganttData.tasks = transformTasksForGantt(tasks);
+                }
                 
-                // Update task summary
-                updateTaskSummary(tasks);
+                // Handle employees data
+                if (employeesRes.ok) {
+                    const employeesData = await employeesRes.json();
+                    employees = Array.isArray(employeesData) ? employeesData : 
+                              (employeesData && employeesData.success && Array.isArray(employeesData.data)) ? employeesData.data : [];
+                }
                 
-                // Initialize Gantt chart
-                initializeGanttChart(tasks);
+                // Handle teams data
+                if (teamsRes.ok) {
+                    const teamsData = await teamsRes.json();
+                    teams = Array.isArray(teamsData) ? teamsData : 
+                           (teamsData && teamsData.success && Array.isArray(teamsData.data)) ? teamsData.data : [];
+                }
                 
-                // Load task list
-                loadTaskList(tasks, employees, teams);
-                
-                // Populate assignee and team dropdowns
-                populateAssigneeDropdowns(employees);
-                populateTeamDropdowns(teams);
+                // Update UI
+                updateProjectInfo();
+                updateTaskSummary();
+                populateFilters();
+                renderGanttChart();
                 
             } catch (error) {
                 console.error('Error loading Gantt data:', error);
-                document.getElementById('ganttChart').innerHTML = '<div class="alert alert-danger">Failed to load Gantt data</div>';
+                document.getElementById('ganttContainer').innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100 bg-dark">
+                        <div class="text-center">
+                            <i class="bi bi-exclamation-triangle fs-1 text-danger"></i>
+                            <p class="mt-2 text-danger">Failed to load Gantt data</p>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadGanttData()">Retry</button>
+                        </div>
+                    </div>`;
             }
         }
 
-        function updateTaskSummary(tasks) {
+        function transformTasksForGantt(tasks) {
+            return tasks.map(task => ({
+                id: task.task_id,
+                text: task.title,
+                start_date: task.start_time ? new Date(task.start_time) : new Date(),
+                end_date: task.end_time ? new Date(task.end_time) : new Date(),
+                progress: task.status === 'completed' ? 1 : (task.status === 'in_progress' ? 0.5 : 0),
+                status: task.status || 'pending',
+                assignee: task.assigned_employee_name || '',
+                team: task.team_name || '',
+                assignee_id: task.assigned_to,
+                team_id: task.assigned_team_id,
+                is_milestone: task.is_milestone || false,
+                parent: task.parent_task_id || 0,
+                description: task.description || '',
+                critical: false // Will be calculated later
+            }));
+        }
+
+        function renderGanttChart() {
+            // Clear existing data
+            gantt.clearAll();
+            
+            // Apply filters
+            const filteredTasks = applyFilters(ganttData.tasks);
+            
+            // Calculate critical path
+            calculateCriticalPath(filteredTasks);
+            
+            // Load data into Gantt
+            gantt.parse({
+                data: filteredTasks,
+                links: ganttData.links
+            });
+            
+            // Don't show today's date automatically - let user control this
+            // gantt.showDate(new Date());
+            
+            // Use the correct method to fit content and scroll to start
+            setTimeout(() => {
+                gantt.render();
+                scrollToEarliestTask(); // Scroll to the earliest task instead of today
+                applyDarkTheme(); // Apply dark theme after rendering
+                ensureDarkThemePersistence(); // Ensure persistence
+                initializeTaskInteractions(); // Re-initialize task interactions
+            }, 100);
+        }
+
+        function scrollToStart() {
+            // Scroll the Gantt chart to the beginning
+            const ganttContainer = document.getElementById('ganttContainer');
+            if (ganttContainer) {
+                const scrollContainer = ganttContainer.querySelector('.gantt_hor_scroll');
+                if (scrollContainer) {
+                    scrollContainer.scrollLeft = 0;
+                } else {
+                    // Fallback: scroll the main container
+                    ganttContainer.scrollLeft = 0;
+                }
+            }
+        }
+
+        function scrollToEarliestTask() {
+            // Find the earliest task start date
+            if (ganttData.tasks.length > 0) {
+                const earliestDate = ganttData.tasks.reduce((earliest, task) => {
+                    return task.start_date < earliest ? task.start_date : earliest;
+                }, ganttData.tasks[0].start_date);
+                
+                // Show the earliest date with some padding (1 week before)
+                const paddedDate = new Date(earliestDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+                gantt.showDate(paddedDate);
+                
+                // Also scroll to the leftmost position
+                setTimeout(() => {
+                    scrollToStart();
+                }, 50);
+            } else {
+                // If no tasks, just scroll to start
+                scrollToStart();
+            }
+        }
+
+        function addTodayIndicator() {
+            // Add a visual "Today" indicator
+            const today = new Date();
+            const todayElement = document.createElement('div');
+            todayElement.className = 'position-absolute bg-danger text-white px-2 py-1 rounded small fw-bold';
+            todayElement.style.zIndex = '1000';
+            todayElement.style.top = '10px';
+            todayElement.textContent = 'Today';
+            
+            // Position the indicator at today's date
+            const todayColumn = gantt.getTaskByTime(today, today);
+            if (todayColumn) {
+                const columnWidth = gantt.config.min_column_width;
+                const todayPosition = gantt.posFromDate(today);
+                todayElement.style.left = `${todayPosition}px`;
+            }
+            
+            // Add to the chart container
+            const ganttContainer = document.getElementById('ganttContainer');
+            if (ganttContainer) {
+                ganttContainer.appendChild(todayElement);
+            }
+        }
+
+        function applyFilters(tasks) {
+            return tasks.filter(task => {
+                // Status filter
+                if (activeFilters.status.length > 0 && !activeFilters.status.includes(task.status)) {
+                    return false;
+                }
+                
+                // Assignee filter
+                if (activeFilters.assignee && task.assignee_id != activeFilters.assignee) {
+                    return false;
+                }
+                
+                // Team filter
+                if (activeFilters.team && task.team_id != activeFilters.team) {
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+
+        function calculateCriticalPath(tasks) {
+            // Simple critical path calculation
+            // In a real implementation, this would be more sophisticated
+            const sortedTasks = tasks.sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
+            const criticalTasks = sortedTasks.slice(-3); // Last 3 tasks as critical
+            
+            tasks.forEach(task => {
+                task.critical = criticalTasks.some(ct => ct.id === task.id);
+            });
+        }
+
+        function updateProjectInfo() {
+            document.getElementById('projectTitle').textContent = `${currentProject.name || 'Project'} - Gantt Chart`;
+            
+            if (currentProject.created_at) {
+                document.getElementById('projectStart').textContent = new Date(currentProject.created_at).toLocaleDateString();
+            }
+            
+            if (currentProject.end_date) {
+                document.getElementById('projectEnd').textContent = new Date(currentProject.end_date).toLocaleDateString();
+            }
+            
+            // Calculate duration
+            if (currentProject.created_at && currentProject.end_date) {
+                const start = new Date(currentProject.created_at);
+                const end = new Date(currentProject.end_date);
+                const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                document.getElementById('projectDuration').textContent = `${duration} days`;
+            }
+        }
+
+        function updateTaskSummary() {
+            const tasks = ganttData.tasks;
             const total = tasks.length;
             const completed = tasks.filter(t => t.status === 'completed').length;
             const inProgress = tasks.filter(t => t.status === 'in_progress').length;
@@ -315,118 +1194,255 @@
             document.getElementById('completedTasks').textContent = completed;
             document.getElementById('inProgressTasks').textContent = inProgress;
             document.getElementById('pendingTasks').textContent = pending;
-        }
-
-        function initializeGanttChart(tasks) {
-            const ganttTasks = tasks.map(task => ({
-                id: String(task.task_id),
-                name: task.title,
-                start: task.start_time ? task.start_time.split('T')[0] : new Date().toISOString().split('T')[0],
-                end: task.end_time ? task.end_time.split('T')[0] : new Date().toISOString().split('T')[0],
-                progress: task.status === 'completed' ? 100 : (task.status === 'in_progress' ? 50 : 0),
-                dependencies: task.successor_task_id ? String(task.successor_task_id) : ''
-            }));
             
-            try {
-                if (ganttChart) {
-                    ganttChart.refresh(tasks);
-                } else {
-                    ganttChart = new Gantt("#ganttChart", ganttTasks, {
-                        custom_popup_html: null,
-                        view_mode: currentView,
-                        bar_height: 24,
-                        padding: 32,
-                        header_height: 32,
-                        step: 24,
-                        date_format: 'YYYY-MM-DD'
-                    });
-                }
-            } catch (error) {
-                console.error('Error initializing Gantt chart:', error);
-                document.getElementById('ganttChart').innerHTML = '<div class="text-muted p-3">Failed to load Gantt chart</div>';
-            }
+            // Update overall progress
+            const overallProgress = total > 0 ? Math.round((completed / total) * 100) : 0;
+            const progressBar = document.getElementById('overallProgress');
+            progressBar.style.width = `${overallProgress}%`;
+            progressBar.textContent = `${overallProgress}%`;
         }
 
-        function loadTaskList(tasks, employees, teams) {
-            let html = '';
-            if (!tasks.length) {
-                html = `<div class="text-muted text-center py-4">
-                    <i class="bi bi-list-task fs-1"></i>
-                    <p class="mt-2">No tasks for this project</p>
-                    <p class="small">Click "Add Task" to create the first task</p>
-                </div>`;
-            } else {
-                html = `<div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Assignee</th>
-                                <th>Team</th>
-                                <th>Start Time</th>
-                                <th>End Time</th>
-                                <th>Progress</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                
-                tasks.forEach(task => {
-                    const assignee = employees.find(e => e.id === task.assigned_to);
-                    const team = teams.find(t => t.team_id === task.assigned_team_id);
-                    const startTime = task.start_time ? new Date(task.start_time).toLocaleString() : '-';
-                    const endTime = task.end_time ? new Date(task.end_time).toLocaleString() : '-';
-                    const progress = task.status === 'completed' ? 100 : (task.status === 'in_progress' ? 50 : 0);
-                    
-                    html += `<tr>
-                        <td>${task.title}</td>
-                        <td><span class="badge bg-${getStatusColor(task.status)}">${task.status}</span></td>
-                        <td>${assignee ? assignee.name : '-'}</td>
-                        <td>${team ? team.name : '-'}</td>
-                        <td>${startTime}</td>
-                        <td>${endTime}</td>
-                        <td>
-                            <div class="progress" style="height: 20px;">
-                                <div class="progress-bar" role="progressbar" style="width: ${progress}%">${progress}%</div>
-                            </div>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editTask(${task.task_id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.task_id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>`;
+        function populateFilters() {
+            // Populate assignee filter
+            const assigneeSelect = document.getElementById('assigneeFilter');
+            assigneeSelect.innerHTML = '<option value="">All Assignees</option>';
+            employees.forEach(emp => {
+                assigneeSelect.innerHTML += `<option value="${emp.id}">${emp.name}</option>`;
+            });
+            
+            // Populate team filter
+            const teamSelect = document.getElementById('teamFilter');
+            teamSelect.innerHTML = '<option value="">All Teams</option>';
+            teams.forEach(team => {
+                teamSelect.innerHTML += `<option value="${team.team_id}">${team.name}</option>`;
+            });
+            
+            // Populate modal dropdowns
+            populateModalDropdowns();
+        }
+
+        function setupFilterListeners() {
+            // Status filter badges
+            document.querySelectorAll('.filter-badge[data-filter="status"]').forEach(badge => {
+                badge.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    updateStatusFilters();
                 });
                 
-                html += `</tbody></table></div>`;
-            }
-            
-            document.getElementById('taskListContent').innerHTML = html;
-        }
-
-        function populateAssigneeDropdowns(employees) {
-            const assigneeSelects = ['taskAssignee', 'editTaskAssignee'];
-            
-            assigneeSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    select.innerHTML = '<option value="">Select assignee...</option>';
-                    employees.forEach(employee => {
-                        select.innerHTML += `<option value="${employee.id}">${employee.name}</option>`;
-                    });
-                }
+                // Add Bootstrap hover effects
+                badge.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.transition = 'transform 0.2s';
+                });
+                
+                badge.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
             });
         }
 
-        function populateTeamDropdowns(teams) {
-            const teamSelects = ['taskTeam', 'editTaskTeam'];
+        function updateStatusFilters() {
+            activeFilters.status = [];
+            document.querySelectorAll('.filter-badge[data-filter="status"].active').forEach(badge => {
+                activeFilters.status.push(badge.dataset.value);
+            });
+            renderGanttChart();
+        }
+
+        function filterByAssignee() {
+            activeFilters.assignee = document.getElementById('assigneeFilter').value;
+            renderGanttChart();
+        }
+
+        function filterByTeam() {
+            activeFilters.team = document.getElementById('teamFilter').value;
+            renderGanttChart();
+        }
+
+        function clearFilters() {
+            activeFilters = { status: [], assignee: '', team: '' };
+            document.getElementById('assigneeFilter').value = '';
+            document.getElementById('teamFilter').value = '';
+            document.querySelectorAll('.filter-badge').forEach(badge => {
+                badge.classList.add('active');
+            });
+            renderGanttChart();
+        }
+
+        // Zoom functions
+        function changeZoom(scale) {
+            document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
             
-            teamSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
+            switch(scale) {
+                case 'day':
+                    gantt.config.scales = [
+                        { unit: "day", step: 1, format: "%j" }
+                    ];
+                    break;
+                case 'week':
+                    gantt.config.scales = [
+                        { unit: "week", step: 1, format: "%M %d" },
+                        { unit: "day", step: 1, format: "%j" }
+                    ];
+                    break;
+                case 'month':
+                    gantt.config.scales = [
+                        { unit: "month", step: 1, format: "%F, %Y" },
+                        { unit: "week", step: 1, format: "%j" }
+                    ];
+                    break;
+                case 'quarter':
+                    gantt.config.scales = [
+                        { unit: "quarter", step: 1, format: "%Y Q%q" },
+                        { unit: "month", step: 1, format: "%F" }
+                    ];
+                    break;
+            }
+            
+            gantt.render();
+            // Apply dark theme after zoom change
+            setTimeout(() => {
+                applyDarkTheme();
+                ensureDarkThemePersistence();
+            }, 50);
+        }
+
+        function enableEditing() {
+            isEditingEnabled = !isEditingEnabled;
+            gantt.config.drag_resize = isEditingEnabled;
+            gantt.config.drag_move = isEditingEnabled;
+            gantt.config.drag_links = isEditingEnabled;
+            gantt.config.drag_progress = isEditingEnabled;
+            
+            const editBtn = event.target;
+            if (isEditingEnabled) {
+                editBtn.innerHTML = '<i class="bi bi-eye"></i> View Mode';
+                editBtn.classList.remove('btn-outline-success');
+                editBtn.classList.add('btn-outline-secondary');
+            } else {
+                editBtn.innerHTML = '<i class="bi bi-pencil"></i> Edit Mode';
+                editBtn.classList.remove('btn-outline-secondary');
+                editBtn.classList.add('btn-outline-success');
+            }
+        }
+
+        function toggleCriticalPath() {
+            criticalPathEnabled = !criticalPathEnabled;
+            const btn = event.target;
+            
+            if (criticalPathEnabled) {
+                btn.classList.remove('btn-outline-warning');
+                btn.classList.add('btn-warning');
+                // Highlight critical path
+                ganttData.tasks.forEach(task => {
+                    if (task.critical) {
+                        task.critical = true;
+                    }
+                });
+            } else {
+                btn.classList.remove('btn-warning');
+                btn.classList.add('btn-outline-warning');
+                // Remove critical path highlighting
+                ganttData.tasks.forEach(task => {
+                    task.critical = false;
+                });
+            }
+            
+            renderGanttChart();
+        }
+
+        function saveChanges() {
+            // Save changes to backend
+            const updatedTasks = gantt.getTaskByTime();
+            console.log('Saving changes:', updatedTasks);
+            // TODO: Implement save to backend
+            alert('Changes saved successfully!');
+        }
+
+        function exportToPDF() {
+            // Check if export method exists
+            if (typeof gantt.exportToPDF === 'function') {
+                gantt.exportToPDF({
+                    name: `project_${projectId}_gantt.pdf`,
+                    header: `<h1>${currentProject.name || 'Project'} - Gantt Chart</h1>`,
+                    footer: `<p>Generated on ${new Date().toLocaleDateString()}</p>`
+                });
+            } else {
+                alert('PDF export is not available in this version. Please use the Excel export instead.');
+            }
+        }
+
+        function exportToPNG() {
+            // Check if export method exists
+            if (typeof gantt.exportToPNG === 'function') {
+                gantt.exportToPNG({
+                    name: `project_${projectId}_gantt.png`,
+                    header: `<h1>${currentProject.name || 'Project'} - Gantt Chart</h1>`,
+                    footer: `<p>Generated on ${new Date().toLocaleDateString()}</p>`
+                });
+            } else {
+                alert('PNG export is not available in this version. Please use the Excel export instead.');
+            }
+        }
+
+        function exportToExcel() {
+            const data = ganttData.tasks.map(task => ({
+                'Task Name': task.text,
+                'Start Date': task.start_date.toLocaleDateString(),
+                'End Date': task.end_date.toLocaleDateString(),
+                'Progress': `${Math.round(task.progress * 100)}%`,
+                'Status': task.status,
+                'Assignee': task.assignee,
+                'Team': task.team,
+                'Description': task.description
+            }));
+            
+            // Create CSV content
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+                headers.join(','),
+                ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
+            ].join('\n');
+            
+            // Download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `project_${projectId}_tasks.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Event handlers for data changes
+        function onTaskChange(id, task) {
+            console.log('Task changed:', id, task);
+            updateTaskSummary();
+        }
+
+        function onLinkChange(id, link) {
+            console.log('Link changed:', id, link);
+        }
+
+        // Task creation and editing functions
+        function populateModalDropdowns() {
+            // Populate assignee dropdowns
+            const assigneeDropdowns = ['taskAssignee', 'editTaskAssignee'];
+            assigneeDropdowns.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">Select assignee...</option>';
+                    employees.forEach(emp => {
+                        select.innerHTML += `<option value="${emp.id}">${emp.name}</option>`;
+                    });
+                }
+            });
+            
+            // Populate team dropdowns
+            const teamDropdowns = ['taskTeam', 'editTaskTeam'];
+            teamDropdowns.forEach(id => {
+                const select = document.getElementById(id);
                 if (select) {
                     select.innerHTML = '<option value="">Select team...</option>';
                     teams.forEach(team => {
@@ -436,28 +1452,9 @@
             });
         }
 
-        function getStatusColor(status) {
-            switch (status) {
-                case 'completed': return 'success';
-                case 'in_progress': return 'primary';
-                case 'pending': return 'warning';
-                default: return 'secondary';
-            }
-        }
-
-        function changeView(view) {
-            currentView = view;
-            if (ganttChart) {
-                ganttChart.change_view_mode(view);
-            }
-        }
-
         async function createTask() {
             const form = document.getElementById('newTaskForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
+            const formData = new FormData(form);
             
             const taskData = {
                 title: document.getElementById('taskTitle').value,
@@ -467,55 +1464,64 @@
                 status: document.getElementById('taskStatus').value,
                 assigned_to: document.getElementById('taskAssignee').value || null,
                 assigned_team_id: document.getElementById('taskTeam').value || null,
-                is_milestone: document.getElementById('taskMilestone').checked
+                is_milestone: document.getElementById('taskMilestone').checked,
+                project_id: projectId
             };
             
             try {
                 const response = await fetch(`${API_URL}/api/projects/${projectId}/tasks`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(taskData)
                 });
                 
                 if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('newTaskModal')).hide();
+                    const result = await response.json();
+                    console.log('Task created:', result);
+                    
+                    // Add to gantt data
+                    const newTask = transformTasksForGantt([result.data || result])[0];
+                    ganttData.tasks.push(newTask);
+                    
+                    // Refresh chart
+                    renderGanttChart();
+                    updateTaskSummary();
+                    
+                    // Close modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('newTaskModal'));
+                    modal.hide();
                     form.reset();
-                    setDefaultDates();
-                    loadGanttData();
+                    
+                    alert('Task created successfully!');
                 } else {
-                    alert('Failed to create task');
+                    throw new Error('Failed to create task');
                 }
             } catch (error) {
                 console.error('Error creating task:', error);
-                alert('Failed to create task');
+                alert('Failed to create task. Please try again.');
             }
         }
 
-        async function editTask(taskId) {
-            try {
-                const response = await fetch(`${API_URL}/api/tasks/${taskId}`);
-                if (response.ok) {
-                    const task = await response.json();
-                    
-                    document.getElementById('editTaskId').value = task.task_id;
-                    document.getElementById('editTaskTitle').value = task.title;
-                    document.getElementById('editTaskDescription').value = task.description || '';
-                    document.getElementById('editTaskStartTime').value = task.start_time ? task.start_time.slice(0, 16) : '';
-                    document.getElementById('editTaskEndTime').value = task.end_time ? task.end_time.slice(0, 16) : '';
-                    document.getElementById('editTaskStatus').value = task.status;
-                    document.getElementById('editTaskAssignee').value = task.assigned_to || '';
-                    document.getElementById('editTaskTeam').value = task.assigned_team_id || '';
-                    document.getElementById('editTaskMilestone').checked = task.is_milestone || false;
-                    
-                    const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
-                    modal.show();
-                } else {
-                    alert('Failed to load task details');
-                }
-            } catch (error) {
-                console.error('Error loading task details:', error);
-                alert('Failed to load task details');
-            }
+        function editTask(taskId) {
+            const task = ganttData.tasks.find(t => t.id == taskId);
+            if (!task) return;
+            
+            // Populate edit form
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editTaskTitle').value = task.text;
+            document.getElementById('editTaskDescription').value = task.description || '';
+            document.getElementById('editTaskStartTime').value = task.start_date.toISOString().slice(0, 16);
+            document.getElementById('editTaskEndTime').value = task.end_date.toISOString().slice(0, 16);
+            document.getElementById('editTaskStatus').value = task.status;
+            document.getElementById('editTaskAssignee').value = task.assignee_id || '';
+            document.getElementById('editTaskTeam').value = task.team_id || '';
+            document.getElementById('editTaskMilestone').checked = task.is_milestone;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+            modal.show();
         }
 
         async function updateTask() {
@@ -532,21 +1538,40 @@
             };
             
             try {
-                const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}/tasks/${taskId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(taskData)
                 });
                 
                 if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
-                    loadGanttData();
+                    const result = await response.json();
+                    console.log('Task updated:', result);
+                    
+                    // Update in gantt data
+                    const taskIndex = ganttData.tasks.findIndex(t => t.id == taskId);
+                    if (taskIndex !== -1) {
+                        const updatedTask = transformTasksForGantt([result.data || result])[0];
+                        ganttData.tasks[taskIndex] = updatedTask;
+                    }
+                    
+                    // Refresh chart
+                    renderGanttChart();
+                    updateTaskSummary();
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+                    modal.hide();
+                    
+                    alert('Task updated successfully!');
                 } else {
-                    alert('Failed to update task');
+                    throw new Error('Failed to update task');
                 }
             } catch (error) {
                 console.error('Error updating task:', error);
-                alert('Failed to update task');
+                alert('Failed to update task. Please try again.');
             }
         }
 
@@ -554,24 +1579,395 @@
             if (!confirm('Are you sure you want to delete this task?')) return;
             
             try {
-                const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+                const response = await fetch(`${API_URL}/api/projects/${projectId}/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
                 
                 if (response.ok) {
-                    loadGanttData();
+                    // Remove from gantt data
+                    ganttData.tasks = ganttData.tasks.filter(t => t.id != taskId);
+                    
+                    // Refresh chart
+                    renderGanttChart();
+                    updateTaskSummary();
+                    
+                    alert('Task deleted successfully!');
                 } else {
-                    alert('Failed to delete task');
+                    throw new Error('Failed to delete task');
                 }
             } catch (error) {
                 console.error('Error deleting task:', error);
-                alert('Failed to delete task');
+                alert('Failed to delete task. Please try again.');
             }
         }
 
-        function exportGantt() {
-            // Placeholder for export functionality
-            alert('Export functionality coming soon');
+        // Enhanced Gantt features
+        function addTaskDependency(fromTaskId, toTaskId) {
+            const link = {
+                id: `link_${fromTaskId}_${toTaskId}`,
+                source: fromTaskId,
+                target: toTaskId,
+                type: "0" // Finish to Start
+            };
+            
+            ganttData.links.push(link);
+            renderGanttChart();
+        }
+
+        function removeTaskDependency(linkId) {
+            ganttData.links = ganttData.links.filter(l => l.id !== linkId);
+            renderGanttChart();
+        }
+
+        // Advanced features
+        function calculateResourceUtilization() {
+            const resourceMap = {};
+            
+            ganttData.tasks.forEach(task => {
+                if (task.assignee_id) {
+                    if (!resourceMap[task.assignee_id]) {
+                        resourceMap[task.assignee_id] = { tasks: [], totalHours: 0 };
+                    }
+                    resourceMap[task.assignee_id].tasks.push(task);
+                    
+                    // Calculate task duration in hours
+                    const duration = (task.end_date - task.start_date) / (1000 * 60 * 60);
+                    resourceMap[task.assignee_id].totalHours += duration;
+                }
+            });
+            
+            return resourceMap;
+        }
+
+        function highlightResourceConflicts() {
+            const resourceMap = calculateResourceUtilization();
+            const conflicts = [];
+            
+            Object.keys(resourceMap).forEach(resourceId => {
+                const resource = resourceMap[resourceId];
+                const sortedTasks = resource.tasks.sort((a, b) => a.start_date - b.start_date);
+                
+                for (let i = 0; i < sortedTasks.length - 1; i++) {
+                    const currentTask = sortedTasks[i];
+                    const nextTask = sortedTasks[i + 1];
+                    
+                    if (currentTask.end_date > nextTask.start_date) {
+                        conflicts.push({
+                            resourceId,
+                            resourceName: employees.find(e => e.id == resourceId)?.name || 'Unknown',
+                            task1: currentTask,
+                            task2: nextTask
+                        });
+                    }
+                }
+            });
+            
+            return conflicts;
+        }
+
+        // Context menu functions
+        function onTaskRightClick(id, e) {
+            selectedTaskId = id;
+            const task = gantt.getTask(id);
+            
+            // Show context menu
+            const modal = new bootstrap.Modal(document.getElementById('taskContextModal'));
+            modal.show();
+            
+            return true; // Prevent default context menu
+        }
+
+        function onTaskDblClick(id, e) {
+            editTask(id);
+            return true;
+        }
+
+        function editTaskFromContext() {
+            if (selectedTaskId) {
+                editTask(selectedTaskId);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('taskContextModal'));
+                modal.hide();
+            }
+        }
+
+        function deleteTaskFromContext() {
+            if (selectedTaskId) {
+                deleteTask(selectedTaskId);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('taskContextModal'));
+                modal.hide();
+            }
+        }
+
+        function duplicateTask() {
+            if (!selectedTaskId) return;
+            
+            const originalTask = ganttData.tasks.find(t => t.id == selectedTaskId);
+            if (!originalTask) return;
+            
+            // Create duplicate task
+            const duplicateTask = {
+                ...originalTask,
+                id: Date.now(), // Temporary ID
+                text: `${originalTask.text} (Copy)`,
+                start_date: new Date(originalTask.start_date.getTime() + 7 * 24 * 60 * 60 * 1000), // 1 week later
+                end_date: new Date(originalTask.end_date.getTime() + 7 * 24 * 60 * 60 * 1000),
+                progress: 0,
+                status: 'pending'
+            };
+            
+            // Add to gantt data
+            ganttData.tasks.push(duplicateTask);
+            renderGanttChart();
+            updateTaskSummary();
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('taskContextModal'));
+            modal.hide();
+            
+            alert('Task duplicated successfully!');
+        }
+
+        function addSubtask() {
+            if (!selectedTaskId) return;
+            
+            // Open new task modal with parent task pre-selected
+            const modal = new bootstrap.Modal(document.getElementById('newTaskModal'));
+            modal.show();
+            
+            // Set parent task (this would need to be implemented in the backend)
+            console.log('Adding subtask to task:', selectedTaskId);
+            
+            const contextModal = bootstrap.Modal.getInstance(document.getElementById('taskContextModal'));
+            contextModal.hide();
+        }
+
+        function markAsMilestone() {
+            if (!selectedTaskId) return;
+            
+            const taskIndex = ganttData.tasks.findIndex(t => t.id == selectedTaskId);
+            if (taskIndex !== -1) {
+                ganttData.tasks[taskIndex].is_milestone = !ganttData.tasks[taskIndex].is_milestone;
+                renderGanttChart();
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('taskContextModal'));
+                modal.hide();
+                
+                alert('Task milestone status updated!');
+            }
+        }
+
+        // Additional utility functions
+        function showResourceConflicts() {
+            const conflicts = highlightResourceConflicts();
+            if (conflicts.length === 0) {
+                alert('No resource conflicts found!');
+                return;
+            }
+            
+            let conflictMessage = 'Resource conflicts found:\n\n';
+            conflicts.forEach(conflict => {
+                conflictMessage += `${conflict.resourceName}:\n`;
+                conflictMessage += `  - ${conflict.task1.text}\n`;
+                conflictMessage += `  - ${conflict.task2.text}\n\n`;
+            });
+            
+            alert(conflictMessage);
+        }
+
+        function autoScheduleTasks() {
+            // Simple auto-scheduling algorithm
+            const sortedTasks = ganttData.tasks.sort((a, b) => a.start_date - b.start_date);
+            let currentDate = new Date();
+            
+            sortedTasks.forEach(task => {
+                if (task.status === 'pending') {
+                    task.start_date = new Date(currentDate);
+                    task.end_date = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000); // 1 day duration
+                    currentDate = new Date(task.end_date.getTime() + 60 * 60 * 1000); // 1 hour gap
+                }
+            });
+            
+            renderGanttChart();
+            alert('Tasks auto-scheduled!');
+        }
+
+        function calculateProjectMetrics() {
+            const tasks = ganttData.tasks;
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
+            const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+            
+            const totalDuration = tasks.reduce((sum, task) => {
+                return sum + (task.end_date - task.start_date);
+            }, 0);
+            
+            const avgTaskDuration = totalDuration / totalTasks;
+            
+            const metrics = {
+                totalTasks,
+                completedTasks,
+                inProgressTasks,
+                pendingTasks,
+                completionRate: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
+                avgTaskDuration: avgTaskDuration / (1000 * 60 * 60 * 24), // Convert to days
+                totalDuration: totalDuration / (1000 * 60 * 60 * 24)
+            };
+            
+            return metrics;
+        }
+
+        function showProjectMetrics() {
+            const metrics = calculateProjectMetrics();
+            
+            const message = `Project Metrics:\n\n` +
+                `Total Tasks: ${metrics.totalTasks}\n` +
+                `Completed: ${metrics.completedTasks}\n` +
+                `In Progress: ${metrics.inProgressTasks}\n` +
+                `Pending: ${metrics.pendingTasks}\n` +
+                `Completion Rate: ${metrics.completionRate.toFixed(1)}%\n` +
+                `Average Task Duration: ${metrics.avgTaskDuration.toFixed(1)} days\n` +
+                `Total Project Duration: ${metrics.totalDuration.toFixed(1)} days`;
+            
+            alert(message);
+        }
+
+        function fitGanttContent() {
+            // Use the correct method to fit content and scroll to earliest task
+            scrollToEarliestTask();
+            gantt.render();
+            // Apply dark theme after fitting content
+            setTimeout(() => {
+                applyDarkTheme();
+                ensureDarkThemePersistence();
+            }, 50);
+        }
+
+        function expandAllTasks() {
+            // Expand all tasks if the method exists, otherwise provide fallback
+            if (typeof gantt.expandAll === 'function') {
+                gantt.expandAll();
+            } else {
+                // Fallback: manually expand all tasks
+                ganttData.tasks.forEach(task => {
+                    if (task.parent === 0) {
+                        gantt.open(task.id);
+                    }
+                });
+            }
+        }
+
+        function collapseAllTasks() {
+            // Collapse all tasks if the method exists, otherwise provide fallback
+            if (typeof gantt.collapseAll === 'function') {
+                gantt.collapseAll();
+            } else {
+                // Fallback: manually collapse all tasks
+                ganttData.tasks.forEach(task => {
+                    if (task.parent === 0) {
+                        gantt.close(task.id);
+                    }
+                });
+            }
+        }
+
+        // Function to ensure dark theme persistence
+        function ensureDarkThemePersistence() {
+            // Set up a mutation observer to watch for DOM changes
+            const ganttContainer = document.getElementById('ganttContainer');
+            if (ganttContainer && !window.darkThemeObserver) {
+                window.darkThemeObserver = new MutationObserver(function(mutations) {
+                    // Debounce the theme application to prevent infinite loops
+                    if (window.darkThemeTimeout) {
+                        clearTimeout(window.darkThemeTimeout);
+                    }
+                    
+                    window.darkThemeTimeout = setTimeout(() => {
+                        // Only re-apply if we're not already applying
+                        if (!window.isApplyingDarkTheme) {
+                            applyDarkTheme();
+                        }
+                    }, 50);
+                });
+                
+                // Start observing with more specific filters
+                window.darkThemeObserver.observe(ganttContainer, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['class', 'style'],
+                    characterData: false
+                });
+            }
+            
+            // Remove the periodic checks as they can cause performance issues
+            // The mutation observer should be sufficient
+        }
+
+        // Task interaction functions
+        function onTaskClick(id, e) {
+            // Deselect all tasks first
+            ganttData.tasks.forEach(task => {
+                task.selected = false;
+            });
+            
+            // Select the clicked task
+            const clickedTask = ganttData.tasks.find(task => task.id == id);
+            if (clickedTask) {
+                clickedTask.selected = true;
+            }
+            
+            // Update the chart to reflect selection
+            gantt.refreshTask(id);
+            
+            // Store selected task ID for context menu
+            selectedTaskId = id;
+            
+            return true; // Prevent default behavior
+        }
+
+        function onMouseMove(id, e) {
+            // Add hover effect to task bars
+            const taskElements = document.querySelectorAll('.gantt_task_line');
+            taskElements.forEach(element => {
+                element.classList.remove('border', 'border-info', 'border-2');
+            });
+            
+            if (id) {
+                const taskElement = document.querySelector(`[task_id="${id}"]`);
+                if (taskElement) {
+                    taskElement.classList.add('border', 'border-info', 'border-2');
+                }
+            }
+        }
+
+        function initializeTaskInteractions() {
+            // Initialize Bootstrap tooltips for task bars
+            const taskElements = document.querySelectorAll('.gantt_task_line');
+            taskElements.forEach(element => {
+                const taskId = element.getAttribute('task_id');
+                if (taskId) {
+                    const task = ganttData.tasks.find(t => t.id == taskId);
+                    if (task) {
+                        element.setAttribute('data-bs-toggle', 'tooltip');
+                        element.setAttribute('data-bs-placement', 'top');
+                        element.setAttribute('data-bs-html', 'true');
+                        element.setAttribute('title', `
+                            <div class="text-start">
+                                <strong>${task.text}</strong><br>
+                                <small>${task.status} • ${Math.round(task.progress * 100)}%</small>
+                            </div>
+                        `);
+                    }
+                }
+            });
+            
+            // Initialize Bootstrap tooltips
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
         }
     </script>
 </body>
