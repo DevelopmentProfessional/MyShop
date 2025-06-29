@@ -103,7 +103,13 @@
         fetch(`${API_URL}/api/vendors`)
             .then(res => res.json())
             .then(data => {
-                vendors = data;
+                if (Array.isArray(data)) {
+                    vendors = data;
+                } else if (data && data.success && Array.isArray(data.data)) {
+                    vendors = data.data;
+                } else {
+                    vendors = [];
+                }
                 renderVendors();
             })
             .catch(() => {
@@ -174,9 +180,13 @@
                 body: JSON.stringify(vendor)
             })
             .then(res => res.json())
-            .then(() => {
-                bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
-                loadVendors();
+            .then(data => {
+                if (data && data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
+                    loadVendors();
+                } else {
+                    alert('Failed to update vendor.');
+                }
             });
         } else {
             fetch(`${API_URL}/api/vendors`, {
@@ -185,9 +195,13 @@
                 body: JSON.stringify(vendor)
             })
             .then(res => res.json())
-            .then(() => {
-                bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
-                loadVendors();
+            .then(data => {
+                if (data && data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('vendorModal')).hide();
+                    loadVendors();
+                } else {
+                    alert('Failed to create vendor.');
+                }
             });
         }
     });
@@ -195,7 +209,13 @@
         if (!confirm('Are you sure you want to delete this vendor?')) return;
         fetch(`${API_URL}/api/vendors/${id}`, { method: 'DELETE' })
             .then(res => res.json())
-            .then(() => loadVendors());
+            .then(data => {
+                if (data && data.success) {
+                    loadVendors();
+                } else {
+                    alert('Failed to delete vendor.');
+                }
+            });
     }
     </script>
 </body>

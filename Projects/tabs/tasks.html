@@ -65,7 +65,8 @@ async function loadTasksData(projectId) {
         ]);
         
         const tasks = tasksRes.ok ? await tasksRes.json() : [];
-        const employees = employeesRes.ok ? await employeesRes.json() : [];
+        const employeesResult = employeesRes.ok ? await employeesRes.json() : {};
+        const employees = employeesResult.success ? employeesResult.data : [];
         
         let html = '';
         if (!tasks.length) {

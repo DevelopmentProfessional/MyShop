@@ -195,7 +195,22 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                contracts = await response.json();
+                const result = await response.json();
+                
+                // Handle new API response structure
+                if (result && result.success && Array.isArray(result.data)) {
+                    contracts = result.data;
+                } else if (Array.isArray(result)) {
+                    // Fallback for old API structure
+                    contracts = result;
+                } else if (result && result.data && Array.isArray(result.data)) {
+                    // Handle case where success might be missing
+                    contracts = result.data;
+                } else {
+                    console.error('Unexpected response format:', result);
+                    contracts = [];
+                }
+                
                 filteredContracts = [...contracts];
                 updateStats();
                 updateFilters();

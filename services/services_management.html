@@ -214,17 +214,29 @@
             }
         }
 
-        async function loadData() {
-            enableFilters(false);
+        async function loadServices() {
             try {
-                services = await fetchData(`${API_URL}/api/services`);
-                filteredServices = [...services];
-                updateCategoryFilter();
-                updateStatusFilter();
-                enableFilters(true);
+                const response = await fetchData(`${API_URL}/api/services`);
+                
+                // Handle new API response structure
+                if (response && response.success && Array.isArray(response.data)) {
+                    services = response.data;
+                } else if (Array.isArray(response)) {
+                    // Fallback for old API structure
+                    services = response;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Handle case where success might be missing
+                    services = response.data;
+                } else {
+                    console.error('Unexpected response format:', response);
+                    services = [];
+                }
+                
                 renderServices();
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('Error loading services:', error);
+                services = [];
+                renderServices();
             }
         }
 
@@ -400,7 +412,16 @@
                     body: JSON.stringify({ name, duration, price, status }),
                 });
 
-                services.push(response);
+                // Handle new API response structure
+                if (response && response.success && response.data) {
+                    services.push(response.data);
+                } else if (response && response.id) {
+                    // Fallback for old API structure
+                    services.push(response);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
                 renderServices();
 
                 // Close the correct modal
@@ -437,9 +458,20 @@
                     body: JSON.stringify({ name, duration, price, status })
                 });
 
+                // Handle new API response structure
+                let updatedService;
+                if (response && response.success && response.data) {
+                    updatedService = response.data;
+                } else if (response && response.id) {
+                    // Fallback for old API structure
+                    updatedService = response;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
                 const index = services.findIndex(s => s.id === id);
                 if (index !== -1) {
-                    services[index] = response;
+                    services[index] = updatedService;
                 }
                 renderServices();
 
@@ -455,12 +487,17 @@
             if (!confirm('Are you sure you want to delete this service?')) return;
 
             try {
-                await fetchData(`${API_URL}/api/services/${id}`, {
+                const response = await fetchData(`${API_URL}/api/services/${id}`, {
                     method: 'DELETE'
                 });
 
-                services = services.filter(s => s.id !== id);
-                renderServices();
+                // Handle new API response structure
+                if (response && response.success) {
+                    services = services.filter(s => s.id !== id);
+                    renderServices();
+                } else {
+                    throw new Error(response.error || 'Failed to delete service');
+                }
                 
              } catch (error) {
                 console.error('Error deleting service:', error);

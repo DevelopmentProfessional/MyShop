@@ -315,17 +315,18 @@
         async function loadData() {
             try {
                 console.log('Loading data from API...');
-                const [servicesData, clientsData, employeesData, appointmentsData] = await Promise.all([
-                    fetchData(`${API_URL}/api/services`).catch(() => []),
-                    fetchData(`${API_URL}/api/clients`).catch(() => []),
-                    fetchData(`${API_URL}/api/employees`).catch(() => []),
-                    fetchData(`${API_URL}/api/appointments`).catch(() => [])
+                const [servicesResponse, clientsResponse, employeesResponse, appointmentsResponse] = await Promise.all([
+                    fetchData(`${API_URL}/api/services`).catch(() => ({ success: false, data: [] })),
+                    fetchData(`${API_URL}/api/clients`).catch(() => ({ success: false, data: [] })),
+                    fetchData(`${API_URL}/api/employees`).catch(() => ({ success: false, data: [] })),
+                    fetchData(`${API_URL}/api/appointments`).catch(() => ({ success: false, data: [] }))
                 ]);
 
-                services = safeObject(servicesData, []);
-                clients = safeObject(clientsData, []);
-                employees = safeObject(employeesData, []);
-                appointments = safeObject(appointmentsData, []);
+                // Handle new API response structure for each endpoint
+                services = safeObject(servicesResponse?.data || servicesResponse, []);
+                clients = safeObject(clientsResponse?.data || clientsResponse, []);
+                employees = safeObject(employeesResponse?.data || employeesResponse, []);
+                appointments = safeObject(appointmentsResponse?.data || appointmentsResponse, []);
 
                 console.log('Loaded data:', {
                     services: services.length,
@@ -810,7 +811,8 @@
         async function loadServices() {
             try {
                 const response = await fetchData(`${API_URL}/api/services`);
-                services = safeObject(response, []);
+                // Handle new API response structure
+                services = safeObject(response?.data || response, []);
                 const serviceSelect = getElement('appointmentService');
                 if (serviceSelect) {
                     serviceSelect.innerHTML = '<option value="">Select a service</option>' +
@@ -826,7 +828,8 @@
         async function loadClients() {
             try {
                 const response = await fetchData(`${API_URL}/api/clients`);
-                clients = safeObject(response, []);
+                // Handle new API response structure
+                clients = safeObject(response?.data || response, []);
                 const clientSelect = getElement('appointmentClient');
                 if (clientSelect) {
                     clientSelect.innerHTML = '<option value="">Select a client</option>' +
@@ -842,7 +845,19 @@
         async function loadEmployees() {
             try {
                 const response = await fetchData(`${API_URL}/api/employees`);
-                employees = safeObject(response, []);
+                // Handle new API response structure
+                if (response && response.success && response.data) {
+                    employees = safeObject(response.data, []);
+                } else if (response && Array.isArray(response)) {
+                    // Fallback for old API structure
+                    employees = safeObject(response, []);
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Handle case where success might be missing
+                    employees = safeObject(response.data, []);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
                 const employeeSelect = getElement('appointmentEmployee');
                 if (employeeSelect) {
                     employeeSelect.innerHTML = '<option value="">Select an employee</option>' +
@@ -858,7 +873,8 @@
         async function loadAppointments() {
             try {
                 const response = await fetchData(`${API_URL}/api/appointments`);
-                appointments = safeObject(response, []);
+                // Handle new API response structure
+                appointments = safeObject(response?.data || response, []);
                 
                 // Update the calendar and show appointments for selected date
                 renderCalendar();

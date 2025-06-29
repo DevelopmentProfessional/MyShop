@@ -184,10 +184,16 @@
 
         async function loadData() {
             try {
-                employees = await fetchData(`${API_URL}/api/employees`);
+                const result = await fetchData(`${API_URL}/api/employees`);
+                if (result.success) {
+                    employees = result.data || [];
+                } else {
+                    throw new Error(result.error || 'Failed to fetch employees');
+                }
                 renderEmployees();
             } catch (error) {
                 console.error('Error loading data:', error);
+                showToast('Failed to load employees: ' + error.message, 'danger');
             }
         }
 

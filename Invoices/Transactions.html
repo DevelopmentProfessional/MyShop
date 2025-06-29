@@ -539,10 +539,24 @@
     async function loadContracts() {
         try {
             const res = await fetch(`${API_URL}/api/contracts`);
-            const contracts = await res.json();
-            contractsList = contracts;
+            const response = await res.json();
+            
+            // Handle new API response structure
+            if (response && response.success && Array.isArray(response.data)) {
+                contractsList = response.data;
+            } else if (Array.isArray(response)) {
+                // Fallback for old API structure
+                contractsList = response;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                // Handle case where success might be missing
+                contractsList = response.data;
+            } else {
+                console.error('Unexpected response format:', response);
+                contractsList = [];
+            }
+            
             paymentContract.innerHTML = '<option value="">Select contract (optional)</option>' +
-                contracts.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+                contractsList.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
         } catch (e) {
             paymentContract.innerHTML = '<option value="">Failed to load contracts</option>';
         }
@@ -604,8 +618,32 @@
                 fetch(`${API_URL}/api/recurring-payments`)
             ]);
 
-            const oneTimePayments = await oneTimeResponse.json();
-            const recurringPayments = await recurringResponse.json();
+            const oneTimeResult = await oneTimeResponse.json();
+            const recurringResult = await recurringResponse.json();
+
+            // Handle new API response structure for one-time payments
+            let oneTimePayments;
+            if (oneTimeResult && oneTimeResult.success && Array.isArray(oneTimeResult.data)) {
+                oneTimePayments = oneTimeResult.data;
+            } else if (Array.isArray(oneTimeResult)) {
+                oneTimePayments = oneTimeResult;
+            } else if (oneTimeResult && oneTimeResult.data && Array.isArray(oneTimeResult.data)) {
+                oneTimePayments = oneTimeResult.data;
+            } else {
+                oneTimePayments = [];
+            }
+
+            // Handle new API response structure for recurring payments
+            let recurringPayments;
+            if (recurringResult && recurringResult.success && Array.isArray(recurringResult.data)) {
+                recurringPayments = recurringResult.data;
+            } else if (Array.isArray(recurringResult)) {
+                recurringPayments = recurringResult;
+            } else if (recurringResult && recurringResult.data && Array.isArray(recurringResult.data)) {
+                recurringPayments = recurringResult.data;
+            } else {
+                recurringPayments = [];
+            }
 
             // Combine and sort all payments by creation date
             const allPayments = [

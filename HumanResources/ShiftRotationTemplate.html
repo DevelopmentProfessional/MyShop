@@ -201,12 +201,36 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="../js/shift-scheduling-client.js"></script>
     
     <script>
         let shiftRotations = [];
         let shiftTemplates = [];
         let employees = [];
+        
+        // Generic API call function
+        async function apiCall(url, options = {}) {
+            try {
+                const config = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                };
+
+                const response = await fetch(url, config);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return data;
+            } catch (error) {
+                console.error(`API Error (${url}):`, error);
+                throw error;
+            }
+        }
         
         // Load all data
         async function loadData() {
@@ -215,14 +239,14 @@
                 
                 // Load all data in parallel
                 const [rotations, templates, employeesData] = await Promise.all([
-                    shiftSchedulingAPI.getRotations(),
-                    shiftSchedulingAPI.getTemplates(),
-                    shiftSchedulingAPI.getEmployees()
+                    apiCall('/api/shift-rotations'),
+                    apiCall('/api/shift-templates'),
+                    apiCall('/api/employees')
                 ]);
                 
-                shiftRotations = rotations;
-                shiftTemplates = templates;
-                employees = employeesData;
+                shiftRotations = rotations.data;
+                shiftTemplates = templates.data;
+                employees = employeesData.data;
                 
                 displayRotations();
                 displayAvailableTemplates();
@@ -342,7 +366,8 @@
         // Load rotation sequence
         async function loadRotationSequence(rotationId) {
             try {
-                const sequence = await shiftSchedulingAPI.getRotationSequence(rotationId);
+                const response = await apiCall(`/api/shift-rotations/${rotationId}/sequence`);
+                const sequence = response.data;
                 const container = $('#editRotationSequence');
                 container.empty();
                 
@@ -377,7 +402,7 @@
             }
             
             try {
-                await shiftSchedulingAPI.deleteRotation(rotationId);
+                await apiCall(`/api/shift-rotations/${rotationId}`, { method: 'DELETE' });
                 loadData();
             } catch (error) {
                 console.error('Error deleting rotation:', error);
@@ -426,7 +451,10 @@
             };
             
             try {
-                await shiftSchedulingAPI.createRotation(rotationData);
+                const response = await apiCall('/api/shift-rotations', {
+                    method: 'POST',
+                    body: JSON.stringify(rotationData)
+                });
                 $('#shiftRotationModal').modal('hide');
                 form[0].reset();
                 loadData();
@@ -446,7 +474,10 @@
             };
             
             try {
-                await shiftSchedulingAPI.updateRotation(rotationId, rotationData);
+                const response = await apiCall(`/api/shift-rotations/${rotationId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(rotationData)
+                });
                 $('#editRotationModal').modal('hide');
                 loadData();
             } catch (error) {
@@ -459,7 +490,7 @@
         $('#pauseRotation').click(async () => {
             const rotationId = $('#editRotationId').val();
             try {
-                await shiftSchedulingAPI.pauseRotation(rotationId);
+                const response = await apiCall(`/api/shift-rotations/${rotationId}/pause`, { method: 'POST' });
                 $('#editRotationModal').modal('hide');
                 loadData();
             } catch (error) {
@@ -472,7 +503,7 @@
         $('#resumeRotation').click(async () => {
             const rotationId = $('#editRotationId').val();
             try {
-                await shiftSchedulingAPI.resumeRotation(rotationId);
+                const response = await apiCall(`/api/shift-rotations/${rotationId}/resume`, { method: 'POST' });
                 $('#editRotationModal').modal('hide');
                 loadData();
             } catch (error) {

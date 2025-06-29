@@ -115,20 +115,30 @@
           document.getElementById('searchInput').disabled = !enable;
         }
 
-        async function loadData() {
-          enableFilters(false);
-          try {
-            products = await fetchData(`${API_URL}/api/products`);
-            console.log('Frontend received products:', products);
-            console.log('First product sample:', products[0]);
-            filteredProducts = [...products];
-            updateCategoryFilter();
-            updateStatusFilter();
-            enableFilters(true);
-            renderProducts();
-          } catch (error) {
-            console.error('Error loading data:', error);
-          }
+        async function loadProducts() {
+            try {
+                const response = await fetchData(`${API_URL}/api/products`);
+                
+                // Handle new API response structure
+                if (response && response.success && Array.isArray(response.data)) {
+                    products = response.data;
+                } else if (Array.isArray(response)) {
+                    // Fallback for old API structure
+                    products = response;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Handle case where success might be missing
+                    products = response.data;
+                } else {
+                    console.error('Unexpected response format:', response);
+                    products = [];
+                }
+                
+                renderProducts();
+            } catch (error) {
+                console.error('Error loading products:', error);
+                products = [];
+                renderProducts();
+            }
         }
 
         function updateCategoryFilter() {
@@ -318,12 +328,17 @@
             if (!confirm('Are you sure you want to delete this product?')) return;
 
             try {
-                await fetchData(`${API_URL}/api/products/${id}`, {
+                const response = await fetchData(`${API_URL}/api/products/${id}`, {
                     method: 'DELETE'
                 });
 
-                products = products.filter(p => p.id !== id);
-                renderProducts();
+                // Handle new API response structure
+                if (response && response.success) {
+                    products = products.filter(p => p.id !== id);
+                    renderProducts();
+                } else {
+                    throw new Error(response.error || 'Failed to delete product');
+                }
                 
              } catch (error) {
                 console.error('Error deleting product:', error);

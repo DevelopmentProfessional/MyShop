@@ -46,7 +46,8 @@ async function loadTeamsData(projectId) {
         
         const teams = teamsRes.ok ? await teamsRes.json() : [];
         const projectTeams = projectTeamsRes.ok ? await projectTeamsRes.json() : [];
-        const employees = employeesRes.ok ? await employeesRes.json() : [];
+        const employeesResult = employeesRes.ok ? await employeesRes.json() : {};
+        const employees = employeesResult.success ? employeesResult.data : [];
         
         // Populate team select
         const teamSelect = document.getElementById('teamSelect');

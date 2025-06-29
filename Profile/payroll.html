@@ -65,60 +65,77 @@
     const EMPLOYEE_ID = 1;
     const API_URL = window.location.origin;
     async function fetchPayroll() {
-        const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/payroll`);
-        if (!res.ok) {
-            document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-danger'>Failed to load payroll records.</td></tr>`;
-            return;
+        try {
+            const res = await fetch(`${API_URL}/api/payroll/employee/${EMPLOYEE_ID}`);
+            if (!res.ok) {
+                throw new Error('Failed to fetch payroll data');
+            }
+            
+            const result = await res.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch payroll data');
+            }
+            
+            const payroll = result.data;
+            if (!payroll || !payroll.length) {
+                document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-muted text-center'>No payroll records found.</td></tr>`;
+                return;
+            }
+            
+            document.getElementById('payrollTbody').innerHTML = payroll.map(p => `
+                <tr>
+                    <td>${p.pay_date ? new Date(p.pay_date).toLocaleDateString() : 'N/A'}</td>
+                    <td>$${Number(p.gross_salary || 0).toFixed(2)}</td>
+                    <td>$${Number(p.net_salary || 0).toFixed(2)}</td>
+                    <td><button class='btn btn-sm btn-outline-info' onclick='showPayrollDetails(${p.payroll_id})'>View</button></td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error fetching payroll:', error);
+            document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-danger'>Failed to load payroll records: ${error.message}</td></tr>`;
         }
-        const payroll = await res.json();
-        if (!payroll.length) {
-            document.getElementById('payrollTbody').innerHTML = `<tr><td colspan='4' class='text-muted text-center'>No payroll records found.</td></tr>`;
-            return;
-        }
-        document.getElementById('payrollTbody').innerHTML = payroll.map(p => `
-            <tr>
-                <td>${p.pay_date}</td>
-                <td>$${Number(p.gross_salary).toFixed(2)}</td>
-                <td>$${Number(p.net_salary).toFixed(2)}</td>
-                <td><button class='btn btn-sm btn-outline-info' onclick='showPayrollDetails(${p.payroll_id})'>View</button></td>
-            </tr>
-        `).join('');
     }
+    
     async function showPayrollDetails(payrollId) {
-        const res = await fetch(`${API_URL}/api/payroll/${payrollId}/details`);
-        if (!res.ok) {
-            document.getElementById('payrollDetailsContent').innerHTML = `<div class='text-danger'>Failed to load details.</div>`;
-        } else {
-            const details = await res.json();
-            if (!details.length) {
+        try {
+            const res = await fetch(`${API_URL}/api/payroll/${payrollId}`);
+            if (!res.ok) {
+                throw new Error('Failed to fetch payroll details');
+            }
+            
+            const result = await res.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch payroll details');
+            }
+            
+            const details = result.data;
+            if (!details) {
                 document.getElementById('payrollDetailsContent').innerHTML = `<div class='text-muted'>No details found for this payroll record.</div>`;
             } else {
                 document.getElementById('payrollDetailsContent').innerHTML = `
-                    <table class='table table-dark table-hover align-middle'>
-                        <thead class='table-secondary'>
-                            <tr>
-                                <th>Benefit</th>
-                                <th>Deduction</th>
-                                <th>Performance Review</th>
-                                <th>Benefit Value</th>
-                                <th>Deduction Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${details.map(d => `
-                                <tr>
-                                    <td>${d.benefit_name || ''}</td>
-                                    <td>${d.deduction_name || ''}</td>
-                                    <td>${d.performance_score !== null ? d.performance_score : ''}</td>
-                                    <td>${d.benefit_value !== null ? d.benefit_value : ''}</td>
-                                    <td>${d.deduction_value !== null ? d.deduction_value : ''}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                    <div class='row'>
+                        <div class='col-md-6'>
+                            <h6>Payroll Information</h6>
+                            <table class='table table-dark table-sm'>
+                                <tr><td>Employee:</td><td>${details.employee_name || 'N/A'}</td></tr>
+                                <tr><td>Pay Date:</td><td>${details.pay_date ? new Date(details.pay_date).toLocaleDateString() : 'N/A'}</td></tr>
+                                <tr><td>Gross Salary:</td><td>$${Number(details.gross_salary || 0).toFixed(2)}</td></tr>
+                                <tr><td>Deductions:</td><td>$${Number(details.deductions || 0).toFixed(2)}</td></tr>
+                                <tr><td>Net Salary:</td><td>$${Number(details.net_salary || 0).toFixed(2)}</td></tr>
+                            </table>
+                        </div>
+                        <div class='col-md-6'>
+                            <h6>Additional Information</h6>
+                            <p class='text-muted'>Detailed breakdown of benefits and deductions will be available here when the payroll details API is implemented.</p>
+                        </div>
+                    </div>
                 `;
             }
+        } catch (error) {
+            console.error('Error fetching payroll details:', error);
+            document.getElementById('payrollDetailsContent').innerHTML = `<div class='text-danger'>Failed to load details: ${error.message}</div>`;
         }
+        
         const modal = new bootstrap.Modal(document.getElementById('payrollDetailsModal'));
         modal.show();
     }

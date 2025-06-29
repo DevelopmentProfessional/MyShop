@@ -142,10 +142,38 @@
                     fetch(`${API_URL}/api/employees`)
                 ]);
                 
-                const project = projectRes.ok ? await projectRes.json() : {};
-                const teams = teamsRes.ok ? await teamsRes.json() : [];
-                const projectTeams = projectTeamsRes.ok ? await projectTeamsRes.json() : [];
-                const employees = employeesRes.ok ? await employeesRes.json() : [];
+                // Handle project data
+                let project = {};
+                if (projectRes.ok) {
+                    const projectData = await projectRes.json();
+                    project = Array.isArray(projectData) ? projectData[0] || {} : 
+                             (projectData && projectData.success && projectData.data) ? projectData.data[0] || {} : 
+                             projectData || {};
+                }
+                
+                // Handle teams data
+                let teams = [];
+                if (teamsRes.ok) {
+                    const teamsData = await teamsRes.json();
+                    teams = Array.isArray(teamsData) ? teamsData : 
+                           (teamsData && teamsData.success && Array.isArray(teamsData.data)) ? teamsData.data : [];
+                }
+                
+                // Handle project teams data
+                let projectTeams = [];
+                if (projectTeamsRes.ok) {
+                    const projectTeamsData = await projectTeamsRes.json();
+                    projectTeams = Array.isArray(projectTeamsData) ? projectTeamsData : 
+                                 (projectTeamsData && projectTeamsData.success && Array.isArray(projectTeamsData.data)) ? projectTeamsData.data : [];
+                }
+                
+                // Handle employees data
+                let employees = [];
+                if (employeesRes.ok) {
+                    const employeesData = await employeesRes.json();
+                    employees = Array.isArray(employeesData) ? employeesData : 
+                              (employeesData && employeesData.success && Array.isArray(employeesData.data)) ? employeesData.data : [];
+                }
                 
                 // Update project title
                 document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Teams`;
@@ -364,7 +392,8 @@
                 ]);
                 
                 const team = teamRes.ok ? await teamRes.json() : {};
-                const employees = employeesRes.ok ? await employeesRes.json() : [];
+                const employeesResult = employeesRes.ok ? await employeesRes.json() : {};
+                const employees = employeesResult.success ? employeesResult.data : [];
                 const teamMembers = employees.filter(emp => emp.team_id === teamId);
                 
                 document.getElementById('teamDetailsTitle').textContent = `Team: ${team.name}`;

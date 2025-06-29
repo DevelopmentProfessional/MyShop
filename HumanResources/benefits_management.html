@@ -125,7 +125,15 @@
             document.getElementById('benefitsTbody').innerHTML = `<tr><td colspan='10' class='text-danger'>Failed to load benefits.</td></tr>`;
             return;
         }
-        benefits = await res.json();
+        const response = await res.json();
+        
+        // Handle new API response structure
+        if (!response.success) {
+            document.getElementById('benefitsTbody').innerHTML = `<tr><td colspan='10' class='text-danger'>${response.error || 'Failed to load benefits.'}</td></tr>`;
+            return;
+        }
+        
+        benefits = response.data || [];
         if (!benefits.length) {
             document.getElementById('benefitsTbody').innerHTML = `<tr><td colspan='10' class='text-muted text-center'>No benefits found.</td></tr>`;
             return;
@@ -196,11 +204,15 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(benefit)
         });
-        if (res.ok) {
+        
+        const response = await res.json();
+        
+        if (res.ok && response.success) {
             bootstrap.Modal.getInstance(document.getElementById('benefitModal')).hide();
             loadBenefits();
         } else {
-            alert('Failed to save benefit.');
+            const errorMessage = response.error || response.details || 'Failed to save benefit.';
+            alert(`Error: ${errorMessage}`);
         }
     });
     document.addEventListener('DOMContentLoaded', loadBenefits);

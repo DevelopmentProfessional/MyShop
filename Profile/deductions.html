@@ -52,26 +52,37 @@
     const EMPLOYEE_ID = 1;
     const API_URL = window.location.origin;
     async function fetchDeductions() {
-        // This endpoint should return the employee's assigned deductions
-        const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/deductions`);
-        if (!res.ok) {
-            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-danger'>Failed to load deductions.</td></tr>`;
-            return;
+        try {
+            // This endpoint should return the employee's assigned deductions
+            const res = await fetch(`${API_URL}/api/employees/${EMPLOYEE_ID}/deductions`);
+            if (!res.ok) {
+                throw new Error('Failed to fetch deductions');
+            }
+            
+            const result = await res.json();
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to fetch deductions');
+            }
+            
+            const deductions = result.data;
+            if (!deductions || !deductions.length) {
+                document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-muted text-center'>No deductions assigned.</td></tr>`;
+                return;
+            }
+            
+            document.getElementById('deductionsTbody').innerHTML = deductions.map(d => `
+                <tr>
+                    <td>${d.name || 'N/A'}</td>
+                    <td>${d.type || 'N/A'}</td>
+                    <td>${d.value || '0'}</td>
+                    <td>${d.value_type || 'N/A'}</td>
+                    <td>${d.description || ''}</td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Error fetching deductions:', error);
+            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-danger'>Failed to load deductions: ${error.message}</td></tr>`;
         }
-        const deductions = await res.json();
-        if (!deductions.length) {
-            document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='5' class='text-muted text-center'>No deductions assigned.</td></tr>`;
-            return;
-        }
-        document.getElementById('deductionsTbody').innerHTML = deductions.map(d => `
-            <tr>
-                <td>${d.name}</td>
-                <td>${d.type}</td>
-                <td>${d.value}</td>
-                <td>${d.value_type}</td>
-                <td>${d.description || ''}</td>
-            </tr>
-        `).join('');
     }
     document.addEventListener('DOMContentLoaded', fetchDeductions);
     </script>

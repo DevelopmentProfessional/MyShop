@@ -104,7 +104,22 @@
             document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='6' class='text-danger'>Failed to load deductions.</td></tr>`;
             return;
         }
-        deductions = await res.json();
+        const response = await res.json();
+        
+        // Handle new API response structure
+        if (response && response.success && Array.isArray(response.data)) {
+            deductions = response.data;
+        } else if (Array.isArray(response)) {
+            // Fallback for old API structure
+            deductions = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+            // Handle case where success might be missing
+            deductions = response.data;
+        } else {
+            console.error('Unexpected response format:', response);
+            deductions = [];
+        }
+        
         if (!deductions.length) {
             document.getElementById('deductionsTbody').innerHTML = `<tr><td colspan='6' class='text-muted text-center'>No deductions found.</td></tr>`;
             return;
@@ -163,11 +178,15 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(deduction)
         });
-        if (res.ok) {
+        
+        const response = await res.json();
+        
+        if (res.ok && response.success) {
             bootstrap.Modal.getInstance(document.getElementById('deductionModal')).hide();
             loadDeductions();
         } else {
-            alert('Failed to save deduction.');
+            const errorMessage = response.error || response.details || 'Failed to save deduction.';
+            alert(`Error: ${errorMessage}`);
         }
     });
     document.addEventListener('DOMContentLoaded', loadDeductions);

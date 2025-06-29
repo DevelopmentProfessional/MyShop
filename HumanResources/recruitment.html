@@ -53,7 +53,23 @@ function showAlert(msg, type='success') {
 }
 async function fetchRecruits() {
     const res = await fetch('/api/recruits');
-    const recruits = await res.json();
+    const response = await res.json();
+    
+    // Handle new API response structure
+    let recruits;
+    if (response && response.success && Array.isArray(response.data)) {
+        recruits = response.data;
+    } else if (Array.isArray(response)) {
+        // Fallback for old API structure
+        recruits = response;
+    } else if (response && response.data && Array.isArray(response.data)) {
+        // Handle case where success might be missing
+        recruits = response.data;
+    } else {
+        console.error('Unexpected response format:', response);
+        recruits = [];
+    }
+    
     const tbody = document.getElementById('recruitList');
     tbody.innerHTML = recruits.map(r => `
         <tr>
@@ -80,21 +96,29 @@ document.getElementById('addRecruitForm').onsubmit = async function(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, qualifications })
     });
-    if (res.ok) {
+    
+    const response = await res.json();
+    
+    if (res.ok && response.success) {
         showAlert('Recruit added!', 'success');
         this.reset();
         fetchRecruits();
     } else {
-        showAlert('Error adding recruit', 'danger');
+        const errorMessage = response.error || response.details || 'Error adding recruit';
+        showAlert(errorMessage, 'danger');
     }
 };
 window.hireRecruit = async function(id) {
     const res = await fetch(`/api/recruits/${id}/hire`, { method: 'POST' });
-    if (res.ok) {
+    
+    const response = await res.json();
+    
+    if (res.ok && response.success) {
         showAlert('Recruit hired and added to employees!', 'success');
         fetchRecruits();
     } else {
-        showAlert('Error hiring recruit', 'danger');
+        const errorMessage = response.error || response.details || 'Error hiring recruit';
+        showAlert(errorMessage, 'danger');
     }
 };
 fetchRecruits();

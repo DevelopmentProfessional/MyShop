@@ -196,13 +196,30 @@
 
         let services = [];
 
-        async function loadData() {
+        async function loadServices() {
             try {
-                services = await fetchData(`${API_URL}/api/services`);
+                const response = await fetchData(`${API_URL}/api/services`);
+                
+                // Handle new API response structure
+                if (response && response.success && Array.isArray(response.data)) {
+                    services = response.data;
+                } else if (Array.isArray(response)) {
+                    // Fallback for old API structure
+                    services = response;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Handle case where success might be missing
+                    services = response.data;
+                } else {
+                    console.error('Unexpected response format:', response);
+                    services = [];
+                }
+                
                 renderServices();
             } catch (error) {
-                console.error('Error loading data:', error);
-             }
+                console.error('Error loading services:', error);
+                services = [];
+                renderServices();
+            }
         }
 
         function renderServices() {
@@ -230,47 +247,57 @@
         }
 
         async function saveService() {
-    // Set default values
-    let name = "";
-    let duration = 0;
-    let price = 0;
-    let status = "";
+            // Set default values
+            let name = "";
+            let duration = 0;
+            let price = 0;
+            let status = "";
 
-    // Get references to form elements
-    const nameInput = document.getElementById("serviceName");
-    const durationElement = document.getElementById("serviceDuration");
-    const priceInput = document.getElementById("servicePrice");
-    const statusElement = document.getElementById("serviceStatus");
+            // Get references to form elements
+            const nameInput = document.getElementById("serviceName");
+            const durationElement = document.getElementById("serviceDuration");
+            const priceInput = document.getElementById("servicePrice");
+            const statusElement = document.getElementById("serviceStatus");
 
-    // Assign values if elements exist
-    if (nameInput) name = nameInput.value;
-    if (durationElement) duration = durationElement.options[durationElement.selectedIndex]?.value;
-    if (priceInput) price = priceInput.value;
-    if (statusElement) status = statusElement.options[statusElement.selectedIndex]?.value;
- 
+            // Assign values if elements exist
+            if (nameInput) name = nameInput.value;
+            if (durationElement) duration = durationElement.options[durationElement.selectedIndex]?.value;
+            if (priceInput) price = priceInput.value;
+            if (statusElement) status = statusElement.options[statusElement.selectedIndex]?.value;
+         
 
-    // Prevent API request if values are missing
-    if (!name || !duration || !price || !status) {
-        console.error("Error: One or more fields are empty!");
-        return;
-    }
+            // Prevent API request if values are missing
+            if (!name || !duration || !price || !status) {
+                console.error("Error: One or more fields are empty!");
+                return;
+            }
 
-    try {
-        const response = await fetchData(`${API_URL}/api/services`, {
-            method: "POST",
-            body: JSON.stringify({ name, duration, price, status }),
-        });
+            try {
+                const response = await fetchData(`${API_URL}/api/services`, {
+                    method: "POST",
+                    body: JSON.stringify({ name, duration, price, status }),
+                });
 
-        services.push(response);
-        renderServices();
+                // Handle new API response structure
+                if (response && response.success && response.data) {
+                    services.push(response.data);
+                } else if (response && response.id) {
+                    // Fallback for old API structure
+                    services.push(response);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+                renderServices();
 
-        // Close the correct modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById("newServiceModal"));
-        modal.hide();
-    } catch (error) {
-        console.error("Error creating service:", error);
-    }
-}
+                // Close the correct modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById("newServiceModal"));
+                modal.hide();
+            } catch (error) {
+                console.error("Error creating service:", error);
+            }
+        }
+
         async function editService(id) {
             const service = services.find(s => s.id === id);
             if (!service) return;
@@ -297,9 +324,20 @@
                     body: JSON.stringify({ name, duration, price, status })
                 });
 
+                // Handle new API response structure
+                let updatedService;
+                if (response && response.success && response.data) {
+                    updatedService = response.data;
+                } else if (response && response.id) {
+                    // Fallback for old API structure
+                    updatedService = response;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
                 const index = services.findIndex(s => s.id === id);
                 if (index !== -1) {
-                    services[index] = response;
+                    services[index] = updatedService;
                 }
                 renderServices();
 
@@ -315,12 +353,17 @@
             if (!confirm('Are you sure you want to delete this service?')) return;
 
             try {
-                await fetchData(`${API_URL}/api/services/${id}`, {
+                const response = await fetchData(`${API_URL}/api/services/${id}`, {
                     method: 'DELETE'
                 });
 
-                services = services.filter(s => s.id !== id);
-                renderServices();
+                // Handle new API response structure
+                if (response && response.success) {
+                    services = services.filter(s => s.id !== id);
+                    renderServices();
+                } else {
+                    throw new Error(response.error || 'Failed to delete service');
+                }
                 
              } catch (error) {
                 console.error('Error deleting service:', error);

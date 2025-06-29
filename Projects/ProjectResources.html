@@ -269,11 +269,46 @@
                     fetch(`${API_URL}/api/projects/${projectId}/resource-assignments`)
                 ]);
                 
-                const project = projectRes.ok ? await projectRes.json() : {};
-                const assets = assetsRes.ok ? await assetsRes.json() : [];
-                const facilities = facilitiesRes.ok ? await facilitiesRes.json() : [];
-                const projectResources = projectResourcesRes.ok ? await projectResourcesRes.json() : [];
-                const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
+                // Handle project data
+                let project = {};
+                if (projectRes.ok) {
+                    const projectData = await projectRes.json();
+                    project = Array.isArray(projectData) ? projectData[0] || {} : 
+                             (projectData && projectData.success && projectData.data) ? projectData.data[0] || {} : 
+                             projectData || {};
+                }
+                
+                // Handle assets data
+                let assets = [];
+                if (assetsRes.ok) {
+                    const assetsData = await assetsRes.json();
+                    assets = Array.isArray(assetsData) ? assetsData : 
+                           (assetsData && assetsData.success && Array.isArray(assetsData.data)) ? assetsData.data : [];
+                }
+                
+                // Handle facilities data
+                let facilities = [];
+                if (facilitiesRes.ok) {
+                    const facilitiesData = await facilitiesRes.json();
+                    facilities = Array.isArray(facilitiesData) ? facilitiesData : 
+                               (facilitiesData && facilitiesData.success && Array.isArray(facilitiesData.data)) ? facilitiesData.data : [];
+                }
+                
+                // Handle project resources data
+                let projectResources = [];
+                if (projectResourcesRes.ok) {
+                    const projectResourcesData = await projectResourcesRes.json();
+                    projectResources = Array.isArray(projectResourcesData) ? projectResourcesData : 
+                                     (projectResourcesData && projectResourcesData.success && Array.isArray(projectResourcesData.data)) ? projectResourcesData.data : [];
+                }
+                
+                // Handle assignments data
+                let assignments = [];
+                if (assignmentsRes.ok) {
+                    const assignmentsData = await assignmentsRes.json();
+                    assignments = Array.isArray(assignmentsData) ? assignmentsData : 
+                                (assignmentsData && assignmentsData.success && Array.isArray(assignmentsData.data)) ? assignmentsData.data : [];
+                }
                 
                 // Update project title
                 document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Resources`;

@@ -128,7 +128,21 @@ let employees = [];
 
 async function fetchEmployees() {
     const res = await fetch(`${API_URL}/api/org-chart`);
-    employees = await res.json();
+    const response = await res.json();
+    
+    // Handle new API response structure
+    if (response && response.success && Array.isArray(response.data)) {
+        employees = response.data;
+    } else if (Array.isArray(response)) {
+        // Fallback for old API structure
+        employees = response;
+    } else if (response && response.data && Array.isArray(response.data)) {
+        // Handle case where success might be missing
+        employees = response.data;
+    } else {
+        console.error('Unexpected response format:', response);
+        employees = [];
+    }
 }
 
 function buildOrgChartData() {
@@ -218,14 +232,22 @@ function renderOrgChart() {
         const employee_id = $(draggedNode).data('nodeData').id;
         const supervisor_id = $(dropZone).data('nodeData').id;
         try {
-            await fetch('/api/UpdateEmployeeSupervisor', {
+            const response = await fetch('/api/UpdateEmployeeSupervisor', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ employee_id, supervisor_id })
             });
-            await refreshChartAndList();
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                await refreshChartAndList();
+            } else {
+                const errorMessage = result.error || result.details || 'Failed to update supervisor';
+                alert(errorMessage);
+            }
         } catch (err) {
-            alert('Failed to update supervisor.');
+            alert('Failed to update supervisor: ' + err.message);
         }
     });
 }
@@ -289,8 +311,19 @@ window.editEmployee = function(id) {
 
 window.deleteEmployee = async function(id) {
     if (!confirm('Delete this employee?')) return;
-    await fetch(`${API_URL}/api/employees/${id}`, { method: 'DELETE' });
-    refreshChartAndList();
+    try {
+        const response = await fetch(`${API_URL}/api/employees/${id}`, { method: 'DELETE' });
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            refreshChartAndList();
+        } else {
+            const errorMessage = result.error || result.details || 'Failed to delete employee';
+            alert(errorMessage);
+        }
+    } catch (error) {
+        alert('Failed to delete employee: ' + error.message);
+    }
 };
 
 document.getElementById('employeeForm').onsubmit = async function(e) {
@@ -304,21 +337,35 @@ document.getElementById('employeeForm').onsubmit = async function(e) {
     const status = document.getElementById('employeeStatus').value;
     const supervisor_id = document.getElementById('employeeSupervisor').value || null;
     const payload = { name, email, phone, role, department, status, supervisor_id };
-    if (id) {
-        await fetch(`${API_URL}/api/employees/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } else {
-        await fetch(`${API_URL}/api/employees`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+    
+    try {
+        let response;
+        if (id) {
+            response = await fetch(`${API_URL}/api/employees/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            response = await fetch(`${API_URL}/api/employees`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            employeeModal.hide();
+            refreshChartAndList();
+        } else {
+            const errorMessage = result.error || result.details || 'Failed to save employee';
+            alert(errorMessage);
+        }
+    } catch (error) {
+        alert('Failed to save employee: ' + error.message);
     }
-    employeeModal.hide();
-    refreshChartAndList();
 };
 
 // Drag-to-reparent (change supervisor)

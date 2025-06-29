@@ -221,11 +221,46 @@
                     fetch(`${API_URL}/api/projects/${projectId}/comments`)
                 ]);
                 
-                const project = projectRes.ok ? await projectRes.json() : {};
-                const tasks = tasksRes.ok ? await tasksRes.json() : [];
-                const teams = teamsRes.ok ? await teamsRes.json() : [];
-                const resources = resourcesRes.ok ? await resourcesRes.json() : [];
-                const comments = commentsRes.ok ? await commentsRes.json() : [];
+                // Handle project data
+                let project = {};
+                if (projectRes.ok) {
+                    const projectData = await projectRes.json();
+                    project = Array.isArray(projectData) ? projectData[0] || {} : 
+                             (projectData && projectData.success && projectData.data) ? projectData.data[0] || {} : 
+                             projectData || {};
+                }
+                
+                // Handle tasks data
+                let tasks = [];
+                if (tasksRes.ok) {
+                    const tasksData = await tasksRes.json();
+                    tasks = Array.isArray(tasksData) ? tasksData : 
+                           (tasksData && tasksData.success && Array.isArray(tasksData.data)) ? tasksData.data : [];
+                }
+                
+                // Handle teams data
+                let teams = [];
+                if (teamsRes.ok) {
+                    const teamsData = await teamsRes.json();
+                    teams = Array.isArray(teamsData) ? teamsData : 
+                           (teamsData && teamsData.success && Array.isArray(teamsData.data)) ? teamsData.data : [];
+                }
+                
+                // Handle resources data
+                let resources = [];
+                if (resourcesRes.ok) {
+                    const resourcesData = await resourcesRes.json();
+                    resources = Array.isArray(resourcesData) ? resourcesData : 
+                              (resourcesData && resourcesData.success && Array.isArray(resourcesData.data)) ? resourcesData.data : [];
+                }
+                
+                // Handle comments data
+                let comments = [];
+                if (commentsRes.ok) {
+                    const commentsData = await commentsRes.json();
+                    comments = Array.isArray(commentsData) ? commentsData : 
+                             (commentsData && commentsData.success && Array.isArray(commentsData.data)) ? commentsData.data : [];
+                }
                 
                 // Update project title
                 document.getElementById('projectTitle').textContent = `${project.name || 'Project'} - Review`;

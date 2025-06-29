@@ -92,7 +92,23 @@
     // Fetch and display projects
     async function fetchProjects() {
         const res = await fetch(`${API_URL}/api/projects`);
-        const projects = await res.json();
+        const response = await res.json();
+        
+        // Handle new API response structure
+        let projects;
+        if (response && response.success && Array.isArray(response.data)) {
+            projects = response.data;
+        } else if (Array.isArray(response)) {
+            // Fallback for old API structure
+            projects = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+            // Handle case where success might be missing
+            projects = response.data;
+        } else {
+            console.error('Unexpected response format:', response);
+            projects = [];
+        }
+        
         renderProjects(projects);
     }
     function renderProjects(projects) {
@@ -131,10 +147,16 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (res.ok) {
+        
+        const response = await res.json();
+        
+        if (res.ok && response.success) {
             document.getElementById('newProjectForm').reset();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('newProjectModal')).hide();
             fetchProjects();
+        } else {
+            const errorMessage = response.error || response.details || 'Failed to create project.';
+            alert(`Error: ${errorMessage}`);
         }
     });
     </script>

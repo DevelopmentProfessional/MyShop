@@ -169,8 +169,30 @@
         async function loadData() {
             enableFilters(false);
             try {
-                assets = await fetchData(`${API_URL}/api/assets`);
-                console.log('Frontend received assets:', assets);
+                const response = await fetchData(`${API_URL}/api/assets`);
+                console.log('Frontend received response:', response);
+                console.log('Response type:', typeof response);
+                console.log('Response keys:', Object.keys(response || {}));
+                console.log('Is array:', Array.isArray(response));
+                
+                // Handle new API response structure
+                if (response && response.success && Array.isArray(response.data)) {
+                    assets = response.data;
+                    console.log('Using new API structure, assets count:', assets.length);
+                } else if (Array.isArray(response)) {
+                    // Fallback for old API structure
+                    assets = response;
+                    console.log('Using old API structure, assets count:', assets.length);
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Handle case where success might be missing
+                    assets = response.data;
+                    console.log('Using data-only structure, assets count:', assets.length);
+                } else {
+                    console.error('Unexpected response format:', response);
+                    assets = [];
+                    throw new Error('Invalid response format - expected array or {success: true, data: [...]}');
+                }
+                
                 filteredAssets = [...assets];
                 updateTypeFilter();
                 updateStatusFilter();
@@ -178,6 +200,9 @@
                 renderAssets();
             } catch (error) {
                 console.error('Error loading data:', error);
+                assets = [];
+                filteredAssets = [];
+                renderAssets();
             }
         }
 
@@ -383,12 +408,17 @@
             if (!confirm('Are you sure you want to delete this asset?')) return;
 
             try {
-                await fetchData(`${API_URL}/api/assets/${id}`, {
+                const response = await fetchData(`${API_URL}/api/assets/${id}`, {
                     method: 'DELETE'
                 });
 
-                assets = assets.filter(a => a.id !== id);
-                renderAssets();
+                // Handle new API response structure
+                if (response.success) {
+                    assets = assets.filter(a => a.id !== id);
+                    renderAssets();
+                } else {
+                    throw new Error(response.error || 'Failed to delete asset');
+                }
                 
             } catch (error) {
                 console.error('Error deleting asset:', error);
@@ -421,28 +451,34 @@
                     status: status
                 };
 
+                let response;
                 if (id) {
                     // Update existing asset
-                    await fetchData(`${API_URL}/api/assets/${id}`, {
+                    response = await fetchData(`${API_URL}/api/assets/${id}`, {
                         method: 'PUT',
                         body: JSON.stringify(assetData)
                     });
                 } else {
                     // Create new asset
-                    await fetchData(`${API_URL}/api/assets`, {
+                    response = await fetchData(`${API_URL}/api/assets`, {
                         method: 'POST',
                         body: JSON.stringify(assetData)
                     });
                 }
 
-                // Reset form and close modal
-                document.getElementById('assetForm').reset();
-                document.getElementById('assetId').value = '';
-                const modal = bootstrap.Modal.getInstance(document.getElementById('assetModal'));
-                modal.hide();
+                // Handle new API response structure
+                if (response.success) {
+                    // Reset form and close modal
+                    document.getElementById('assetForm').reset();
+                    document.getElementById('assetId').value = '';
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('assetModal'));
+                    modal.hide();
 
-                // Reload data
-                await loadData();
+                    // Reload data
+                    await loadData();
+                } else {
+                    throw new Error(response.error || 'Failed to save asset');
+                }
                 
             } catch (error) {
                 console.error('Error saving asset:', error);

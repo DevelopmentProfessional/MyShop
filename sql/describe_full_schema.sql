@@ -312,3 +312,114 @@ ORDER BY tablename, indexname;
 "INDEX"	"public"	"users"	"users_pkey"	"CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
 "INDEX"	"public"	"users"	"users_username_key"	"CREATE UNIQUE INDEX users_username_key ON public.users USING btree (username)"
 "INDEX"	"public"	"vendors"	"vendors_pkey"	"CREATE UNIQUE INDEX vendors_pkey ON public.vendors USING btree (id)"
+
+-- Complete Database Schema Description
+-- Run this to get all table structures for comparison with API queries
+
+-- Main query: All tables and columns with data types
+SELECT 
+    t.table_name,
+    c.column_name,
+    c.data_type,
+    CASE 
+        WHEN c.character_maximum_length IS NOT NULL 
+        THEN c.data_type || '(' || c.character_maximum_length || ')'
+        WHEN c.numeric_precision IS NOT NULL AND c.numeric_scale IS NOT NULL
+        THEN c.data_type || '(' || c.numeric_precision || ',' || c.numeric_scale || ')'
+        ELSE c.data_type
+    END as full_data_type,
+    c.is_nullable,
+    c.column_default,
+    CASE 
+        WHEN pk.column_name IS NOT NULL THEN 'PRIMARY KEY'
+        WHEN fk.column_name IS NOT NULL THEN 'FOREIGN KEY'
+        ELSE ''
+    END as key_type,
+    CASE 
+        WHEN fk.column_name IS NOT NULL THEN 
+            fk.foreign_table_name || '.' || fk.foreign_column_name
+        ELSE ''
+    END as foreign_key_reference
+FROM information_schema.tables t
+JOIN information_schema.columns c ON t.table_name = c.table_name
+LEFT JOIN (
+    SELECT 
+        tc.table_name,
+        kcu.column_name,
+        ccu.table_name as foreign_table_name,
+        ccu.column_name as foreign_column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+    JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+) fk ON t.table_name = fk.table_name AND c.column_name = fk.column_name
+LEFT JOIN (
+    SELECT 
+        tc.table_name,
+        kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.constraint_type = 'PRIMARY KEY'
+) pk ON t.table_name = pk.table_name AND c.column_name = pk.column_name
+WHERE t.table_schema = 'public' 
+    AND t.table_type = 'BASE TABLE'
+ORDER BY t.table_name, c.ordinal_position;
+
+-- Summary: Just table names
+SELECT '=== TABLE LIST ===' as info;
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+    AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+
+-- Foreign Key Relationships
+SELECT '=== FOREIGN KEY RELATIONSHIPS ===' as info;
+SELECT 
+    tc.table_name as table_name,
+    kcu.column_name as column_name,
+    ccu.table_name AS foreign_table_name,
+    ccu.column_name AS foreign_column_name
+FROM information_schema.table_constraints AS tc 
+JOIN information_schema.key_column_usage AS kcu
+    ON tc.constraint_name = kcu.constraint_name
+    AND tc.table_schema = kcu.table_schema
+JOIN information_schema.constraint_column_usage AS ccu
+    ON ccu.constraint_name = tc.constraint_name
+    AND ccu.table_schema = tc.table_schema
+WHERE tc.constraint_type = 'FOREIGN KEY' 
+    AND tc.table_schema = 'public'
+ORDER BY tc.table_name, kcu.column_name;
+
+-- Primary Keys
+SELECT '=== PRIMARY KEYS ===' as info;
+SELECT 
+    tc.table_name,
+    kcu.column_name
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+WHERE tc.constraint_type = 'PRIMARY KEY'
+    AND tc.table_schema = 'public'
+ORDER BY tc.table_name;
+
+-- Indexes
+SELECT '=== INDEXES ===' as info;
+SELECT 
+    t.relname as table_name,
+    i.relname as index_name,
+    array_to_string(array_agg(a.attname), ', ') as column_names,
+    ix.indisunique as is_unique,
+    ix.indisprimary as is_primary
+FROM pg_index ix
+JOIN pg_class t ON t.oid = ix.indrelid
+JOIN pg_class i ON i.oid = ix.indexrelid
+JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+WHERE t.relkind = 'r' 
+    AND t.relname IN (
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+    )
+GROUP BY t.relname, i.relname, ix.indisunique, ix.indisprimary
+ORDER BY t.relname, i.relname;
