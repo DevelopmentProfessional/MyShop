@@ -205,6 +205,47 @@ app.use(['/products', '/Products'],                   express.static(path.join(_
 app.use(['/profile', '/Profile'],                     express.static(path.join(__dirname, '..', 'Profile')));         app.get(['/profile', '/Profile'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Profile', 'index.html')); });
 app.use(['/projects', '/Projects'],                   express.static(path.join(__dirname, '..', 'Projects')));        app.get(['/projects', '/Projects'], (req, res) => { res.sendFile(path.join(__dirname, '..', 'Projects', 'index.html')); });
 
+// Specific routes for individual project HTML files
+app.get(['/projects/projectoverview.html', '/Projects/projectoverview.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'ProjectOverview.html'));
+});
+app.get(['/projects/projectdetails.html', '/Projects/projectdetails.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'ProjectDetails.html'));
+});
+app.get(['/projects/projectresources.html', '/Projects/projectresources.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'ProjectResources.html'));
+});
+app.get(['/projects/projectteams.html', '/Projects/projectteams.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'ProjectTeams.html'));
+});
+app.get(['/projects/projectreview.html', '/Projects/projectreview.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'ProjectReview.html'));
+});
+app.get(['/projects/gantt.html', '/Projects/gantt.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'Gantt.html'));
+});
+app.get(['/projects/projects.html', '/Projects/projects.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'Projects.html'));
+});
+app.get(['/projects/progress_tracking.html', '/Projects/progress_tracking.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'progress_tracking.html'));
+});
+app.get(['/projects/task_assignments.html', '/Projects/task_assignments.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'task_assignments.html'));
+});
+app.get(['/projects/task_dependencies.html', '/Projects/task_dependencies.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'task_dependencies.html'));
+});
+app.get(['/projects/team_collaboration_boards.html', '/Projects/team_collaboration_boards.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'team_collaboration_boards.html'));
+});
+app.get(['/projects/project_timelines.html', '/Projects/project_timelines.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'project_timelines.html'));
+});
+app.get(['/projects/time_logging.html', '/Projects/time_logging.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'Projects', 'time_logging.html'));
+});
+
 function handleError(res, error, message, details = false) {
     console.error('Backend error:', error); // Log the real error for debugging
     const response = {
