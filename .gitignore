@@ -107,4 +107,7 @@ ssl/
 
 # Backup files
 *.bak
-*.backup 
+*.backup
+
+# Ignore the sql directory
+sql/ 
